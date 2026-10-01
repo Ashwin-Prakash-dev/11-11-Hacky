@@ -1,0 +1,11 @@
+{
+  "case_id": "case-0001",
+  "pack_id": "malaria_thin",
+  "pack_version": "0.1.0",
+  "field_ids": ["field-01", "field-02"],
+  "fields_passed": 1,
+  "counts": { "parasitized": 1, "uninfected": 2 },
+  "image_score": 0.93,
+  "uncertainty": { "flag": false, "reason": null },
+  "triage": { "level": "ABNORMAL_FLAG", "rule_id": "parasite_seen", "provisional": true }
+}

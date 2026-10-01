@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepsight/contracts/manifest.schema.json",
+  "title": "DeepSight pack manifest",
+  "description": "Contract 1.x. One file per pack at ml/packs/<id>/manifest.json. Semantics: contracts/README.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version", "id", "version", "display_name", "task_type", "runtime", "compute",
+    "model", "input", "preprocess", "output", "quality", "aggregation", "triage", "uncertainty", "provenance"
+  ],
+  "properties": {
+    "contract_version": { "type": "string", "pattern": "^1\\.[0-9]+$" },
+    "id": { "$ref": "#/$defs/id", "description": "Pack id. Also the router class for this test type." },
+    "version": { "$ref": "#/$defs/semver" },
+    "display_name": { "type": "string", "minLength": 1 },
+    "task_type": { "enum": ["detector", "segmenter", "classifier", "vlm"] },
+    "runtime": { "enum": ["onnx", "litert-lm", "hub"] },
+    "compute": { "enum": ["phone", "hub"] },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "file": { "type": "string", "minLength": 1, "description": "Weights path relative to the pack directory (phone packs)." },
+        "sha256": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" },
+        "endpoint": { "type": "string", "pattern": "^/", "description": "Path on the hub (hub packs)." }
+      }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["color"],
+      "properties": {
+        "tensor": { "type": "string", "minLength": 1 },
+        "shape": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "minItems": 2 },
+        "layout": { "enum": ["NCHW", "NHWC"] },
+        "dtype": { "enum": ["float32", "uint8"] },
+        "color": { "enum": ["RGB", "BGR"] },
+        "max_side": { "type": "integer", "minimum": 1, "description": "Downscale the longest side to this before sending (hub, litert-lm)." }
+      }
+    },
+    "preprocess": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source"],
+      "properties": {
+        "source": { "enum": ["field", "cells"], "description": "field: the whole image. cells: crops from the shared cell detector." },
+        "cell_type": { "enum": ["rbc", "wbc"] },
+        "resize": { "enum": ["stretch", "letterbox", "center_crop", "none"], "default": "stretch" },
+        "scale": { "type": "number", "exclusiveMinimum": 0, "default": 1.0, "description": "Pixel value multiplier, applied before mean/std." },
+        "mean": { "type": "array", "items": { "type": "number" }, "minItems": 1, "default": [0.0, 0.0, 0.0] },
+        "std": { "type": "array", "items": { "type": "number", "exclusiveMinimum": 0 }, "minItems": 1, "default": [1.0, 1.0, 1.0] },
+        "stain_normalization": { "enum": ["none", "reinhard", "macenko"], "default": "none" }
+      },
+      "if": { "properties": { "source": { "const": "cells" } } },
+      "then": { "required": ["cell_type"] }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decoder", "labels"],
+      "properties": {
+        "decoder": { "enum": ["softmax", "sigmoid", "yolov8", "mask", "json"] },
+        "labels": { "type": "array", "items": { "$ref": "#/$defs/label" }, "minItems": 1, "uniqueItems": true },
+        "score_threshold": { "$ref": "#/$defs/unit", "description": "Detectors: drop objects scoring below this." },
+        "iou_threshold": { "$ref": "#/$defs/unit", "description": "Detectors: NMS IoU threshold." },
+        "image_score_label": { "$ref": "#/$defs/label", "description": "Label whose score becomes image_score. Omit if the pack has no image score." }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min_blur", "max_clipped_fraction"],
+      "properties": {
+        "min_blur": { "type": "number", "minimum": 0, "description": "Minimum variance of Laplacian. Calibrate on this pack's images." },
+        "max_clipped_fraction": { "$ref": "#/$defs/unit" }
+      }
+    },
+    "aggregation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["image_score", "min_fields"],
+      "properties": {
+        "image_score": { "enum": ["max", "mean", "none"] },
+        "min_fields": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "triage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provisional", "source", "rules"],
+      "properties": {
+        "provisional": { "type": "boolean" },
+        "source": { "type": "string", "minLength": 1, "description": "Citation for the thresholds, or why they are provisional." },
+        "rules": { "type": "array", "items": { "$ref": "#/$defs/rule" }, "minItems": 1, "description": "Ordered; the first rule that matches wins." }
+      }
+    },
+    "uncertainty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method"],
+      "properties": {
+        "method": { "enum": ["none", "score_band"] },
+        "band": { "type": "array", "items": { "$ref": "#/$defs/unit" }, "minItems": 2, "maxItems": 2 },
+        "max_fraction": { "$ref": "#/$defs/unit" }
+      },
+      "if": { "properties": { "method": { "const": "score_band" } } },
+      "then": { "required": ["band", "max_fraction"] }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "licence", "training_data"],
+      "properties": {
+        "source": { "type": "string", "minLength": 1 },
+        "licence": { "type": "string", "minLength": 1, "description": "Write UNVERIFIED until checked." },
+        "training_data": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 },
+        "notes": { "type": "string" }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "runtime": { "const": "hub" } } },
+      "then": { "properties": { "compute": { "const": "hub" }, "model": { "required": ["endpoint"] } } },
+      "else": { "properties": { "compute": { "const": "phone" }, "model": { "required": ["file"] } } }
+    },
+    {
+      "if": { "properties": { "runtime": { "const": "onnx" } } },
+      "then": { "properties": { "input": { "required": ["tensor", "shape", "layout", "dtype"] } } }
+    }
+  ],
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "label": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "unit": { "type": "number", "minimum": 0, "maximum": 1 },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "level", "all"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "level": { "enum": ["ABNORMAL_FLAG", "NORMAL_SCREEN", "NEEDS_EXPERT"] },
+        "all": { "type": "array", "items": { "$ref": "#/$defs/condition" }, "minItems": 1, "description": "AND. Use separate rules for OR." }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metric", "op", "value"],
+      "properties": {
+        "metric": { "enum": ["count", "image_score"] },
+        "labels": { "type": "array", "items": { "$ref": "#/$defs/label" }, "minItems": 1, "uniqueItems": true, "description": "count: summed case counts of these labels." },
+        "op": { "enum": [">=", ">", "<=", "<", "=="] },
+        "value": { "type": "number" }
+      },
+      "if": { "properties": { "metric": { "const": "count" } } },
+      "then": { "required": ["labels"], "properties": { "value": { "minimum": 0 } } },
+      "else": { "not": { "required": ["labels"] }, "properties": { "value": { "minimum": 0, "maximum": 1 } } }
+    }
+  }
+}
