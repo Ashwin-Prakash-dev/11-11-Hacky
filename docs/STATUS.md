@@ -50,8 +50,10 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
     - `OnnxSmokeTest` uses `ml/eval/make_smoke_model.py`: a 64×64 cell-crop-sized CNN with random weights. CPU and XNNPACK outputs matched the desktop golden output within 1e-5 on the Nothing A059 via `:engine:connectedDebugAndroidTest` (2/2 tests passed).
     - Median inference: CPU 0.6 ms at batch 1 and 72.1 ms at batch 256; XNNPACK 0.7 ms and 68.3 ms. See Verified facts for the measurement method.
   - **Done (#15, PackLoader framework):** discovers on-phone ONNX packs in APK assets, rejects invalid manifests/files and SHA-256 mismatches, and exposes only verified packs for the picker. Its 8 JVM tests pass; a synthetic smoke pack loaded through `AssetManager` and created an `OnnxModel` on the Nothing A059 (`:engine:connectedDebugAndroidTest`, 3/3 tests passed).
+  - **Done (#16, preprocessing framework):** pure Kotlin converts `PixelImage` to float32 tensors with stretch/letterbox/center-crop/none resize, RGB/BGR, NCHW/NHWC and manifest scale/mean/std. Seven synthetic JVM tests pass.
 - **Next:**
   - **Known #15 integration gap:** Track A has not delivered the final `malaria_thin` manifest/model. Stage them under the APK's `packs/` assets and repeat the device test with the real pack before G1; real-pack loading is currently UNVERIFIED.
+  - **Known #16 parity gap:** compare tensors against #11's Python-reference dumps within 1e-4 when they land; Python/Android parity is currently UNVERIFIED.
   - Aggregation and triage per `contracts/README.md`, as pure Kotlin with JVM tests.
 
 ### D: Gates and report (owner: TBD)
