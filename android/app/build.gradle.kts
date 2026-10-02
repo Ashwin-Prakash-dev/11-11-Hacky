@@ -17,6 +17,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Demo phones are arm64; ONNX Runtime's native libs for all 4 ABIs would add ~129 MB uncompressed.
+        ndk { abiFilters += "arm64-v8a" }
     }
 
     buildTypes {

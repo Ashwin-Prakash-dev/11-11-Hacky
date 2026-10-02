@@ -11,6 +11,8 @@ android {
 
     defaultConfig {
         minSdk = 24
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        ndk { abiFilters += "arm64-v8a" } // test APK: same reason as :app
     }
 
     compileOptions {
@@ -21,7 +23,10 @@ android {
 
 dependencies {
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.onnxruntime.android)
     testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.test.runner)
 }
 
 // Unit tests read <repo>/contracts/examples and write Kotlin-encoded copies for contracts/validate.py.
