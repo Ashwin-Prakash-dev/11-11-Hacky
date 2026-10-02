@@ -46,6 +46,11 @@ Run Gradle commands from `android/`. On Windows, use `gradlew.bat`.
 | Validate contract files | `python contracts/validate.py <files>` |
 | Python setup | `python -m venv .venv`, then `.venv/Scripts/python -m pip install -r ml/requirements.txt` |
 
+## Skills (shared by all agents)
+Workflows live in `.agents/skills/<name>/SKILL.md`: `concise-plan`, `tool-research`, `merge-check` and `project-docs`.
+- **Invoke:** Claude `/name`, Codex `$name` (or `/skills`), Antigravity 2.0 and CLI `/name`; in the Antigravity IDE, mention the skill by name. Agents also pick them up automatically from their descriptions.
+- **Edit only the SKILL.md.** Claude doesn't read `.agents/skills/`, so `.claude/commands/<name>.md` is a one-line pointer to it. If you change a skill's `description`, copy it into the pointer too, because Claude matches on the pointer's copy. A new skill needs both files.
+
 ## Git (4 people and their agents)
 - **Commits:** keep them small and run `git pull --rebase` before every push. Never force-push `main`.
 - **Commit message prefix:** the track letter, e.g. `[C] ORT runner: add batch API`.
