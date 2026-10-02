@@ -62,7 +62,7 @@ adb shell am start -n com.deepsight/.MainActivity
 | Python tests | `conda run -n deepsight python -m unittest discover -s ml/tests -v` |
 | Contract files | `python contracts/validate.py <files>` |
 
-Tests that need torch skip themselves outside the Conda environment. "It works" means it ran on a physical phone: a green build or CI run is not enough.
+Tests that need torch skip themselves outside the Conda environment; the `ml-torch` CI job installs the pinned packages and runs them. "It works" means it ran on a physical phone: a green build or CI run is not enough.
 
 Pull requests and pushes to `test` and `main` run the Python tests, contract validation, setup-script checks and the Android engine JVM tests in GitHub Actions. Model downloads and phone-only tests are excluded.
 
