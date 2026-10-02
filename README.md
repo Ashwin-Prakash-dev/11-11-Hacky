@@ -4,6 +4,19 @@ An offline Android app for microscopy screening and triage. A health worker pick
 
 Built in a 30-hour hackathon. Current state: [docs/STATUS.md](docs/STATUS.md).
 
+## Development setup
+
+Requires Conda. The setup script creates the `deepsight` environment, installs OpenJDK 25 and the pinned Python packages, and downloads checksum-verified models approved for evaluation. Model weights stay untracked.
+
+```sh
+scripts/setup_dev.sh
+conda activate deepsight
+```
+
+Run `scripts/setup_dev.sh --help` for a different environment name or to skip dependencies/models. Candidates with unresolved licensing or provenance require the explicit `--include-unverified` option.
+
+Pull requests and pushes to `main` run Python tests, contract validation, setup-script checks, and Android engine JVM tests in GitHub Actions. Model downloads and phone-only tests are intentionally excluded.
+
 ## Run it
 
 Requires an arm64 Android phone (Android 7.0+, API 24) with USB debugging on.
