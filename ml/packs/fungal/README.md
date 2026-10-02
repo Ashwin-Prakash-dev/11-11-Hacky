@@ -3,7 +3,8 @@
 ## Dataset
 - **Source**: DeFungi dataset (UCI ML Repository).
 - **Licence**: UNVERIFIED.
-- **Split**: Held-out split grouped by source image to prevent data leakage.
+- **Split**: Held-out split grouped by source image to prevent data leakage. Patch filenames encode the source image (for example `H1_100a_1.jpg` is source `100a`), so a leak-free split is possible (spike S5).
+- **Classes**: 5 fungal classes and no normal class, so a field with no fungus has no label to receive.
 
 ## Model (Placeholder)
 Currently uses a dummy model file and placeholder manifest to validate the pipeline and unblock G2.

@@ -1,6 +1,6 @@
 # DeepSight status
 
-**Last updated:** 2026-10-02 (S2 ONNX device pass).
+**Last updated:** 2026-10-02 (router training scaffolding, docs refresh).
 **Hackathon clock:** H0 = TBD. Fill in the start time so everyone can convert H-numbers to clock times.
 
 Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how each fact was verified, or mark it UNVERIFIED.

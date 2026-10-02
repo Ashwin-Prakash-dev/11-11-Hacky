@@ -26,6 +26,14 @@ Optional hub: a laptop on its own hotspot, running Ollama and PathOS for breast 
 4. Every pack, including hub packs, returns the same result JSON.
 5. Nothing outside `ml/packs/` and the manifests knows about a specific disease.
 
+## Router guard
+
+- **Model:** a small pretrained classifier (MobileNetV2 backbone, ONNX) with one class per pack id plus `reject`. Training and export: `ml/train/train_router.py`.
+- **Verdict:** the top class equal to the chosen pack is `match`; another pack id is `mismatch` and names it in `predicted`; `reject` means the image is no known test type. Verdicts and the effect on triage are in [contracts/README.md](../contracts/README.md).
+- **Labels:** derived from the split manifest, never hardcoded. Adding a pack means retraining the router.
+- **Evaluation:** accuracy is reported on a held-out source per class, not a random split, because a router trained on mixed sources learns dataset fingerprints. Numbers go in `docs/claims.md` only once measured.
+- **Today:** the engine still uses a stub that always returns `match`; the trained model and its golden cases are pending (see [STATUS.md](STATUS.md)).
+
 ## Packs
 
 ```text
@@ -37,7 +45,8 @@ ml/packs/<id>/
 ```
 
 - **Golden tests:** the Kotlin engine must reproduce the Python reference outputs on a physical Android phone, within a stated tolerance. The plan's example is boxes within 2 px and scores within 0.02. This catches preprocessing mismatches, which are the usual way on-device ports fail.
-- **Done:** a pack that hasn't passed its golden tests on the device doesn't appear in the demo.
+- **Done:** a pack that hasn't passed its golden tests on a physical phone doesn't appear in the demo.
+- **Test-first:** every behavior change adds or updates the test that proves it (AGENTS.md, Test-first workflow).
 
 ## Report
 
@@ -50,8 +59,8 @@ ml/packs/<id>/
 | Module | Runs on | Basis |
 |---|---|---|
 | Malaria (thin smear) | Phone (target) | Android prior art and an evaluation-model fallback exist; S1 remains partial ([status](STATUS.md)) |
-| Fungal (DeFungi) | Phone (probably) | Small patch classifier; confirm after S2, S5 |
-| Leukaemia | Phone (probably) | Single-cell classifier; needs segmentation or tiling (S1) |
+| Fungal (DeFungi) | Phone (probably) | Small patch classifier. S2 and S5 are done; the pack still has a placeholder model |
+| Leukaemia | Phone (probably) | Single-cell classifier on WBC crops; needs segmentation or tiling. Placeholder model today |
 | Breast (PathOS) | Hub, unless S6 passes | Fine-tuned Gemma VLM via Ollama |
 | Gemma reports | Phone | Measured in AI Edge Gallery, see STATUS.md facts |
 
