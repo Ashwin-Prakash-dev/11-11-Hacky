@@ -11,7 +11,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val engine = FakeEngine(this)
-        setContent { DeepSightTheme { DeepSightApp(engine, CaseDb.get(this).dao()) } }
+        setContent { DeepSightTheme { DeepSightApp(CaseRunner.get(this), CaseDb.get(this).dao()) } }
     }
 }
