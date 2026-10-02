@@ -47,7 +47,7 @@ The parity harness that ran NLM's original Java against the port lives in a scra
 
 | Data | Licence | Source | In git |
 |---|---|---|---|
-| NIH-NLM Thin Blood Smears Pf | Use and redistribution allowed with the notice and attribution kept | [S1 spike](docs/spikes/S1-malaria-screener.md) | No |
+| NIH-NLM Thin Blood Smears Pf | NLM Informational Notice permits commercial/non-commercial use and redistribution with notice, conditions and disclaimer retained; no endorsement; requires NLM attribution and RBCNet citation. Independently read 2026-10-02 | [Original dataset licence](https://data.lhncbc.nlm.nih.gov/public/Malaria/NIH-NLM-ThinBloodSmearsPf/Data%20License%20Agreement.docx); [retained notice](ml/fixtures/NOTICE_NLM_THIN_FIELDS.txt); [selected fields and attribution](docs/datasets.md#reserved-malaria-fields-6) | Metadata and notice only; images and annotation files are ignored |
 | RBCNet sample images (8 field photos; `ml/data/rbcnet/`, evaluation only) | RBCNet's `LICENSE` is the same NLM BSD-style notice (its attribution line says "MetaMap", a copy-paste slip). Its readme says the images come from NIH-NLM Thin Blood Smears Pf | <https://github.com/nlm-malaria/RBCNet>, commit `b98941d` | Yes (`ml/data/`), private repo only |
 | NIH malaria `cell_images` (the 32 golden chips in `ml/packs/malaria_thin/golden/chips/`) | **UNVERIFIED**: the licence file on data.lhncbc.nlm.nih.gov returned 403 | — | Yes, private repo only |
 | DeFungi | CC BY 4.0 | [UCI dataset page](https://archive.ics.uci.edu/dataset/773/defungi) | No |

@@ -1,0 +1,185 @@
+{
+  "count_semantics": "Parasitized counts annotated infected RBCs, not individual parasites. Missing labels in a complete validated annotation file count as zero. Individual parasite counts are not supplied by these annotations.",
+  "dataset": "NIH-NLM-ThinBloodSmearsPf",
+  "excluded_previously_evaluated_patients": [
+    "C92P53",
+    "C12N"
+  ],
+  "fields": [
+    {
+      "annotation": {
+        "filename": "IMG_20150813_130332.txt",
+        "sha256": "a08e04a8819ab3215f997cdcef51594e2d914f11cd38e4da36a78d6fe2926c9e",
+        "url": "https://data.lhncbc.nlm.nih.gov/public/Malaria/NIH-NLM-ThinBloodSmearsPf/Polygon%20Set/211C70P31_ThinF/GT/IMG_20150813_130332.txt"
+      },
+      "category": "positive",
+      "counts": {
+        "Parasitized": 15,
+        "Uninfected": 99,
+        "White_Blood_Cell": 2
+      },
+      "field_id": "IMG_20150813_130332",
+      "height": 2988,
+      "id": "golden_positive",
+      "image": {
+        "filename": "IMG_20150813_130332.jpg",
+        "sha256": "722cebbafbfa47982cb7568d26574514c9fa820e53ac7a5ca72048f70d3d2b44",
+        "url": "https://data.lhncbc.nlm.nih.gov/public/Malaria/NIH-NLM-ThinBloodSmearsPf/Polygon%20Set/211C70P31_ThinF/Img/IMG_20150813_130332.jpg"
+      },
+      "patient_id": "211C70P31_ThinF",
+      "role": "golden",
+      "width": 5312
+    },
+    {
+      "annotation": {
+        "filename": "IMG_20150611_104404.txt",
+        "sha256": "a3ca66b0f3dc0279081d0c776205a1cebe275cb9b87de521fc63e63418052787",
+        "url": "https://data.lhncbc.nlm.nih.gov/public/Malaria/NIH-NLM-ThinBloodSmearsPf/Polygon%20Set/244C7NthinF/GT/IMG_20150611_104404.txt"
+      },
+      "category": "negative",
+      "counts": {
+        "Uninfected": 204
+      },
+      "field_id": "IMG_20150611_104404",
+      "height": 2988,
+      "id": "golden_negative",
+      "image": {
+        "filename": "IMG_20150611_104404.jpg",
+        "sha256": "cd10aceea7a35395a40a42b114f867a2abe8f102a4dbb05a110ee5a6c74e78c3",
+        "url": "https://data.lhncbc.nlm.nih.gov/public/Malaria/NIH-NLM-ThinBloodSmearsPf/Polygon%20Set/244C7NthinF/Img/IMG_20150611_104404.jpg"
+      },
+      "patient_id": "244C7NthinF",
+      "role": "golden",
+      "width": 5312
+    },
+    {
+      "annotation": {
+        "filename": "IMG_20150813_130849.txt",
+        "sha256": "16bd1dfb4b7d2e57ad39f86529d40d49a3fc5b26ec1bc85633fbd14e1fc4b9e6",
+        "url": "https://data.lhncbc.nlm.nih.gov/public/Malaria/NIH-NLM-ThinBloodSmearsPf/Polygon%20Set/211C70P31_ThinF/GT/IMG_20150813_130849.txt"
+      },
+      "category": "sparse",
+      "counts": {
+        "Parasitized": 9,
+        "Uninfected": 70
+      },
+      "field_id": "IMG_20150813_130849",
+      "height": 2988,
+      "id": "golden_sparse",
+      "image": {
+        "filename": "IMG_20150813_130849.jpg",
+        "sha256": "7526d6dc52f4946594f4a778edc84088025b1328d51ad187c492d6693a756a6e",
+        "url": "https://data.lhncbc.nlm.nih.gov/public/Malaria/NIH-NLM-ThinBloodSmearsPf/Polygon%20Set/211C70P31_ThinF/Img/IMG_20150813_130849.jpg"
+      },
+      "patient_id": "211C70P31_ThinF",
+      "role": "golden",
+      "width": 5312
+    },
+    {
+      "annotation": {
+        "filename": "IMG_20150621_112043.txt",
+        "sha256": "c9141ce17860886e9842505c4acbd0606f2b8ef34dccf2fd8b93f56577879346",
+        "url": "https://data.lhncbc.nlm.nih.gov/public/Malaria/NIH-NLM-ThinBloodSmearsPf/Polygon%20Set/142C38P3thinF_original/GT/IMG_20150621_112043.txt"
+      },
+      "category": "positive",
+      "counts": {
+        "Parasitized": 2,
+        "Uninfected": 207
+      },
+      "field_id": "IMG_20150621_112043",
+      "height": 2988,
+      "id": "demo_positive",
+      "image": {
+        "filename": "IMG_20150621_112043.jpg",
+        "sha256": "9a0fcd1484eb8f9e6acc21854b4b22a94bc44b05149116541ff36ed005d6aceb",
+        "url": "https://data.lhncbc.nlm.nih.gov/public/Malaria/NIH-NLM-ThinBloodSmearsPf/Polygon%20Set/142C38P3thinF_original/Img/IMG_20150621_112043.jpg"
+      },
+      "patient_id": "142C38P3thinF_original",
+      "role": "demo",
+      "width": 5312
+    },
+    {
+      "annotation": {
+        "filename": "IMG_20150611_104510.txt",
+        "sha256": "a1aee45280fc0006ab010ff6f4187079066a73659b7889229087e32fc3ec043c",
+        "url": "https://data.lhncbc.nlm.nih.gov/public/Malaria/NIH-NLM-ThinBloodSmearsPf/Polygon%20Set/244C7NthinF/GT/IMG_20150611_104510.txt"
+      },
+      "category": "negative",
+      "counts": {
+        "Uninfected": 201
+      },
+      "field_id": "IMG_20150611_104510",
+      "height": 2988,
+      "id": "demo_negative",
+      "image": {
+        "filename": "IMG_20150611_104510.jpg",
+        "sha256": "948fb06facd1728714639a104d275e276592e95a179c3d6755381f07e668a160",
+        "url": "https://data.lhncbc.nlm.nih.gov/public/Malaria/NIH-NLM-ThinBloodSmearsPf/Polygon%20Set/244C7NthinF/Img/IMG_20150611_104510.jpg"
+      },
+      "patient_id": "244C7NthinF",
+      "role": "demo",
+      "width": 5312
+    },
+    {
+      "annotation": {
+        "filename": "IMG_20150813_130510.txt",
+        "sha256": "2f20690d3eaac6bd0e2b51b232a0dcee1729b6ed52dbb1dc4e71b73353a7615b",
+        "url": "https://data.lhncbc.nlm.nih.gov/public/Malaria/NIH-NLM-ThinBloodSmearsPf/Polygon%20Set/211C70P31_ThinF/GT/IMG_20150813_130510.txt"
+      },
+      "category": "sparse",
+      "counts": {
+        "Parasitized": 14,
+        "Uninfected": 80
+      },
+      "field_id": "IMG_20150813_130510",
+      "height": 2988,
+      "id": "demo_sparse",
+      "image": {
+        "filename": "IMG_20150813_130510.jpg",
+        "sha256": "c603c8c1fee117967d5d7c83b887a309e8141fa6f2fdfdde3f50dfdd01f85b04",
+        "url": "https://data.lhncbc.nlm.nih.gov/public/Malaria/NIH-NLM-ThinBloodSmearsPf/Polygon%20Set/211C70P31_ThinF/Img/IMG_20150813_130510.jpg"
+      },
+      "patient_id": "211C70P31_ThinF",
+      "role": "demo",
+      "width": 5312
+    }
+  ],
+  "notices": [
+    {
+      "filename": "Data License Agreement.docx",
+      "sha256": "e7617a7206967e1806ba335f8b986880c959fbb4d81295dc71049c8639d4b86f",
+      "url": "https://data.lhncbc.nlm.nih.gov/public/Malaria/NIH-NLM-ThinBloodSmearsPf/Data%20License%20Agreement.docx"
+    },
+    {
+      "filename": "ReadMe.pdf",
+      "sha256": "2fe6ab9b218b5b840a6979947b2dbc548f5ca244024e909cf0bf543d7a83b3f1",
+      "url": "https://data.lhncbc.nlm.nih.gov/public/Malaria/NIH-NLM-ThinBloodSmearsPf/ReadMe.pdf"
+    }
+  ],
+  "reserved_patients": [
+    "C70P31",
+    "C7N",
+    "C38P3"
+  ],
+  "schema_version": 1,
+  "selection_notes": "Visual inspection and complete annotation counts; no classifier predictions used. All six final fields must pass the unchanged current quality gate. Sparse is relative: 79/94 RBCs versus 114/209 positive and 204/201 negative RBCs. Golden positive/sparse share one reserved patient; demo positive and negative use two others. This is a plumbing/demo fixture set, not an independent accuracy evaluation.",
+  "variants": [
+    {
+      "expected_reason": "blur",
+      "id": "demo_blurred",
+      "kernel": 81,
+      "kind": "gaussian_blur",
+      "sigma": 20,
+      "source_id": "demo_positive"
+    },
+    {
+      "expected_reason": "overexposed",
+      "gain": 4,
+      "id": "demo_overexposed",
+      "kind": "overexpose",
+      "offset": 252.0,
+      "source_id": "demo_positive"
+    }
+  ],
+  "verified_date": "2026-10-02"
+}

@@ -11,6 +11,8 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
+from ml.tools.malaria_reservations import assert_no_reserved_patients
+
 
 class SplitError(ValueError):
     pass
@@ -35,6 +37,10 @@ def load_split(path: Path) -> Split:
     if doc.get("schema_version") != 1:
         raise SplitError("schema_version must be 1")
     reject = doc.get("reject_class", "reject")
+    try:
+        assert_no_reserved_patients(doc["files"])
+    except ValueError as error:
+        raise SplitError(str(error)) from error
     files = [SplitFile(f["path"], f["class"], f["source"]) for f in doc["files"]]
     paths = [f.path for f in files]
     if len(set(paths)) != len(paths):
