@@ -40,6 +40,16 @@ class CheckPacksTest(unittest.TestCase):
         write_pack(self.root, "gone", {"file": "model.onnx", "sha256": self.sha}, payload=None)
         self.assertRegex(pack_problems(self.root)[0], "gone.*missing")
 
+    def test_missing_model_marked_not_in_git_is_skipped(self):
+        write_pack(self.root, "local", {"file": "model.onnx", "sha256": self.sha}, payload=None)
+        (self.root / "local" / "WEIGHTS_NOT_IN_GIT").write_text("licence pending\n")
+        self.assertEqual(pack_problems(self.root), [])
+
+    def test_marked_model_that_is_present_is_still_hash_checked(self):
+        write_pack(self.root, "local", {"file": "model.onnx", "sha256": self.sha}, payload=b"other")
+        (self.root / "local" / "WEIGHTS_NOT_IN_GIT").write_text("licence pending\n")
+        self.assertRegex(pack_problems(self.root)[0], "local.*sha256")
+
     def test_hub_pack_without_a_file_is_skipped(self):
         write_pack(self.root, "hub", {"endpoint": "http://hub.local/x"}, payload=None)
         self.assertEqual(pack_problems(self.root), [])

@@ -1,4 +1,8 @@
-"""Check that every pack's model file exists and matches the sha256 in its manifest."""
+"""Check that every pack's model file exists and matches the sha256 in its manifest.
+
+A pack whose weights are deliberately kept out of git (licence pending) carries a WEIGHTS_NOT_IN_GIT file saying why;
+its missing model is not a problem, but a model that is present is still hash-checked.
+"""
 import hashlib
 import json
 import sys
@@ -13,7 +17,8 @@ def pack_problems(packs_dir: Path) -> list[str]:
             continue
         path = manifest.parent / model["file"]
         if not path.is_file():
-            problems.append(f"{manifest.parent.name}: model file {model['file']} is missing")
+            if not (manifest.parent / "WEIGHTS_NOT_IN_GIT").is_file():
+                problems.append(f"{manifest.parent.name}: model file {model['file']} is missing")
         elif hashlib.sha256(path.read_bytes()).hexdigest() != model["sha256"]:
             problems.append(f"{manifest.parent.name}: {model['file']} does not match the manifest sha256")
     return problems
