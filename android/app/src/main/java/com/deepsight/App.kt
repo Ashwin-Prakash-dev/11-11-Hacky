@@ -39,6 +39,7 @@ import com.deepsight.engine.contract.PackManifest
 import com.deepsight.result.ResultScreen
 import com.deepsight.result.SignOff
 import com.deepsight.result.signOff
+import com.deepsight.ui.components.DeepSightTopBar
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -61,6 +62,7 @@ fun DeepSightApp(engine: FakeEngine, dao: CaseDao) {
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        topBar = { DeepSightTopBar(stringResource(R.string.app_name), canGoBack = stack.size > 1, onBack = { stack.removeAt(stack.lastIndex) }) },
         bottomBar = {
             Text(
                 stringResource(R.string.disclaimer),

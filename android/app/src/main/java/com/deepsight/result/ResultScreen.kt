@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.deepsight.engine.contract.CaseResult
 import com.deepsight.engine.contract.FieldResult
+import com.deepsight.ui.components.TriageBadge
 
 /** Stateless except for the sign-off form. [report] is null until the report module (#24) is wired in. */
 @Composable
@@ -51,7 +52,7 @@ fun ResultScreen(
 @Composable
 private fun CaseCard(case: CaseResult) = Card(Modifier.fillMaxWidth()) {
     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(case.triage.level.name, style = MaterialTheme.typography.headlineSmall)
+        TriageBadge(case.triage.level, Modifier.fillMaxWidth())
         if (case.triage.provisional) {
             Text("PROVISIONAL: thresholds not clinically validated", color = MaterialTheme.colorScheme.error)
         }
