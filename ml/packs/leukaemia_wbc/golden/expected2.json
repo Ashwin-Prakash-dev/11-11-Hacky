@@ -1,0 +1,19 @@
+{
+  "image": "case2.jpg",
+  "objects": [
+    {
+      "label": "hem",
+      "score": 0.99,
+      "box": [
+        0.1,
+        0.1,
+        0.2,
+        0.2
+      ]
+    }
+  ],
+  "quality": {
+    "blur": 100.0,
+    "clipped_fraction": 0.0
+  }
+}
