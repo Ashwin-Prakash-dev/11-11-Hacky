@@ -5,6 +5,7 @@ import com.deepsight.engine.contract.InputSource
 import com.deepsight.engine.contract.InputSpec
 import com.deepsight.engine.contract.PreprocessSpec
 import com.deepsight.engine.contract.Resize
+import com.deepsight.engine.contract.StainNormalization
 import com.deepsight.engine.contract.TensorDtype
 import com.deepsight.engine.contract.TensorLayout
 import com.deepsight.engine.quality.PixelImage
@@ -85,6 +86,18 @@ class TensorPreprocessorTest {
         val input = input(shape = listOf(1, 3, 1, 1), layout = TensorLayout.NCHW).copy(dtype = TensorDtype.UINT8)
 
         TensorPreprocessor.preprocess(image, input, preprocess())
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `rejects stain normalization until it is implemented`() {
+        val image = image(1, 1, rgb(0, 0, 0))
+        val input = input(shape = listOf(1, 3, 1, 1), layout = TensorLayout.NCHW)
+
+        TensorPreprocessor.preprocess(
+            image,
+            input,
+            preprocess().copy(stainNormalization = StainNormalization.REINHARD),
+        )
     }
 
     private fun input(shape: List<Int>, layout: TensorLayout, color: ColorOrder = ColorOrder.RGB) = InputSpec(

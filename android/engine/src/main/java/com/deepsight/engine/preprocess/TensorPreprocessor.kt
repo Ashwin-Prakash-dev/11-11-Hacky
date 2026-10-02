@@ -4,6 +4,7 @@ import com.deepsight.engine.contract.ColorOrder
 import com.deepsight.engine.contract.InputSpec
 import com.deepsight.engine.contract.PreprocessSpec
 import com.deepsight.engine.contract.Resize
+import com.deepsight.engine.contract.StainNormalization
 import com.deepsight.engine.contract.TensorDtype
 import com.deepsight.engine.contract.TensorLayout
 import com.deepsight.engine.quality.PixelImage
@@ -16,6 +17,9 @@ import kotlin.math.roundToInt
 object TensorPreprocessor {
     fun preprocess(image: PixelImage, input: InputSpec, spec: PreprocessSpec): FloatArray {
         require(input.dtype == TensorDtype.FLOAT32) { "Float preprocessing requires input.dtype float32" }
+        require(spec.stainNormalization == StainNormalization.NONE) {
+            "Stain normalization ${spec.stainNormalization} is not implemented"
+        }
         val dimensions = dimensions(input)
         val means = channelValues(spec.mean, "mean")
         val standardDeviations = channelValues(spec.std, "std")
