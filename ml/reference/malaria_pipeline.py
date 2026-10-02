@@ -8,20 +8,21 @@ OpenCV equivalent that exists on every mobile OpenCV binding.
 
 Pipeline (one microscope field-of-view photo -> counts):
   1. resize photo by RV for segmentation          (CameraActivity.resizeImage)
-  2. segment red blood cells -> label map          [SIMPLIFIED] (MarkerBasedWatershed)
-  3. upscale labels to full-res, crop each cell,   (Cells.runCells)
-     mask background to black, dilate mask 7x7
+  2. segment red blood cells                       --seg nlm (default): faithful port of MarkerBasedWatershed in
+                                                   nlm_segmentation.py (GPL-3.0, see LICENSING.md)
+                                                   --seg simple: [SIMPLIFIED] segment_cells_simple
+  3. crop each cell at full resolution, mask       --seg nlm: port of Cells.runCells
+     background to black, dilate mask 7x7          --seg simple: extract_chips
   4. resize chip to 44x44 (bicubic), RGB, /255     (Cells.putInPixels)
   5. ONNX model -> probs[:,0] = P(infected)        (TensorFlowClassifier.recongnize_batch)
   6. infected if P(infected) > TH (default 0.5)    (UtilsCustom.Th)
   7. image confidence = median P over infected     (ThinSmearProcessor.cal_image_conf)
 
-STATUS: steps 4-7 are validated (see ml/packs/malaria_thin/README.md). Steps 1-3 (segmentation) are NOT:
-on a confirmed-uninfected NIH patient (C12N) this pipeline flags ~13% of cells.
-Treat segment_cells/extract_chips as a swappable stage.
+STATUS: steps 4-7 are validated (see ml/packs/malaria_thin/README.md). Both segmentations are compared on
+RBCNet field images by ml/eval/eval_segmentation.py.
 
 Usage:
-  python ml/reference/malaria_pipeline.py image1.jpg [image2.jpg ...] [--model ml/packs/malaria_thin/model.onnx] [--debug outdir]
+  python ml/reference/malaria_pipeline.py image1.jpg [image2.jpg ...] [--seg nlm|simple] [--model ml/packs/malaria_thin/model.onnx] [--debug outdir]
 """
 import argparse, json, os, sys
 import numpy as np
@@ -51,8 +52,8 @@ def compute_rv(h, w):
     return RV_BASE / scale_factor
 
 
-def segment_cells(rgb_small):
-    """[SIMPLIFIED] Otsu + distance-transform watershed on the green channel.
+def segment_cells_simple(rgb_small):
+    """[SIMPLIFIED] Otsu + distance-transform watershed on the green channel (--seg simple).
     Returns int32 label map (0 = background) at segmentation resolution."""
     # field-of-view mask: drop the black vignette outside the eyepiece circle
     # (MarkerBasedWatershed: mask_border = inv < 0.8, keep largest contour, 5x5 erode)
@@ -97,7 +98,9 @@ def segment_cells(rgb_small):
 
 
 def extract_chips(rgb_full, labels_small):
-    """Cells.runCells: upscale each cell mask to full res, filter by area, dilate 7x7, mask background black, crop.
+    """[SIMPLIFIED] Cells.runCells for segment_cells_simple's label map (--seg simple). The faithful port is
+    nlm_segmentation.run_cells, which returns the same (chips, centers, boxes) format.
+    Upscale each cell mask to full res, filter by area, dilate 7x7, mask background black, crop.
     (NIH upsamples the binary mask with INTER_CUBIC; we upsample each cell's mask bilinearly and threshold 0.5,
     which keeps edges smooth instead of blocky.)"""
     H, W = rgb_full.shape[:2]
@@ -157,23 +160,38 @@ class MalariaThin:
     def classify(self, x):
         return self.sess.run(["probs"], {"input": x})[0]   # [N,2]; col 0 = infected, col 1 = uninfected
 
-    def run_image(self, path, th=TH, debug_dir=None):
-        bgr = cv2.imread(path)
-        rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+    def cells(self, rgb, seg="nlm"):
+        """Segment and classify one RGB field: (boxes, P(infected) per cell), or None if NLM asks for a retake."""
         H, W = rgb.shape[:2]
         rv = compute_rv(H, W)
         small = cv2.resize(rgb, (int(W / rv), int(H / rv)), interpolation=cv2.INTER_CUBIC)
-        labels = segment_cells(small)
-        chips, centers, boxes = extract_chips(rgb, labels)
-        if not chips:
+        if seg == "nlm":
+            import nlm_segmentation  # GPL-3.0 port, imported only when used (LICENSING.md)
+            masks = nlm_segmentation.marker_based_watershed(small, rv)
+            if masks is None:
+                return None
+            chips, centers, boxes = nlm_segmentation.run_cells(*masks, rgb)
+        else:
+            chips, centers, boxes = extract_chips(rgb, segment_cells_simple(small))
+        p = self.classify(preprocess(chips))[:, 0] if chips else np.zeros(0, np.float32)
+        return boxes, p
+
+    def run_image(self, path, th=TH, debug_dir=None, seg="nlm"):
+        bgr = cv2.imread(path)
+        rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+        H, W = rgb.shape[:2]
+        out = self.cells(rgb, seg)
+        if out is None:
+            return {"image": os.path.basename(path), "cells": 0, "infected": 0, "error": "retake (NLM histogram check)"}
+        boxes, p = out
+        if not boxes:
             return {"image": os.path.basename(path), "cells": 0, "infected": 0, "error": "no cells found - retake"}
-        p = self.classify(preprocess(chips))[:, 0]
         inf = p > th
         res = {
             "image": os.path.basename(path),
-            "cells": int(len(chips)),
+            "cells": int(len(boxes)),
             "infected": int(inf.sum()),
-            "parasitemia_pct": round(100.0 * inf.sum() / len(chips), 2),
+            "parasitemia_pct": round(100.0 * inf.sum() / len(boxes), 2),
             "image_conf": float(np.median(p[inf])) if inf.any() else 0.0,
             "infected_cells": [{"box_xyxy": boxes[j], "p_infected": round(float(p[j]), 4)} for j in np.where(inf)[0]],
         }
@@ -201,9 +219,10 @@ if __name__ == "__main__":
     ap.add_argument("--model", default=os.path.join(os.path.dirname(__file__), "..", "packs", "malaria_thin", "model.onnx"))
     ap.add_argument("--th", type=float, default=TH)
     ap.add_argument("--debug", default=None)
+    ap.add_argument("--seg", choices=["nlm", "simple"], default="nlm")
     a = ap.parse_args()
     m = MalariaThin(a.model)
-    rs = [m.run_image(p, a.th, a.debug) for p in a.images]
+    rs = [m.run_image(p, a.th, a.debug, a.seg) for p in a.images]
     for r in rs:
         print(json.dumps({k: v for k, v in r.items() if k != "infected_cells"}))
     print("SLIDE:", json.dumps(aggregate(rs)))

@@ -40,7 +40,11 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
 
     That run was before the move to `malaria_thin`. A rerun from the new path is pending (phone disconnected); the files are unchanged (sha256 checked).
   - **Not in git:** the weights and the NIH golden chips, until S1 and the cell_images licence are resolved.
-  - **Not validated:** the segmentation stage.
+  - **Segmentation:**
+    - **Port:** `ml/reference/nlm_segmentation.py` is a faithful Python port of NLM's `MarkerBasedWatershed` and `Cells.runCells`. It is GPL-3.0 ([LICENSING.md](../LICENSING.md)), selected with `--seg nlm`; the old version is `--seg simple`.
+    - **Verified bit-exact** against NLM's original Java on OpenCV 3.4.2 (a desktop harness, not in the repo): 0 differing mask pixels and identical cell lists on 8 RBCNet fields.
+    - **Neither version separates the negative patient from the positive one.** % of cells flagged > 0.5 (`ml/eval/eval_segmentation.py`), C12N negative vs C92P53 positive: simple 13.1 vs 10.4; nlm 18.0 vs 15.8.
+    - **Kotlin port:** waits for approval and the team's GPL decision.
 - **Next:** independently evaluate the fallback model on the licensed NIH-NLM data, export the chosen model to ONNX, and create the first golden case in `ml/packs/malaria_thin/`. Replace every UNVERIFIED and PLACEHOLDER manifest value before enabling the pack.
 
 ### B: Android shell (owner: TBD)

@@ -51,11 +51,19 @@ The original kit reports the following on the NIH `cell_images` set (27,558 chip
 **These are not held-out numbers.** NLM probably trained on these chips. UNVERIFIED. To check: evaluate per patient on data NLM didn't train on (Track E).
 
 ## Known limits
-- **Segmentation.** The kit author ran the reference pipeline on full field photos (UNVERIFIED here):
-  - C12N, a patient with 0 parasitized cells: about 13% of cells flagged.
-  - C92P53, a positive patient: about 10% flagged.
+- **Field photos: the pipeline doesn't yet separate a negative patient from a positive one, with either segmentation.** `ml/eval/eval_segmentation.py`, 4 RBCNet fields per patient. The figures are the % of cells with P(parasitized) > 0.5:
 
-  So it doesn't separate positive from negative patients yet. Most false positives are cells with small dark specks (debris). The classifier scores NLM-style crops well but mis-scores crops from the simplified segmentation.
+  | Segmentation | C12N (negative) | C92P53 (positive) |
+  |---|---|---|
+  | `simple` | 13.1% | 10.4% |
+  | `nlm` (port that matches NLM's Java exactly) | 18.0% | 15.8% |
+
+  - The original kit blamed the simplified segmentation. That was wrong: NLM's own segmentation does no better with this model.
+  - NLM's app pairs its segmentation with the Sudan-retrained model. That flags far fewer cells (`nlm`: 5.6% vs 3.6%), but the negative patient still comes out higher.
+  - Seen in the overlays:
+    - NLM boxes merged clumps of 2–4 touching cells, which get flagged.
+    - The simplified version misses touching cells.
+    - Both flag cells with small dark specks.
 - **One field is not a slide.** NLM keeps capturing fields until it has counted at least 1000 red cells (`CameraActivity.totalCellNeeded`).
 - **Thin smears only.** Thick smears use a different NLM model.
 
