@@ -18,7 +18,7 @@ Source: <https://github.com/nlm-malaria/MalariaScreener> (archived), commit `c48
 |---|---|---|
 | Root `LICENSE` | BSD-style "Informational Notice" from NLM. Redistribution is allowed if the notice and disclaimer are kept and the app credits "Courtesy of the U.S. National Library of Medicine". Copied in [`ml/packs/malaria_thin/NOTICE_NLM.txt`](ml/packs/malaria_thin/NOTICE_NLM.txt) | Read 2026-10-02 |
 | Java source files | Headers say "Copyright 2020 The Malaria Screener Authors. All Rights Reserved. This software was developed under contract funded by the National Library of Medicine [...] Licensed under GNU General Public License v3.0". S1 counted 85+ such files. They include the 5 we ported from (`MarkerBasedWatershed`, `SegmentWatershed`, `OtsuThreshold`, `Histogram`, `Cells`) and `ThinSmearProcessor`, which we read for the call order | Read 2026-10-02. Headers name v3.0 without "or later" |
-| Model weights (`malaria_thin_44.onnx`, `malaria_thin_44_sudan.onnx`) | No licence or provenance file of their own | **UNVERIFIED**. In git only because the repo is private (`model.onnx` of the malaria pack; the raw `ml/models/` conversions stay out). To resolve: ask NLM (LHNCBC) which licence covers the bundled models |
+| Model weights (`malaria_thin_44.onnx`, `malaria_thin_44_sudan.onnx`) | No licence or provenance file of their own | **UNVERIFIED**. In git only because the repo is private (`ml/models/`, and the malaria pack's `model.onnx`). To resolve: ask NLM (LHNCBC) which licence covers the bundled models |
 
 The headers say the code was written under contract. Works written by federal employees have no US copyright (17 U.S.C. §105), but contractors' work can, so treat the GPL headers as binding.
 
@@ -37,8 +37,9 @@ The parity harness that ran NLM's original Java against the port lives in a scra
 | Model | Licence | Source | In git |
 |---|---|---|---|
 | NLM thin-smear CNN (`ml/packs/malaria_thin/model.onnx`) | UNVERIFIED (above) | S1 | Yes, private repo only |
-| NLM Sudan-retrained CNN (`ml/models/`, evaluation only) | UNVERIFIED (above) | S1 | No |
+| NLM Sudan-retrained CNN (`ml/models/`, evaluation only) | UNVERIFIED (above) | S1 | Yes, private repo only |
 | LocalMedScan MobileNetV2 | MIT | Model card and source repo, recorded in [`ml/models.json`](ml/models.json) | No (downloaded by `setup_dev.sh`) |
+| BreakHis DenseNet-121 (`breast_breakhis`) | Upstream repository declares MIT; dataset-derived model redistribution remains **UNVERIFIED** | [Upstream licence](https://github.com/mrdvince/breast_cancer_detection/blob/master/License); [pack provenance and local preparation](ml/packs/breast_breakhis/README.md). Keep `NOTICE_MIT_mrdvince.txt` with the model. Resolve dataset terms before distributing weights | No (local only: the pack is unfinished and not in git yet) |
 | Lara YOLOv8n | UNVERIFIED: the model card says MIT, but the linked repo has no licence | [`ml/models.json`](ml/models.json) | No (opt-in only) |
 | Gemma 4 E2B (report, via LiteRT-LM; `gemma-4-E2B-it.litertlm`) | Apache-2.0 | Hugging Face [`litert-community/gemma-4-E2B-it-litert-lm`](https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm) model API (`license: apache-2.0`, ungated), 2026-10-02; sha256 in [S3](docs/spikes/S3-litertlm-gemma.md) | No (`*.litertlm` is never committed; pushed to the phone) |
 
@@ -47,9 +48,10 @@ The parity harness that ran NLM's original Java against the port lives in a scra
 | Data | Licence | Source | In git |
 |---|---|---|---|
 | NIH-NLM Thin Blood Smears Pf | Use and redistribution allowed with the notice and attribution kept | [S1 spike](docs/spikes/S1-malaria-screener.md) | No |
-| RBCNet sample images (8 field photos; `ml/data/rbcnet/`, evaluation only) | RBCNet's `LICENSE` is the same NLM BSD-style notice (its attribution line says "MetaMap", a copy-paste slip). Its readme says the images come from NIH-NLM Thin Blood Smears Pf | <https://github.com/nlm-malaria/RBCNet>, commit `b98941d` | No |
-| NIH malaria `cell_images` (the 32 golden chips in `ml/packs/malaria_thin/golden/chips/`) | **UNVERIFIED**: the licence file on data.lhncbc.nlm.nih.gov returned 403 | — | No (`.git/info/exclude`) |
+| RBCNet sample images (8 field photos; `ml/data/rbcnet/`, evaluation only) | RBCNet's `LICENSE` is the same NLM BSD-style notice (its attribution line says "MetaMap", a copy-paste slip). Its readme says the images come from NIH-NLM Thin Blood Smears Pf | <https://github.com/nlm-malaria/RBCNet>, commit `b98941d` | Yes (`ml/data/`), private repo only |
+| NIH malaria `cell_images` (the 32 golden chips in `ml/packs/malaria_thin/golden/chips/`) | **UNVERIFIED**: the licence file on data.lhncbc.nlm.nih.gov returned 403 | — | Yes, private repo only |
 | DeFungi | CC BY 4.0 | [UCI dataset page](https://archive.ics.uci.edu/dataset/773/defungi) | No |
+| BreakHis (six breast-pack reference images and derived tensors) | **UNVERIFIED for redistribution:** the UFPR page contains non-commercial-research wording and a CC BY 4.0 footer. Confirm applicable terms with the dataset authors before redistribution; cite Spanhol et al., TBME 63(7):1455-1462, 2016 | [UFPR dataset terms](https://web.inf.ufpr.br/vri/databases/breast-cancer-histopathological-database-breakhis/) | No (local only, with the unfinished breast pack) |
 
 ## Software dependencies
 

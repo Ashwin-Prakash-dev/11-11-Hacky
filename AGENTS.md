@@ -22,6 +22,7 @@ The phone needs no internet. A clinician always signs off. This is screening sup
 - **Offline:** everything runs offline on the phone, except packs with `compute: hub`.
 - **Device:** "it works" means it ran on a physical Android phone (any model; the app must work on every supported phone, not one) through `installDebug` or `connectedDebugAndroidTest`. A successful build is not enough. There is no emulator.
 - **Never commit:** datasets, downloaded evaluation weights under `ml/models/`, `.litertlm` files, `local.properties`, `build/`, `.idea/`, `.venv/`, `ml/data/`.
+  - **Exception, private repo only:** the files `.gitignore` re-includes (our ONNX conversions in `ml/models/`, the sample photos in `ml/data/`, the pack weights and golden images). Their licences are UNVERIFIED ([LICENSING.md](LICENSING.md)); take them out of git before the repo goes public.
 - **Python:** use the Conda environment created by `scripts/setup_dev.sh`, never global Python. ONNX needs protobuf>=6.31, which breaks other globally installed packages.
 
 ## Test-first workflow

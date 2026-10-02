@@ -2,8 +2,14 @@
 .venv/
 __pycache__/
 .ipynb_checkpoints/
-ml/models/
-ml/data/
+# Downloaded eval weights and datasets stay out of git, except the files the team shares (private repo, see LICENSING.md)
+ml/models/*
+!ml/models/malaria_thin_44.onnx
+!ml/models/malaria_thin_44_sudan.onnx
+ml/data/*
+!ml/data/android_parity/
+!ml/data/rbcnet/
+!ml/data/rbcnet_eval/
 
 # On-device LLM model files are multi-GB: adb push them, never commit
 *.litertlm
