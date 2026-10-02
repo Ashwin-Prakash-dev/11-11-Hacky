@@ -74,6 +74,12 @@ class RouterSplitTest(unittest.TestCase):
         with self.assertRaisesRegex(SplitError, "duplicate"):
             self.load(doc)
 
+    def test_reserved_demo_patient_rejected_before_train_or_eval(self):
+        doc = valid()
+        doc["files"][0]["path"] = "C70P31thinF_cell_999.png"
+        with self.assertRaisesRegex(SplitError, "reserved"):
+            self.load(doc)
+
 
 if __name__ == "__main__":
     unittest.main()
