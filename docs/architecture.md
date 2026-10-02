@@ -36,7 +36,7 @@ ml/packs/<id>/
   README.md       dataset, licence, held-out metrics, known limits
 ```
 
-- **Golden tests:** the Kotlin engine must reproduce the Python reference outputs on the demo phone, within a stated tolerance. The plan's example is boxes within 2 px and scores within 0.02. This catches preprocessing mismatches, which are the usual way on-device ports fail.
+- **Golden tests:** the Kotlin engine must reproduce the Python reference outputs on a physical Android phone, within a stated tolerance. The plan's example is boxes within 2 px and scores within 0.02. This catches preprocessing mismatches, which are the usual way on-device ports fail.
 - **Done:** a pack that hasn't passed its golden tests on the device doesn't appear in the demo.
 
 ## Report

@@ -21,6 +21,19 @@ android {
     }
 }
 
+// Every pack's manifest, model and golden cases live in ml/packs; PackGoldenTest reads them from the test APK's
+// assets under packs/<id>/ (the prefix keeps them out of the asset root that PackLoaderDeviceTest scans).
+val stageGoldenPacks by tasks.registering(Sync::class) {
+    from(rootDir.resolve("../ml/packs"))
+    into(layout.buildDirectory.dir("golden-assets/packs"))
+}
+androidComponents {
+    onVariants { variant ->
+        variant.androidTest?.sources?.assets?.addStaticSourceDirectory(layout.buildDirectory.dir("golden-assets").get().asFile.path)
+    }
+}
+tasks.configureEach { if (name.endsWith("AndroidTestAssets")) dependsOn(stageGoldenPacks) }
+
 dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.onnxruntime.android)

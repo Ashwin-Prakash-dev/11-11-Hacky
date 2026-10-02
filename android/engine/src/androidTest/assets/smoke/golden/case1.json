@@ -1,0 +1,32 @@
+{
+  "case_id": "golden",
+  "field_id": "case1",
+  "pack_id": "smoke",
+  "pack_version": "0.1.0",
+  "quality": {
+    "pass": true,
+    "blur_score": 0.0,
+    "exposure_score": 0.0,
+    "reasons": []
+  },
+  "router": {
+    "verdict": "match",
+    "score": 1.0
+  },
+  "objects": [
+    {
+      "label": "negative",
+      "score": 0.6177313131334151
+    }
+  ],
+  "counts": {
+    "negative": 1,
+    "positive": 0
+  },
+  "image_score": 0.38226868686658483,
+  "uncertainty": {
+    "flag": false,
+    "reason": null
+  },
+  "timing_ms": {}
+}
