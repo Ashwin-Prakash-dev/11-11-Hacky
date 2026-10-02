@@ -8,7 +8,7 @@ NLM Malaria Screener's **Sudan-retrained** thin-smear CNN, converted from Tensor
 **Not validated for screening:**
 - The weights are in git, in this private repo only (licence unresolved, see below).
 - The triage, quality and uncertainty values remain provisional; see [threshold evidence](#threshold-evidence-issue-7).
-- On field photos it doesn't yet separate a negative patient from a positive one (see Known limits).
+- On 6 annotated field photos it flags 28 of 40 infected cells, and its false flags vary by slide (0–14 per field). That is behaviour on reserved fixtures, not accuracy (see Known limits).
 
 ## Threshold evidence (issue #7)
 
@@ -89,16 +89,26 @@ The original kit reports the following on the NIH `cell_images` set (27,558 chip
 This model trades sensitivity for specificity. It raises fewer false alarms but misses more infected cells, so the case-level triage rule needs care.
 
 ## Known limits
-- **Field photos: the pipeline doesn't yet separate a negative patient from a positive one.** `ml/eval/eval_segmentation.py`, 4 RBCNet fields per patient. The figures are the % of cells with P(parasitized) > 0.5:
+- **Annotated field photos, cell by cell: the segmentation is good; this model flags about 70% of infected cells, and its false flags depend on the slide.** From `ml/eval/eval_annotated_fields.py` with `nlm` segmentation, in the Python reference (2026-10-02). It ran on the six reserved fields in [docs/datasets.md](../../../docs/datasets.md), whose annotations label every red cell:
 
-  | Segmentation | Model | C12N (negative) | C92P53 (positive) |
-  |---|---|---|---|
-  | `nlm` (port that matches NLM's Java exactly) | **this model** | 5.6% | 3.6% |
-  | `simple` | **this model** | 1.4% | 0.7% |
-  | `nlm` | previous default | 18.0% | 15.8% |
-  | `simple` | previous default | 13.1% | 10.4% |
+  | Field | Annotated infected / red cells | Cells found | Infected flagged | False flags |
+  |---|---|---:|---:|---:|
+  | golden_positive | 15 / 114 | 110 | 9 | 0 |
+  | golden_sparse | 9 / 79 | 81 | 9 | 1 |
+  | golden_negative | 0 / 204 | 214 | 0 | 0 |
+  | demo_positive | 2 / 209 | 217 | 0 | 14 |
+  | demo_sparse | 14 / 94 | 94 | 10 | 0 |
+  | demo_negative | 0 / 201 | 212 | 0 | 3 |
 
-  - RBCNet has no per-cell labels, so it's unknown how many of the positive patient's flags are real.
+  - **Segmentation:** cell counts are within 5% of the annotation, and 39 of the 40 infected cells fall inside a detected box.
+  - **This model:** it flags 28 of 40 infected cells, with 18 false flags among 861 uninfected cells. 14 of those are on one slide (`demo_positive`, patient C38P3), and none of that slide's flags are on its 2 infected cells. The previous default model flags 35 of 40, with 64 false flags.
+  - **Triage under the provisional rules, one field per case:**
+    - every positive field gives `ABNORMAL_FLAG`;
+    - `demo_negative` gives a false `ABNORMAL_FLAG` (3 flags);
+    - `golden_negative` gives `NEEDS_EXPERT` (fewer than 1000 clear cells).
+  - **Not accuracy:** 6 fields from 3 reserved patients, and NLM may have trained on these patients (UNVERIFIED).
+  - **Not run on the phone:** the Kotlin port closely matched the Python on the RBCNet fields (Track C in STATUS.md), but these six fields haven't been run on the phone.
+- **The earlier RBCNet comparison was a weak test.** `ml/eval/eval_segmentation.py` compared 4 fields from a negative patient (C12N) with 4 from a positive one (C92P53). It found the positive patient flagged no more often: `nlm` with this model gave 5.6% vs 3.6% of cells; `simple` gave 1.4% vs 0.7%; the previous default model gave 18.0% vs 15.8% with `nlm`. But RBCNet only labels the patient, not the cells, so nobody knows how many infected cells those positive fields hold. The comparison mostly measured false flags.
   - Seen in the overlays:
     - NLM boxes merged clumps of 2–4 touching cells, which get flagged.
     - The simplified version misses touching cells.
