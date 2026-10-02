@@ -34,16 +34,20 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
   - Fungal pack skeleton (issue #13) on DeFungi with placeholder ONNX model, provisional triage, dummy golden cases, and manifest.
 - **`ml/packs/malaria_thin/` (NLM thin-smear CNN as ONNX):**
   - **Done:** pack format. The manifest passes `validate.py`; triage, quality and uncertainty are PLACEHOLDER. Also added: the README, golden expected outputs, and the Python reference, moved to `ml/reference/malaria_pipeline.py`.
-  - **Verified:** `MalariaPackGoldenTest` passed on the edge 50 fusion demo phone via `:engine:connectedDebugAndroidTest` (2026-10-02):
-    - Test A, CPU and XNNPACK: within 6e-7.
-    - PNG chips with a Kotlin `INTER_CUBIC` port: within 5e-5. Android bilinear: 0.149 off, a fail.
-
-    That run was before the move to `malaria_thin`. A rerun from the new path is pending (phone disconnected); the files are unchanged (sha256 checked).
+  - **Model:** switched to NLM's Sudan-retrained model for the demo (2026-10-02), the one NLM's app loads (`CameraActivity.java` line 277).
+    - On the RBCNet negative patient it flags 5.6% of cells instead of 18.0%.
+    - It misses more infected cells (sensitivity 86.3% vs 96.6% on NIH crops, kit's figures, not held out).
+    - Replace it after measurement on annotated field photos.
+  - **Verified:** `MalariaPackGoldenTest` passed 3/3 on the edge 50 fusion demo phone with this model, loaded from `malaria_thin/` (`:engine:connectedDebugAndroidTest`, 2026-10-02):
+    - Test A, CPU and XNNPACK: within 6.3e-7.
+    - PNG chips with a Kotlin `INTER_CUBIC` port: within 5e-5. Android bilinear: 0.064 off (0.149 with the previous model).
   - **Not in git:** the weights and the NIH golden chips, until S1 and the cell_images licence are resolved.
   - **Segmentation:**
     - **Port:** `ml/reference/nlm_segmentation.py` is a faithful Python port of NLM's `MarkerBasedWatershed` and `Cells.runCells`. It is GPL-3.0 ([LICENSING.md](../LICENSING.md)), selected with `--seg nlm`; the old version is `--seg simple`.
     - **Verified bit-exact** against NLM's original Java on OpenCV 3.4.2 (a desktop harness, not in the repo): 0 differing mask pixels and identical cell lists on 8 RBCNet fields.
-    - **Neither version separates the negative patient from the positive one.** % of cells flagged > 0.5 (`ml/eval/eval_segmentation.py`), C12N negative vs C92P53 positive: simple 13.1 vs 10.4; nlm 18.0 vs 15.8.
+    - **Neither version separates the negative patient from the positive one.** % of cells flagged > 0.5 (`ml/eval/eval_segmentation.py`), C12N negative vs C92P53 positive:
+      - previous model: simple 13.1 vs 10.4; nlm 18.0 vs 15.8.
+      - Sudan model: simple 1.4 vs 0.7; nlm 5.6 vs 3.6.
     - **Kotlin port:** waits for approval and the team's GPL decision.
 - **Next:** independently evaluate the fallback model on the licensed NIH-NLM data, export the chosen model to ONNX, and create the first golden case in `ml/packs/malaria_thin/`. Replace every UNVERIFIED and PLACEHOLDER manifest value before enabling the pack.
 
