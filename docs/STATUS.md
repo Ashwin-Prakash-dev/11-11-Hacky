@@ -22,7 +22,7 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
 | S2 | ONNX Runtime on Android | C | **yes:** CPU and XNNPACK outputs passed on the Nothing A059 within 1e-5; timings recorded below |
 | S3 | LiteRT-LM Gemma inside our app | TBD | not started |
 | S4 | Phone → laptop hub over hotspot, cleartext HTTP | TBD | not started |
-| S5 | DeFungi classes | TBD | not started |
+| S5 | DeFungi classes | Gemini | **done:** 5 classes (TSH, BASH, GMA, SHC, BBH), no normal class. Yes, leak-free split is possible via filename prefixes. |
 | S6 | PathOS conversion | TBD | not started |
 
 ## Tracks
@@ -62,6 +62,8 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
 ## Verified facts
 | Fact | How verified |
 |---|---|
+| DeFungi dataset has 5 classes and no 'normal/no-fungus' class | UCI ML Repository dataset description |
+| DeFungi patches can be grouped by source image for a leak-free split | Downloaded UCI zip; filenames encode source image IDs (e.g. `H1_100a_1.jpg` -> source `100a`) |
 | Demo phone: Nothing A059, Android 16 (API 36), SoC SM7635, arm64-v8a, 7.3 GiB RAM total, ~2.3 GiB available during the S2 run | `adb getprop`, `/proc/meminfo`, 2026-10-02 |
 | Demo phone storage: 29 GB free | `adb shell df -h /data`, 2026-10-02 |
 | ONNX smoke model on Nothing A059: CPU load 2.2 ms, median 0.6 ms batch 1 / 72.1 ms batch 256; XNNPACK load 3.3 ms, median 0.7 ms / 68.3 ms | `OnnxSmokeTest.logTimings`: 3 warmups then median of 10 runs; `connectedDebugAndroidTest`, 2026-10-02 |
