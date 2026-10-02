@@ -126,7 +126,8 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
 
 ### E: Data, eval, clinical thresholds (owner: TBD)
 - **Done:** Created `docs/datasets.md` mapping datasets, links, licenses, attributions, and grouping keys for ML packs (issue #5).
-- **Next:** sourced triage thresholds for malaria. Every value in the example manifest is a placeholder.
+- **Done (#7, sourcing):** reviewed WHO MM-SOP-08/09 and NLM's configurable capture target; [malaria threshold evidence](../ml/packs/malaria_thin/README.md#threshold-evidence-issue-7) records the thick-film negative examination minimum and why thin-film counting does not validate this pack's normal-screen rule. `triage.source` individually labels unsupported settings PROVISIONAL. In the `deepsight` Conda environment, the contract validator passed all pack manifests, the pack-integrity check passed, and `:engine:testDebugUnitTest` passed; semantic comparison against the rebased parent commit confirmed only `triage.source` changed. App presentation checked by source inspection only; no new phone-run claim.
+- **Next (#7, acceptance):** external deck compliance is UNVERIFIED (no deck in this checkout); Track F must audit it before the presentation checkbox can be completed. The automated thin-smear negative-call minimum and uncertainty calibration remain UNVERIFIED; obtain clinical review and held-out validation before changing values.
 
 ### F: Pitch and demo (owner: TBD)
 - **Done:** nothing yet.
