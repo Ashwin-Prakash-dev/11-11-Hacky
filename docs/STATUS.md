@@ -38,6 +38,7 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
     - On the RBCNet negative patient it flags 5.6% of cells instead of 18.0%.
     - It misses more infected cells (sensitivity 86.3% vs 96.6% on NIH crops, kit's figures, not held out).
     - Replace it after measurement on annotated field photos.
+    - `model.onnx` outputs logits: the final Softmax is removed by `ml/tools/onnx_logits.py`, because the engine's decoder applies softmax. Expected outputs stay probabilities.
   - **Verified:** `MalariaPackGoldenTest` passed 3/3 on the edge 50 fusion demo phone with this model, loaded from `malaria_thin/` (`:engine:connectedDebugAndroidTest`, 2026-10-02):
     - Test A, CPU and XNNPACK: within 6.3e-7.
     - PNG chips with a Kotlin `INTER_CUBIC` port: within 5e-5. Android bilinear: 0.064 off (0.149 with the previous model).
@@ -81,33 +82,36 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
   - **Known #17 segmentation gap:** port #10's exact RBC detector when it lands, add the OpenCV Android dependency then measure its APK delta, compare golden counts/boxes, and measure field runtime on a physical Android phone. RBC detection and parity are currently UNVERIFIED.
   - **Known #18 integration gap:** compare decoded objects, scores and uncertainty against #11's real reference outputs when they land; real-model parity is currently UNVERIFIED.
   - **Known #21 gap (issue closed, follow-up tracked here):** add the real `malaria_thin` goldens from #12 to `PackGoldenTest`, run `:engine:connectedDebugAndroidTest` and record every case passing; replace the `fungal` and `leukaemia_wbc` stubs when Track A ships real models. Until then no real pack is golden-tested on a phone.
-- **Update, malaria field pipeline (branch `Ashwin-Prakash-dev/c-malaria-field-pipeline`, 2026-10-02):** closes the #15 staging gap, #17, and the real-model part of #18.
+- **Update, malaria field pipeline (branch `Ashwin-Prakash-dev/c-malaria-field-pipeline`, 2026-10-02):** closes the #15 staging gap, #17, and the real-model part of #18. **Merged into `FieldPipeline` (#54); needs Abhay's review.**
   - **Code:**
     - `engine/.../segmentation/RbcDetector.kt` (+ `NlmHistogram.kt`) is the Kotlin port of `ml/reference/nlm_segmentation.py`, on OpenCV Android 4.14.0. It is GPL-3.0 (LICENSING.md).
-    - `engine/.../pipeline/FieldAnalyzer.kt` runs photo → `QualityGate` → `RbcDetector` → 44×44 bicubic crops → `TensorPreprocessor` → ONNX → `ClassifierDecoder` → `field_result`.
+    - **`CellFinder` now returns crops (`CellCrop`), not boxes,** so a detector can mask and resize them. A box-only finder returns `CellCropper.crop(field, boxes)`.
+    - `pipeline/CellFinders.kt`:
+      - `CellFinders.forPack(manifest)` gives the engine's finder: `RbcCellFinder` for `cell_type: rbc`, null otherwise.
+      - `RbcCellFinder` cuts NLM-style crops (background black, bicubic to the model input). An NLM retake gives no cells, so triage says NEEDS_EXPERT.
+    - `FieldPipeline` times the new step as `cells`.
+    - `PackGoldenTest` passes `CellFinders.forPack`.
+    - The app's case flow (#30) should call `FieldPipeline(pack, cellFinder = CellFinders.forPack(pack.manifest))`.
     - `:app` stages `ml/packs/*` (only folders that have a `manifest.json`) into the APK's `packs/` assets.
-    - Debug-only `DebugAnalyzeActivity` ("DeepSight debug" icon): pick a photo, see the cell boxes, counts, triage and timings.
-  - **Verified on the edge 50 fusion** via `:engine:connectedDebugAndroidTest`, 11/11 engine device tests passing:
+    - Debug-only `DebugAnalyzeActivity` ("DeepSight debug" icon) runs `FieldPipeline` on a picked photo (Android decoder + EXIF rotation): cell boxes, counts, `closeCase` triage, timings.
+  - **Softmax:** `malaria_thin`'s `model.onnx` now outputs logits (final Softmax removed by `ml/tools/onnx_logits.py`). `ClassifierDecoder` applies softmax, the convention `make_smoke_golden.py` also encodes, so no engine change was needed. softmax(logits) matches the old probabilities within 3e-8.
+  - **Verified on the edge 50 fusion** (`:engine:connectedDebugAndroidTest`, 26 tests; the only failures are 4 by-design `PackGoldenTest` rows, see below):
     - **Same resized input:** the port matches NLM's Java golden (`RbcDetectorTest`).
     - **Full photo → cells:** within ARM/x86 OpenCV resize noise (±1 on ~1% of pixels); synthetic 123 vs 124 cells.
-    - **8 RBCNet fields against desktop Python** (`FieldAnalyzerTest`):
+    - **8 RBCNet fields through `FieldPipeline` against desktop Python** (`RbcFieldPipelineTest`):
       - cell counts within 1.1%;
       - 92.6–97.7% of cells match (boxes within 2 segmentation px, scores within 0.02);
       - parasitized counts equal on the 4 positive-patient fields, +1 or +2 on the negative ones.
-    - **The app itself:** `installDebug`, then the debug screen on 2 RBCNet fields; results read from logcat because the phone was locked.
+    - **Abhay's tests:** `FieldPipelineCellsDeviceTest` passes after its test double wraps `CellCropper.crop` and the timing keys include `cells`.
+    - **The app itself:** `installDebug`, then the debug screen on an RBCNet field: 215 cells, 6 parasitized, same as Python, 3.2 s.
   - **Measured:**
-    - Field time 2.7–3.5 s in the instrumentation test: quality ~0.8 s, segmentation 1.2–1.9 s, model 0.4–0.5 s. 14–17 s in the debug app with the screen off; a foreground run is UNVERIFIED.
+    - Field time 2.4–3.4 s on the phone: quality ~0.45–0.7 s, cells 1.3–2.1 s, model 0.4–0.6 s.
     - OpenCV adds `libopencv_java4.so` 23.5 MiB + `libc++_shared.so` 1.2 MiB, stored uncompressed. Debug APK 74.1 MiB.
   - **For the team:**
-    - **Decoder (Track C):** `ClassifierDecoder` applies softmax, but `malaria_thin`'s ONNX graph already ends in Softmax. `FieldAnalyzer` passes log-probabilities so the scores are right; the contract should say whether `softmax` means "apply" or "already applied".
     - **Quality gate (Track D):** `QualityGate` counts the black eyepiece vignette as underexposure (33–37% of every NLM photo) and measures blur over the whole frame.
-    - **Overlap with `FieldPipeline` (#54), to merge with Abhay:** `FieldAnalyzer` duplicates `FieldPipeline`, which the case flow (#30) will call. `FieldPipeline` can't yet run `malaria_thin` correctly:
-      - its `CellFinder` returns boxes only, so crops keep their background, but NLM's classifier expects black-background crops;
-      - crops are resized bilinear (0.064–0.149 off on the phone; NLM used bicubic);
-      - probabilities go to the decoder's softmax again.
-
-      Proposal: `CellFinder` returns masked crops (`CellCrop`) at the model's input size, `RbcDetector` implements it, the softmax question is settled, and then `FieldAnalyzer` folds into `FieldPipeline`.
-    - **`PackGoldenTest` (#21):** 4 rows fail by design on this branch: `fungal`, `leukaemia_wbc`, `malaria_thin` (no golden in the harness format, and no `CellFinder`) and a local untracked `breast_breakhis` folder. The other 21 engine device tests pass on the edge 50 fusion (2026-10-02).
+    - **Golden harness (Abhay):** `PackGoldenTest`'s comparator wants exact counts, but ARM/x86 resize noise moves about 1% of `malaria_thin`'s cells, so a malaria case in the harness format needs a count tolerance in `tolerance.json` or a noise-free fixture.
+    - **`PackGoldenTest` (#21):** 4 rows fail by design: `fungal` and `leukaemia_wbc` (stubs), `malaria_thin` (no case in the harness format yet), and a local untracked `breast_breakhis` folder. The other 22 engine device tests pass.
+    - **Image decoding (Track B):** the case flow should apply the photo's EXIF orientation when decoding, as the debug screen and cv2.imread do; NLM photos are EXIF-rotated.
   - Aggregation and triage per `contracts/README.md`, as pure Kotlin with JVM tests.
 
 ### D: Gates and report (owner: TBD)

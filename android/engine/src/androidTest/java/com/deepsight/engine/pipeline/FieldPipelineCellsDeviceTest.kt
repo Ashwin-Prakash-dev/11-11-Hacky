@@ -11,6 +11,7 @@ import com.deepsight.engine.contract.QualityReason
 import com.deepsight.engine.onnx.OnnxModel
 import com.deepsight.engine.pack.LoadedPack
 import com.deepsight.engine.pack.PackLoader
+import com.deepsight.engine.segmentation.CellCropper
 import com.deepsight.engine.segmentation.PixelRect
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -37,13 +38,13 @@ class FieldPipelineCellsDeviceTest {
     @Test
     fun cellsPackBatchesCropsAndKeepsEachCropsBoxAndScore() {
         var seenCellType: CellType? = null
-        val field = pipeline(cellsManifest) { _, type -> seenCellType = type; boxes }.use {
+        val field = pipeline(cellsManifest) { image, type -> seenCellType = type; CellCropper.crop(image, boxes) }.use {
             it.analyzeField("case-1", "f1", bitmap(128, 128, 7919))
         }
         assertEquals(CellType.RBC, seenCellType)
         assertEquals(boxes.size, field.objects.size)
         assertEquals(boxes.size, field.counts.values.sum())
-        assertEquals(setOf("quality", "router", "preprocess", "pack", "total"), field.timingMs.keys)
+        assertEquals(setOf("quality", "router", "cells", "preprocess", "pack", "total"), field.timingMs.keys)
         // bbox is the contract's normalized [x, y, w, h].
         boxes.forEachIndexed { i, b ->
             assertEquals(listOf(b.x / 128.0, b.y / 128.0, b.width / 128.0, b.height / 128.0), field.objects[i].bbox)
@@ -51,7 +52,7 @@ class FieldPipelineCellsDeviceTest {
 
         // Batching must not mix crops up: each crop alone gives the same score as inside the batch.
         boxes.forEachIndexed { i, b ->
-            val alone = pipeline(cellsManifest) { _, _ -> listOf(b) }.use { it.analyzeField("case-1", "f1", bitmap(128, 128, 7919)) }
+            val alone = pipeline(cellsManifest) { image, _ -> CellCropper.crop(image, listOf(b)) }.use { it.analyzeField("case-1", "f1", bitmap(128, 128, 7919)) }
             assertEquals("crop $i", alone.objects.single().score, field.objects[i].score, 1e-6)
             assertEquals("crop $i", alone.objects.single().label, field.objects[i].label)
         }
