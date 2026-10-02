@@ -15,7 +15,7 @@ conda activate deepsight
 
 Run `scripts/setup_dev.sh --help` for a different environment name or to skip dependencies/models. Candidates with unresolved licensing or provenance require the explicit `--include-unverified` option.
 
-Pull requests and pushes to `main` run Python tests, contract validation, setup-script checks, and Android engine JVM tests in GitHub Actions. Model downloads and phone-only tests are intentionally excluded.
+Pull requests and pushes to `test` and `main` run Python tests, contract validation, setup-script checks, and Android engine JVM tests in GitHub Actions. Model downloads and phone-only tests are intentionally excluded.
 
 ## Run it
 
@@ -26,6 +26,15 @@ cd android
 ./gradlew installDebug          # Windows: gradlew.bat installDebug
 adb shell am start -n com.deepsight/.MainActivity
 ```
+
+## Branches
+
+| Branch | Holds |
+|---|---|
+| `test` (default) | Where all work lands. CI-checked, but may not have run on the phone yet. |
+| `main` | Only commits verified on the demo phone. Build demos from here. |
+
+How to promote a commit from `test` to `main`: the Git section of [AGENTS.md](AGENTS.md).
 
 ## Docs
 

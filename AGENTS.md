@@ -56,11 +56,17 @@ Workflows live in `.agents/skills/<name>/SKILL.md`: `concise-plan`, `tool-resear
 - **Edit only the SKILL.md.** Claude doesn't read `.agents/skills/`, so `.claude/commands/<name>.md` is a one-line pointer to it. If you change a skill's `description`, copy it into the pointer too, because Claude matches on the pointer's copy. A new skill needs both files.
 
 ## Git (4 people and their agents)
-- **Commits:** keep them small and run `git pull --rebase` before every push. Never force-push `main`.
+- **Branches:** `test` is the default branch, and all work lands there. `main` only gets commits that ran on the demo phone. Never commit to `main` directly.
+- **Commits:** keep them small and run `git pull --rebase` before every push. Push to `test`, or open a PR into `test`. Never force-push `main` or `test`.
 - **Commit message prefix:** the track letter, e.g. `[C] ORT runner: add batch API`.
 - **STATUS.md:** edit only your own track's section, plus any spike or gate row you own. Put that edit in the same commit as the work. This keeps merge conflicts rare.
 - **Before editing a shared file** (contracts/, `libs.versions.toml`, `settings.gradle.kts`), pull first and keep the change minimal.
-- **Branch `test`:** IDE files only. Don't merge it.
+- **Promote `test` to `main`** (whoever has the demo phone):
+  1. `git switch test`, `git pull --rebase`, then note the commit with `git rev-parse HEAD`. CI must be green for it.
+  2. Run that commit on the demo phone: `installDebug` and use the app. If inference changed, also run `:engine:connectedDebugAndroidTest`.
+  3. `git push origin <sha>:main`. This promotes exactly the commit you tested, even if `test` has moved since.
+  - Don't promote through a GitHub PR. Its merge or squash commit lands on `main` but not on `test`, and later promotions stop being fast-forwards.
+  - If the push is refused as not a fast-forward, someone committed to `main`. Merge `main` into `test`, verify again and push again. Never force.
 
 ## Tracks
 | Track | Scope |

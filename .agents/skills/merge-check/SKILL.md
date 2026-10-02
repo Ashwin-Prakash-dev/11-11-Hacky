@@ -1,11 +1,11 @@
 ---
 name: merge-check
-description: Final pre-merge gate for a DeepSight change, run after code review on the finished diff. Checks correctness, the AGENTS.md hard rules (deterministic triage, frozen contracts, offline, demo-phone proof, sourced facts), tests and commit hygiene, and reports a one-row-per-section table. Use before pushing to main or calling work done.
+description: Final pre-merge gate for a DeepSight change, run after code review on the finished diff. Checks correctness, the AGENTS.md hard rules (deterministic triage, frozen contracts, offline, demo-phone proof, sourced facts), tests and commit hygiene, and reports a one-row-per-section table. Use before pushing to test or calling work done.
 ---
 
 # Pre-Merge Checklist
 
-The last gate before a change lands on `main`. We are in a 30-hour hackathon: the bar is **"works on the demo phone and breaks nothing"**, not production polish. MVP first; don't block a merge on elegance.
+The last gate before a change lands on `test`. Promotion to `main` is a separate step after a demo-phone run (AGENTS.md, Git section). We are in a 30-hour hackathon: the bar is **"works on the demo phone and breaks nothing"**, not production polish. MVP first; don't block a merge on elegance.
 
 ## Workflow position
 
@@ -80,7 +80,7 @@ Use the Commands table in AGENTS.md.
 
 - No dead code, debug logs, commented-out blocks, or unused imports added.
 - `docs/STATUS.md`: your track's section updated in the same commit if the change matters.
-- Commits small, prefixed with the track letter (`[C] ...`); `git pull --rebase` before push; never force-push `main`.
+- Commits small, prefixed with the track letter (`[C] ...`); `git pull --rebase` before push; push to `test`, never commit to `main` directly; never force-push `main` or `test`.
 
 ## 9. Final gate
 

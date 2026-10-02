@@ -84,3 +84,4 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
 - 2026-10-02: Contracts v1.0 frozen. Triage lives on `case_result`, not `field_result`, because it runs after aggregation.
 - 2026-10-02: ONNX Runtime and the Python tooling pinned to 1.30.0. Golden outputs depend on this.
 - 2026-10-02: APKs are arm64-v8a only.
+- 2026-10-02: `test` is the default branch, and all work lands there. `main` only gets commits verified on the demo phone, promoted by fast-forward (AGENTS.md, Git).
