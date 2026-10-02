@@ -45,6 +45,7 @@ sealed interface Route {
     data object History : Route
     data class SavedCase(val caseId: String) : Route
     data object About : Route
+    data object Profiles : Route
     data class Document(val title: String, val asset: String) : Route
 }
 
