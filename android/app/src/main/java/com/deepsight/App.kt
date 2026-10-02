@@ -3,6 +3,7 @@ package com.deepsight
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -18,8 +19,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.deepsight.capture.CaptureScreen
+import com.deepsight.capture.CaseStore
 import com.deepsight.engine.contract.CaseResult
 import com.deepsight.engine.contract.FieldResult
 import com.deepsight.engine.contract.PackManifest
@@ -71,8 +75,12 @@ private fun ChooseScreen(tests: List<PackManifest>, onPick: () -> Unit, onHistor
 }
 
 @Composable
-private fun CaseScreen(fields: List<FieldResult>, onDone: () -> Unit) {
-    Title("Case ${fields.first().caseId}")
+private fun ColumnScope.CaseScreen(fields: List<FieldResult>, onDone: () -> Unit) {
+    val caseId = fields.first().caseId
+    Title("Case $caseId")
+    // Real images (import/capture) live in filesDir; the list below is still the fake engine's until #30.
+    val store = CaseStore(LocalContext.current.filesDir.resolve("cases"))
+    CaptureScreen(store, caseId, Modifier.weight(1f))
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items(fields) { f ->
             Card(Modifier.fillMaxWidth()) {

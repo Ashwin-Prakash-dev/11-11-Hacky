@@ -34,7 +34,8 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
 ### B: Android shell (owner: TBD)
 - **Done:** package `com.deepsight`, modules `:app`, `:engine` and `:report`. The stock Compose screen runs on the demo phone.
 - **Skeleton (issue #26):** choose test → case → result → review/sign-off → history with a fake engine (`FakeEngine`, reads `contracts/examples`); disclaimer on every screen. **Verified on a phone (moto g32, Android 13, 2026-10-02):** `installDebug` installed and `:app:connectedDebugAndroidTest` passed 2/2, including `NavigationTest` (all screens + disclaimer). Not yet checked by hand on the edge 50 fusion demo phone.
-- **Next:** CameraX capture or gallery import in the case flow; persist history (Room).
+- **Done (#27):** gallery import (photo picker, bytes copied unchanged) and CameraX capture (CameraX 1.6.2) save into `filesDir/cases/<caseId>/field_<n>.<ext>`; the files are the fields. **Verified on a moto g32 (Android 13), not yet on the edge 50 fusion demo phone (2026-10-02):** `installDebug`; an imported PNG was byte-identical to the source, a captured JPEG was written, and both listed as fields on the case screen, with the rest of the skeleton flow still working; `:app:connectedDebugAndroidTest` 2/2, `CaseStoreTest` and `:engine:testDebugUnitTest` pass. Image files survive an app restart; history does not yet (in-memory until #28). It sits on the case screen above the fake engine's field list (the case id comes from the fake engine until #30); Room is not used yet.
+- **Next:** persist cases and history (Room, #28); result screen and sign-off (#29); real engine (#30).
 
 ### C: On-device engine (owner: TBD)
 - **Done:**
