@@ -48,9 +48,9 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
   - Aggregation and triage per `contracts/README.md`, as pure Kotlin with JVM tests.
 
 ### D: Gates and report (owner: TBD)
-- **Done:** nothing yet.
+- **Done:** Pure-Kotlin quality-gate core accepts an Android-free ARGB pixel buffer, computes Laplacian variance and dark/bright clipped-pixel fractions, and applies each pack's `quality` thresholds. JVM tests cover sharp, blurred, overexposed, dual-clipped, boundary and sparse-field/per-pack cases (`:engine:testDebugUnitTest`).
 - **Next:**
-  - Quality gate (variance of Laplacian, histogram clipping), using thresholds from the manifest's `quality` block.
+  - Match #11's Python reference scores within a stated tolerance once its exact scoring convention and golden outputs land; add the Bitmap/shared image adapter after the joint library decision with #17.
   - A template report.
 
 ### E: Data, eval, clinical thresholds (owner: TBD)
