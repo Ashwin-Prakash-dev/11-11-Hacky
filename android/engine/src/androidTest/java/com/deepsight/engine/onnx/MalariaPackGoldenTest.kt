@@ -19,10 +19,12 @@ import org.junit.runner.RunWith
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.abs
+import kotlin.math.exp
 import kotlin.math.floor
 
 /**
  * Golden test for the malaria thin-smear pack (ml/packs/malaria_thin), ported from its golden/verify.py.
+ * The model outputs logits (ClassifierDecoder applies softmax); expected.json holds probabilities.
  * Timings: adb logcat -d -s DeepSightMalaria
  */
 @RunWith(AndroidJUnit4::class)
@@ -47,7 +49,7 @@ class MalariaPackGoldenTest {
         val input = assets.open("$PACK/golden/input_32x44x44x3_float32.bin").use { it.readBytes() }
             .let { bytes -> FloatArray(bytes.size / 4).also { ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer().get(it) } }
         for (accelerator in OnnxModel.Accelerator.entries) {
-            val probs = OnnxModel(modelBytes, accelerator).use { it.run(input, shapeOf(cases.size)) }
+            val probs = softmaxPairs(OnnxModel(modelBytes, accelerator).use { it.run(input, shapeOf(cases.size)) })
             val err = cases.indices.maxOf { i -> maxOf(abs(probs[2 * i] - cases[i].f("p_infected")), abs(probs[2 * i + 1] - cases[i].f("p_uninfected"))) }
             Log.i(TAG, "Test A %s: max abs err %.2e (tolerance %.0e)".format(accelerator, err, tolerance))
             assertTrue("$accelerator max abs err $err", err < tolerance)
@@ -68,7 +70,7 @@ class MalariaPackGoldenTest {
     private fun compareChips(name: String, bicubic: Boolean): Float {
         val input = FloatArray(cases.size * CHIP_FLOATS)
         cases.forEachIndexed { i, case -> chipToRgb(case.getValue("file").jsonPrimitive.content, input, i * CHIP_FLOATS, bicubic) }
-        val probs = OnnxModel(modelBytes).use { it.run(input, shapeOf(cases.size)) }
+        val probs = softmaxPairs(OnnxModel(modelBytes).use { it.run(input, shapeOf(cases.size)) })
         val pInfected = cases.indices.map { probs[2 * it] }
         val err = cases.indices.maxOf { abs(pInfected[it] - cases[it].f("p_infected")) }
         val flips = cases.indices.count { (pInfected[it] > 0.5f) != (cases[it].f("p_infected") > 0.5f) }
@@ -153,6 +155,17 @@ class MalariaPackGoldenTest {
     }
 
     private fun shapeOf(batch: Int) = longArrayOf(batch.toLong(), CHIP.toLong(), CHIP.toLong(), 3)
+
+    /** Two logits per cell -> two probabilities per cell. */
+    private fun softmaxPairs(logits: FloatArray) = FloatArray(logits.size).also { out ->
+        for (i in logits.indices step 2) {
+            val m = maxOf(logits[i], logits[i + 1])
+            val e0 = exp(logits[i] - m)
+            val e1 = exp(logits[i + 1] - m)
+            out[i] = e0 / (e0 + e1)
+            out[i + 1] = e1 / (e0 + e1)
+        }
+    }
 
     private fun json(path: String) = assets.open(path).use { Json.parseToJsonElement(it.reader().readText()).jsonObject }
 

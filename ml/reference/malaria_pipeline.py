@@ -158,7 +158,14 @@ class MalariaThin:
         self.sess = ort.InferenceSession(model_path, providers=["CPUExecutionProvider"])
 
     def classify(self, x):
-        return self.sess.run(["probs"], {"input": x})[0]   # [N,2]; col 0 = infected, col 1 = uninfected
+        """[N,2] probabilities; col 0 = infected, col 1 = uninfected. The pack model outputs `logits` (its final
+        Softmax removed for the engine's decoder); NLM's original ONNX files output `probs`."""
+        out = self.sess.get_outputs()[0].name
+        y = self.sess.run([out], {"input": x})[0]
+        if out == "probs":
+            return y
+        e = np.exp(y - y.max(axis=1, keepdims=True))
+        return e / e.sum(axis=1, keepdims=True)
 
     def cells(self, rgb, seg="nlm"):
         """Segment and classify one RGB field: (boxes, P(infected) per cell), or None if NLM asks for a retake."""

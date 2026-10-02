@@ -15,7 +15,7 @@ NLM Malaria Screener's **Sudan-retrained** thin-smear CNN, converted from Tensor
 | Path | In git | What |
 |---|---|---|
 | `manifest.json` | yes | Contract v1.0. Passes `contracts/validate.py` |
-| `model.onnx` | **no** | 1.5 MB, sha256 `fe11d01a…`. Get it from Ashwin and check it against the manifest |
+| `model.onnx` | **no** | 1.5 MB, sha256 `4ae01239…`: NLM's Sudan model with its final Softmax removed (`python ml/tools/onnx_logits.py ml/models/malaria_thin_44_sudan.onnx model.onnx`). Get it from Ashwin and check it against the manifest |
 | `golden/expected.json`, `golden/verify.py` | yes | Expected outputs of this model for 32 chips (`model_sha256` records which model); desktop golden test |
 | `golden/chips/*.png`, `golden/input_32x44x44x3_float32.bin` | **no** | 32 NIH cell chips (16 parasitized, 16 uninfected) and the exact input tensor. Dataset licence UNVERIFIED |
 | `NOTICE_NLM.txt` | yes | NLM notice. Must ship with the app if the weights do |
@@ -27,7 +27,7 @@ The previous default model, `malaria_thin_44.onnx` (sha256 `63e2d8d5…`), is ke
 | | |
 |---|---|
 | Input | `input`, `[N, 44, 44, 3]` float32, NHWC, RGB, `pixel / 255`, no mean subtraction. Batch is dynamic |
-| Output | `probs`, `[N, 2]` softmax. **Column 0 = P(parasitized)**, column 1 = P(uninfected) |
+| Output | `logits`, `[N, 2]`. The engine's `ClassifierDecoder` applies softmax (the convention the smoke golden also encodes), so the graph doesn't. **Column 0 = parasitized**, column 1 = uninfected |
 | Decision | Argmax, which equals `P(parasitized) > 0.5`, NLM's default |
 | Resize | **OpenCV `INTER_CUBIC`**, as NLM used. A Kotlin port of `INTER_CUBIC` matched desktop within 5e-5 on the demo phone. Android's bilinear `createScaledBitmap` was 0.064 off with this model and 0.149 off with the previous one |
 | Graph | ONNX opset 13, made by tf2onnx 1.17.0. Standard ops only (Conv, Relu, MaxPool, GlobalAveragePool, MatMul, Softmax) |

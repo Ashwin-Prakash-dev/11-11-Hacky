@@ -6,7 +6,7 @@
   "task_type": "classifier",
   "runtime": "onnx",
   "compute": "phone",
-  "model": { "file": "model.onnx", "sha256": "fe11d01a649640aeb8ed790d353c2e9e719cd3a9ec9778191dcf0a50452c33b8" },
+  "model": { "file": "model.onnx", "sha256": "4ae012394333316790a0c5c7902edaaf3f46c0e23b80858a89d2f09f419a6471" },
   "input": { "tensor": "input", "shape": [1, 44, 44, 3], "layout": "NHWC", "dtype": "float32", "color": "RGB" },
   "preprocess": {
     "source": "cells",
@@ -44,6 +44,6 @@
     "source": "NLM Malaria Screener's Sudan-retrained thin-smear CNN, malaria_thinsmear_44_retrainSudan_20P_4000C_separate.pb: the model the NLM app loads (CameraActivity.java line 277, https://github.com/LHNCBC/MalariaScreener commit c485a21). Converted from TensorFlow to ONNX with tf2onnx 1.17.0; parity with the original graph is UNVERIFIED (see README).",
     "licence": "UNVERIFIED: the root LICENSE is BSD-style with NLM attribution, but 85+ source files carry GPLv3 headers and the weights have no licence or provenance file (docs/spikes/S1-malaria-screener.md). Weights stay out of git until resolved.",
     "training_data": ["UNVERIFIED: not documented by NLM; the file name suggests retraining on 20 patients / 4000 cells, possibly from Sudan"],
-    "notes": "Chosen for the demo because NLM pairs it with this segmentation; replace it after measurement on annotated field images. quality is PROVISIONAL, from 8 RBCNet fields (5312x2988): QualityGate blur 12.8-15.8 and 33-37% exactly-black pixels from the eyepiece vignette; uncertainty values are PLACEHOLDERS from the contract example. Output column 0 is P(parasitized) (TensorFlowClassifier.recongnize_batch), so labels are [parasitized, uninfected]."
+    "notes": "Chosen for the demo because NLM pairs it with this segmentation; replace it after measurement on annotated field images. quality is PROVISIONAL, from 8 RBCNet fields (5312x2988): QualityGate blur 12.8-15.8 and 33-37% exactly-black pixels from the eyepiece vignette; uncertainty values are PLACEHOLDERS from the contract example. model.onnx is malaria_thin_44_sudan.onnx with its final Softmax removed (ml/tools/onnx_logits.py): ClassifierDecoder applies softmax itself. Logit 0 is parasitized (TensorFlowClassifier.recongnize_batch), so labels are [parasitized, uninfected]."
   }
 }
