@@ -28,7 +28,7 @@ The headers say the code was written under contract. Works written by federal em
 |---|---|---|
 | [`ml/reference/nlm_segmentation.py`](ml/reference/nlm_segmentation.py) | GPL-3.0-only, text in [`LICENSES/GPL-3.0.txt`](LICENSES/GPL-3.0.txt) | Port of the GPLv3 files above. The file header records the source, the original notice and our changes (GPLv3 §5a) |
 | [`ml/reference/malaria_pipeline.py`](ml/reference/malaria_pipeline.py) | Ours; no licence chosen yet | It imports the GPL module only for `--seg nlm`. Distributing the two together makes a combined work, which has to be GPLv3 |
-| `RbcDetector.kt` (planned) | GPL-3.0-only if ported from the Python or Java | Same reason. Not written yet |
+| [`RbcDetector.kt`](android/engine/src/main/java/com/deepsight/engine/segmentation/RbcDetector.kt), [`NlmHistogram.kt`](android/engine/src/main/java/com/deepsight/engine/segmentation/NlmHistogram.kt) | GPL-3.0-only | Kotlin port of the Python port; the headers record the source and our changes. They ship in the APK, so any APK given out must follow [GPL obligations](#gpl-obligations) |
 
 The parity harness that ran NLM's original Java against the port lives in a scratch folder outside the repo. No NLM Java source is in the repo.
 

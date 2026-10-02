@@ -1,6 +1,6 @@
 # DeepSight status
 
-**Last updated:** 2026-10-02 (Track A, malaria_thin pack format).
+**Last updated:** 2026-10-02 (malaria field pipeline on the phone).
 **Hackathon clock:** H0 = TBD. Fill in the start time so everyone can convert H-numbers to clock times.
 
 Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how each fact was verified, or mark it UNVERIFIED.
@@ -8,7 +8,7 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
 ## Gates
 | Gate | Due | Definition | State |
 |---|---|---|---|
-| G1 | H10 | Malaria field image → result on a physical Android phone | not started |
+| G1 | H10 | Malaria field image → result on a physical Android phone | **partial:** a field photo gives a `field_result` plus provisional triage on the demo phone via the debug-only `DeepSight debug` screen (Track C below). Not yet in the main case flow (#30); accuracy not validated |
 | G2 | H18 | 2 packs + router + quality gate + report | not started |
 
 **Cut lines:**
@@ -42,6 +42,8 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
     - Test A, CPU and XNNPACK: within 6.3e-7.
     - PNG chips with a Kotlin `INTER_CUBIC` port: within 5e-5. Android bilinear: 0.064 off (0.149 with the previous model).
   - **Not in git:** the weights and the NIH golden chips, until S1 and the cell_images licence are resolved.
+  - **Quality thresholds:** PROVISIONAL `min_blur` 8.0 and `max_clipped_fraction` 0.45, from 8 RBCNet fields (`QualityGate` blur 12.8–15.8; 33–37% black pixels from the vignette). The placeholders (100 / 0.05) rejected every NLM photo.
+  - **Field golden:** `golden/field_synthetic.json` holds the Python pipeline's cells and scores on `ml/tests/data/nlm_synthetic.png`, bound to the model by `model_sha256`.
   - **Segmentation:**
     - **Port:** `ml/reference/nlm_segmentation.py` is a faithful Python port of NLM's `MarkerBasedWatershed` and `Cells.runCells`. It is GPL-3.0 ([LICENSING.md](../LICENSING.md)), selected with `--seg nlm`; the old version is `--seg simple`.
     - **Verified bit-exact** against NLM's original Java on OpenCV 3.4.2 (a desktop harness, not in the repo): 0 differing mask pixels and identical cell lists on 8 RBCNet fields.
@@ -79,6 +81,26 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
   - **Known #17 segmentation gap:** port #10's exact RBC detector when it lands, add the OpenCV Android dependency then measure its APK delta, compare golden counts/boxes, and measure field runtime on a physical Android phone. RBC detection and parity are currently UNVERIFIED.
   - **Known #18 integration gap:** compare decoded objects, scores and uncertainty against #11's real reference outputs when they land; real-model parity is currently UNVERIFIED.
   - **Known #21 gap (issue closed, follow-up tracked here):** add the real `malaria_thin` goldens from #12 to `PackGoldenTest`, run `:engine:connectedDebugAndroidTest` and record every case passing; replace the `fungal` and `leukaemia_wbc` stubs when Track A ships real models. Until then no real pack is golden-tested on a phone.
+- **Update, malaria field pipeline (branch `Ashwin-Prakash-dev/c-malaria-field-pipeline`, 2026-10-02):** closes the #15 staging gap, #17, and the real-model part of #18.
+  - **Code:**
+    - `engine/.../segmentation/RbcDetector.kt` (+ `NlmHistogram.kt`) is the Kotlin port of `ml/reference/nlm_segmentation.py`, on OpenCV Android 4.14.0. It is GPL-3.0 (LICENSING.md).
+    - `engine/.../pipeline/FieldAnalyzer.kt` runs photo → `QualityGate` → `RbcDetector` → 44×44 bicubic crops → `TensorPreprocessor` → ONNX → `ClassifierDecoder` → `field_result`.
+    - `:app` stages `ml/packs/*` (only folders that have a `manifest.json`) into the APK's `packs/` assets.
+    - Debug-only `DebugAnalyzeActivity` ("DeepSight debug" icon): pick a photo, see the cell boxes, counts, triage and timings.
+  - **Verified on the edge 50 fusion** via `:engine:connectedDebugAndroidTest`, 11/11 engine device tests passing:
+    - **Same resized input:** the port matches NLM's Java golden (`RbcDetectorTest`).
+    - **Full photo → cells:** within ARM/x86 OpenCV resize noise (±1 on ~1% of pixels); synthetic 123 vs 124 cells.
+    - **8 RBCNet fields against desktop Python** (`FieldAnalyzerTest`):
+      - cell counts within 1.1%;
+      - 92.6–97.7% of cells match (boxes within 2 segmentation px, scores within 0.02);
+      - parasitized counts equal on the 4 positive-patient fields, +1 or +2 on the negative ones.
+    - **The app itself:** `installDebug`, then the debug screen on 2 RBCNet fields; results read from logcat because the phone was locked.
+  - **Measured:**
+    - Field time 2.7–3.5 s in the instrumentation test: quality ~0.8 s, segmentation 1.2–1.9 s, model 0.4–0.5 s. 14–17 s in the debug app with the screen off; a foreground run is UNVERIFIED.
+    - OpenCV adds `libopencv_java4.so` 23.5 MiB + `libc++_shared.so` 1.2 MiB, stored uncompressed. Debug APK 74.1 MiB.
+  - **For the team:**
+    - **Decoder (Track C):** `ClassifierDecoder` applies softmax, but `malaria_thin`'s ONNX graph already ends in Softmax. `FieldAnalyzer` passes log-probabilities so the scores are right; the contract should say whether `softmax` means "apply" or "already applied".
+    - **Quality gate (Track D):** `QualityGate` counts the black eyepiece vignette as underexposure (33–37% of every NLM photo) and measures blur over the whole frame.
   - Aggregation and triage per `contracts/README.md`, as pure Kotlin with JVM tests.
 
 ### D: Gates and report (owner: TBD)
