@@ -54,6 +54,22 @@ class CheckPacksTest(unittest.TestCase):
         write_pack(self.root, "hub", {"endpoint": "http://hub.local/x"}, payload=None)
         self.assertEqual(pack_problems(self.root), [])
 
+    def test_detector_sidecar_is_hash_checked(self):
+        write_pack(self.root, "cascade", {"file": "model.onnx", "sha256": self.sha})
+        pack = self.root / "cascade"
+        (pack / "detector.json").write_text(json.dumps({"file": "wbc_detector.onnx", "sha256": self.sha}))
+        (pack / "wbc_detector.onnx").write_bytes(b"other")
+
+        self.assertRegex(pack_problems(self.root)[0], "cascade.*wbc_detector.onnx.*sha256")
+
+    def test_missing_detector_sidecar_model_is_reported(self):
+        write_pack(self.root, "cascade", {"file": "model.onnx", "sha256": self.sha})
+        (self.root / "cascade" / "detector.json").write_text(
+            json.dumps({"file": "wbc_detector.onnx", "sha256": self.sha})
+        )
+
+        self.assertRegex(pack_problems(self.root)[0], "cascade.*wbc_detector.onnx.*missing")
+
     def test_every_committed_pack_matches_its_model_hash(self):
         self.assertEqual(pack_problems(REPO_ROOT / "ml" / "packs"), [])
 

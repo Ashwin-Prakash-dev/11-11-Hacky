@@ -83,6 +83,7 @@ private fun Screen(route: Route, vm: AppViewModel) {
                 ResultScreen(
                     r.run.case, r.run.fields, r.report, r.signOff, onRecapture = vm::recapture, onSignOff = vm::signOff,
                     testName = r.pack.displayName, images = r.images, positiveLabel = r.pack.output.imageScoreLabel,
+                    classificationOnly = r.pack.triage.rules.all { it.level.name == "NEEDS_EXPERT" },
                 )
             }
         }

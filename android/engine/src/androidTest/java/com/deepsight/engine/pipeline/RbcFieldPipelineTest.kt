@@ -60,7 +60,7 @@ class RbcFieldPipelineTest {
         val loaded = pack!!
         val open = loaded.copy(manifest = loaded.manifest.copy(quality = QualitySpec(minBlur = 0.0, maxClippedFraction = 1.0)))
         val image = decode("nlm_synthetic.png")
-        val field = FieldPipeline(open, cellFinder = CellFinders.forPack(open.manifest)).use { it.analyze("case-test", "field-01", image) }
+        val field = FieldPipeline(open, cellFinder = CellFinders.forPack(open)).use { it.analyze("case-test", "field-01", image) }
         val ok = compare("synthetic", field, image, json("packs/malaria_thin/golden/field_synthetic.json"))
         assertTrue(problems.joinToString(), ok)
     }
@@ -69,7 +69,7 @@ class RbcFieldPipelineTest {
     fun rbcnetFieldsMatchPythonReference() {
         val names = assets.list("").orEmpty().filter { it.contains("ThinF_IMG") && it.endsWith(".json") }.map { it.removeSuffix(".json") }
         assumeTrue("ml/data/android_parity is not present", names.isNotEmpty())
-        FieldPipeline(pack!!, cellFinder = CellFinders.forPack(pack!!.manifest)).use { pipeline ->
+        FieldPipeline(pack!!, cellFinder = CellFinders.forPack(pack!!)).use { pipeline ->
             for (name in names) {
                 val image = decode("$name.jpg")
                 val field = pipeline.analyze("case-test", name, image)

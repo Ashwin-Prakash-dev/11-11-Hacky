@@ -75,7 +75,15 @@ data class ResultUiState(
     val signOff: SignOff? = null,
 )
 
-data class HistoryItem(val caseId: String, val packName: String, val level: TriageLevel?, val signedAt: Long?, val signedBy: String?, val decision: String?)
+data class HistoryItem(
+    val caseId: String,
+    val packName: String,
+    val level: TriageLevel?,
+    val signedAt: Long?,
+    val signedBy: String?,
+    val decision: String?,
+    val classificationOnly: Boolean = false,
+)
 
 data class SavedCaseUiState(
     val packName: String,
@@ -85,6 +93,7 @@ data class SavedCaseUiState(
     val images: Map<String, File>,
     val report: CaseReportText?,
     val signOff: SignOff?,
+    val classificationOnly: Boolean = false,
 )
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
@@ -112,12 +121,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val saved: StateFlow<SavedCaseUiState?> = _saved.asStateFlow()
 
     val history: StateFlow<List<HistoryItem>> = combine(dao.history(), _packs) { rows, packs ->
-        val names = packs.orEmpty().associate { it.manifest.id to it.manifest.displayName }
+        val manifests = packs.orEmpty().associate { it.manifest.id to it.manifest }
         rows.map { row ->
+            val manifest = manifests[row.packId]
             HistoryItem(
-                caseId = row.caseId, packName = names[row.packId] ?: row.packId,
+                caseId = row.caseId, packName = manifest?.displayName ?: row.packId,
                 level = row.caseResultJson?.let { runCatching { Contracts.parseCaseResult(it).triage.level }.getOrNull() },
                 signedAt = row.signedAt, signedBy = row.signedBy, decision = row.decision,
+                classificationOnly = manifest?.triage?.rules?.all { it.level == TriageLevel.NEEDS_EXPERT } == true,
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -195,7 +206,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                     val images = store.fields(c.caseId).associate { fieldId(c.caseId, it.index) to it.file }
                     _result.value = ResultUiState(c.pack, run, images, ReportUiState.Writing(""))
                     open(Route.Result)
-                    writeReport(c.pack, run)
+                    if (!c.pack.triage.rules.all { it.level == TriageLevel.NEEDS_EXPERT }) writeReport(c.pack, run)
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -270,6 +281,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 images = fieldRows.mapNotNull { f -> f.imagePath?.let { f.fieldId to File(it) } }.toMap(),
                 report = row.reportText?.let { CaseReportText(it, if (row.reportSource == "gemma") ReportSource.GEMMA else ReportSource.TEMPLATE) },
                 signOff = row.signOff(),
+                classificationOnly = pack?.triage?.rules?.all { it.level == TriageLevel.NEEDS_EXPERT } == true,
             )
         }
     }

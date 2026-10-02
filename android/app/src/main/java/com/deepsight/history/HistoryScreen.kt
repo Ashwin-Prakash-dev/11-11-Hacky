@@ -63,7 +63,7 @@ private fun HistoryRow(item: HistoryItem, onOpen: (String) -> Unit) {
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(item.packName, style = MaterialTheme.typography.titleMedium)
-                Text(item.level?.name ?: "No triage", style = MaterialTheme.typography.labelLarge)
+                Text(if (item.classificationOnly) "Cell classification" else item.level?.name ?: "No triage", style = MaterialTheme.typography.labelLarge)
                 Text(
                     listOfNotNull(
                         item.signedBy?.let { "Signed by $it${item.decision?.let { d -> " ($d)" } ?: ""}" },
@@ -89,5 +89,6 @@ fun SavedCaseScreen(state: SavedCaseUiState?, modifier: Modifier = Modifier) {
         case = state.case, fields = state.fields, report = state.report?.let { ReportUiState.Done(it) }, signOff = state.signOff,
         onRecapture = {}, onSignOff = {}, modifier = modifier,
         testName = state.packName, images = state.images, positiveLabel = state.positiveLabel, canRecapture = false,
+        classificationOnly = state.classificationOnly,
     )
 }

@@ -66,7 +66,7 @@ class DebugAnalyzeActivity : ComponentActivity() {
         enableEdgeToEdge()
         worker.execute {
             val loaded = runCatching {
-                PackLoader.fromAssets(assets).load(PACK_ID).let { it.manifest to FieldPipeline(it, cellFinder = CellFinders.forPack(it.manifest)) }
+                PackLoader.fromAssets(assets).load(PACK_ID).let { it.manifest to FieldPipeline(it, cellFinder = CellFinders.forPack(it)) }
             }
             runOnUiThread {
                 loaded.onSuccess { (m, p) ->

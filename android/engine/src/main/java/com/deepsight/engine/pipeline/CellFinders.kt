@@ -5,18 +5,34 @@ import com.deepsight.engine.contract.CellType
 import com.deepsight.engine.contract.InputSource
 import com.deepsight.engine.contract.PackManifest
 import com.deepsight.engine.contract.TensorLayout
+import com.deepsight.engine.pack.LoadedPack
 import com.deepsight.engine.quality.PixelImage
 import com.deepsight.engine.segmentation.CellCrop
+import com.deepsight.engine.segmentation.CellCropper
 import com.deepsight.engine.segmentation.RbcDetector
+import com.deepsight.engine.segmentation.WbcDetector
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
 
-/** The engine's cell finders. Callers pass `CellFinders.forPack(pack.manifest)` to [FieldPipeline]. */
+/** The engine's cell finders. Callers pass `CellFinders.forPack(pack)` to [FieldPipeline]. */
 object CellFinders {
-    /** The finder for a `cells` pack's cell type, or null when the pack takes whole fields or no finder exists yet (WBC). */
+    /** The finder for a loaded `cells` pack, including its optional detector sidecar. */
+    fun forPack(pack: LoadedPack): CellFinder? {
+        if (pack.manifest.preprocess.source != InputSource.CELLS) return null
+        return when (pack.manifest.preprocess.cellType) {
+            CellType.WBC -> {
+                val detector = checkNotNull(pack.detector) { "Pack '${pack.manifest.id}' uses WBC cells but has no detector.json" }
+                WbcCellFinder(WbcDetector(detector.modelBytes, detector.spec))
+            }
+            CellType.RBC -> forPack(pack.manifest)
+            null -> null
+        }
+    }
+
+    /** Kept for manifest-only RBC callers and tests. WBC packs require [forPack] with loaded detector bytes. */
     fun forPack(manifest: PackManifest): CellFinder? {
         if (manifest.preprocess.source != InputSource.CELLS || manifest.preprocess.cellType != CellType.RBC) return null
         val shape = requireNotNull(manifest.input.shape) { "Pack '${manifest.id}' has no input.shape" }
@@ -25,6 +41,16 @@ object CellFinders {
             else -> RbcCellFinder(cropWidth = shape[2], cropHeight = shape[1])
         }
     }
+}
+
+/** Detects WBCs in the whole field and sends every automatically cropped cell to the classifier. */
+class WbcCellFinder(private val detector: WbcDetector) : CellFinder, AutoCloseable {
+    override fun find(field: PixelImage, cellType: CellType?): List<CellCrop> {
+        require(cellType == CellType.WBC) { "WbcCellFinder requires cell_type=wbc" }
+        return CellCropper.crop(field, detector.detect(field))
+    }
+
+    override fun close() = detector.close()
 }
 
 /**

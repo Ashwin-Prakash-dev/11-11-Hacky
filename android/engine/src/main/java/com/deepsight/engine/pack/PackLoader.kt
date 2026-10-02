@@ -5,11 +5,52 @@ import com.deepsight.engine.contract.Compute
 import com.deepsight.engine.contract.Contracts
 import com.deepsight.engine.contract.PackManifest
 import com.deepsight.engine.contract.PackRuntime
+import java.io.FileNotFoundException
 import java.security.MessageDigest
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 /** A validated ONNX pack loaded from the app's packaged assets. */
 data class LoadedPack(
     val manifest: PackManifest,
+    val modelBytes: ByteArray,
+    val detector: LoadedDetector? = null,
+)
+
+@Serializable
+data class DetectorSpec(
+    val file: String,
+    val sha256: String,
+    @SerialName("input_tensor") val inputTensor: String,
+    @SerialName("output_tensor") val outputTensor: String,
+    @SerialName("input_shape") val inputShape: List<Int>,
+    val labels: List<String>,
+    @SerialName("score_threshold") val scoreThreshold: Double,
+    @SerialName("iou_threshold") val iouThreshold: Double,
+    @SerialName("crop_padding_fraction") val cropPaddingFraction: Double,
+    @SerialName("pixel_scale") val pixelScale: Double,
+    @SerialName("letterbox_value") val letterboxValue: Int,
+) {
+    fun problems(): List<String> = buildList {
+        if (file.isBlank()) add("file must not be blank")
+        if (inputTensor.isBlank()) add("input_tensor must not be blank")
+        if (outputTensor.isBlank()) add("output_tensor must not be blank")
+        if (inputShape.size != 4 || inputShape.getOrNull(0) != 1 || inputShape.getOrNull(1) != 3 || inputShape.drop(2).any { it <= 0 }) {
+            add("input_shape must be fixed NCHW [1,3,height,width]")
+        }
+        if (labels.isEmpty() || labels.distinct().size != labels.size || "wbc" !in labels) add("labels must be unique and include wbc")
+        if (scoreThreshold !in 0.0..1.0) add("score_threshold must be between 0 and 1")
+        if (iouThreshold !in 0.0..1.0) add("iou_threshold must be between 0 and 1")
+        if (cropPaddingFraction !in 0.0..1.0) add("crop_padding_fraction must be between 0 and 1")
+        if (pixelScale <= 0.0) add("pixel_scale must be positive")
+        if (letterboxValue !in 0..255) add("letterbox_value must be between 0 and 255")
+        if (!sha256.matches(Regex("[0-9a-f]{64}"))) add("sha256 must be 64 lowercase hex characters")
+    }
+}
+
+data class LoadedDetector(
+    val spec: DetectorSpec,
     val modelBytes: ByteArray,
 )
 
@@ -66,7 +107,29 @@ class PackLoader(
                 throw PackLoadException("Pack '$packId' model SHA-256 mismatch: expected $expected, got $actual")
             }
         }
-        return LoadedPack(manifest, modelBytes)
+        return LoadedPack(manifest, modelBytes, readDetector(packId))
+    }
+
+    private fun readDetector(packId: String): LoadedDetector? {
+        val bytes = try {
+            readBytes(packId, DETECTOR_FILE)
+        } catch (_: FileNotFoundException) {
+            return null
+        }
+        val spec = try {
+            Json.decodeFromString<DetectorSpec>(String(bytes, Charsets.UTF_8))
+        } catch (error: Exception) {
+            throw PackLoadException("Pack '$packId' detector.json is not valid JSON: ${error.message}", error)
+        }
+        val problems = spec.problems()
+        if (problems.isNotEmpty()) throw PackLoadException("Pack '$packId' detector problems: ${problems.joinToString("; ")}")
+        requireSafeRelativePath(packId, spec.file)
+        val modelBytes = readPackFile(packId, spec.file, "detector")
+        val actual = sha256(modelBytes)
+        if (actual != spec.sha256) {
+            throw PackLoadException("Pack '$packId' detector SHA-256 mismatch: expected ${spec.sha256}, got $actual")
+        }
+        return LoadedDetector(spec, modelBytes)
     }
 
     private fun readManifest(packId: String): PackManifest {
@@ -118,6 +181,7 @@ class PackLoader(
     companion object {
         private const val PACKS_ROOT = "packs"
         private const val MANIFEST_FILE = "manifest.json"
+        private const val DETECTOR_FILE = "detector.json"
         private val PACK_ID = Regex("[a-z][a-z0-9_]*")
 
         fun fromAssets(assets: AssetManager, packsRoot: String = PACKS_ROOT): PackLoader {

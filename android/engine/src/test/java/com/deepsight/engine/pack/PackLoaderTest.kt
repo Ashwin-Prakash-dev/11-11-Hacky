@@ -44,6 +44,63 @@ class PackLoaderTest {
     }
 
     @Test
+    fun loadsAndVerifiesOptionalDetectorSidecar() {
+        val detectorBytes = "small detector".encodeToByteArray()
+        val detector = """
+            {
+              "file": "wbc_detector.onnx",
+              "sha256": "${sha256(detectorBytes)}",
+              "input_tensor": "images",
+              "output_tensor": "output0",
+              "input_shape": [1, 3, 640, 640],
+              "labels": ["wbc", "rbc", "platelets"],
+              "score_threshold": 0.25,
+              "iou_threshold": 0.45,
+              "crop_padding_fraction": 0.1,
+              "pixel_scale": 0.00392156862745098,
+              "letterbox_value": 114
+            }
+        """.trimIndent().encodeToByteArray()
+        val files = files(exampleManifest) + mapOf(
+            packFile("malaria_thin", DETECTOR_SPEC) to detector,
+            packFile("malaria_thin", DETECTOR_MODEL) to detectorBytes,
+        )
+
+        val loaded = loader(files).load("malaria_thin").detector ?: error("detector not loaded")
+
+        assertEquals("wbc_detector.onnx", loaded.spec.file)
+        assertEquals(listOf("wbc", "rbc", "platelets"), loaded.spec.labels)
+        assertTrue(detectorBytes.contentEquals(loaded.modelBytes))
+    }
+
+    @Test
+    fun rejectsOptionalDetectorWhoseChecksumDoesNotMatch() {
+        val detector = """
+            {
+              "file": "wbc_detector.onnx",
+              "sha256": "${"0".repeat(64)}",
+              "input_tensor": "images",
+              "output_tensor": "output0",
+              "input_shape": [1, 3, 640, 640],
+              "labels": ["wbc", "rbc", "platelets"],
+              "score_threshold": 0.25,
+              "iou_threshold": 0.45,
+              "crop_padding_fraction": 0.1,
+              "pixel_scale": 0.00392156862745098,
+              "letterbox_value": 114
+            }
+        """.trimIndent().encodeToByteArray()
+        val files = files(exampleManifest) + mapOf(
+            packFile("malaria_thin", DETECTOR_SPEC) to detector,
+            packFile("malaria_thin", DETECTOR_MODEL) to "detector".encodeToByteArray(),
+        )
+
+        val error = expectLoadFailure { loader(files).load("malaria_thin") }
+
+        assertTrue(error.message.orEmpty(), "detector SHA-256 mismatch" in error.message.orEmpty())
+    }
+
+    @Test
     fun rejectsDirectoryAndManifestIdMismatch() {
         val loader = loader(mapOf(packFile("fungal", MANIFEST) to exampleManifest.encodeToByteArray(), packFile("fungal", MODEL) to modelBytes))
 
@@ -140,5 +197,7 @@ class PackLoaderTest {
     private companion object {
         const val MANIFEST = "manifest.json"
         const val MODEL = "model.onnx"
+        const val DETECTOR_SPEC = "detector.json"
+        const val DETECTOR_MODEL = "wbc_detector.onnx"
     }
 }

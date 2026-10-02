@@ -74,7 +74,7 @@ class CaseRunner(private val loader: PackLoader) {
             runCatching { pipeline.close() }.onFailure { Log.w(TAG, "closing pack $id failed", it) }
         }
         val pack = loader.load(packId).also { loads++ }
-        return FieldPipeline(pack, cellFinder = CellFinders.forPack(pack.manifest)).also { current = packId to it }
+        return FieldPipeline(pack, cellFinder = CellFinders.forPack(pack)).also { current = packId to it }
     }
 
     companion object {

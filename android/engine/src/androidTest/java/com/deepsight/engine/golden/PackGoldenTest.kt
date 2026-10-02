@@ -49,7 +49,7 @@ class PackGoldenTest(private val packPath: String, private val case: String?) {
             ?: throw AssertionError("$dir/$name.png could not be decoded")
 
         val pack = PackLoader.fromAssets(assets, packsRoot = packsRoot).load(packId)
-        val actual = FieldPipeline(pack, OnnxModel.Accelerator.CPU, CellFinders.forPack(pack.manifest))
+        val actual = FieldPipeline(pack, OnnxModel.Accelerator.CPU, CellFinders.forPack(pack))
             .use { it.analyzeField(expected.caseId, expected.fieldId, bitmap) }
         val diffs = GoldenComparator.compare(expected, actual, tolerance, bitmap.width, bitmap.height)
         if (diffs.isNotEmpty()) throw AssertionError(diffs.joinToString("; "))
