@@ -52,6 +52,21 @@ class MatchesNlmJava(unittest.TestCase):
         self.assertGreaterEqual(len(set(ours) & set(golden)), len(golden) - 1)
 
 
+class AndroidFixturesMatchGenerator(unittest.TestCase):
+    """The phone tests (RbcDetectorTest, FieldAnalyzerTest) read these PNGs instead of regenerating the field."""
+
+    def test_synthetic_png_is_synthetic_field(self):
+        png = cv2.cvtColor(cv2.imread(os.path.join(DATA, "nlm_synthetic.png")), cv2.COLOR_BGR2RGB)
+        np.testing.assert_array_equal(png, synthetic_field())
+
+    def test_small_png_is_the_desktop_resize(self):
+        h, w = 747, 1328
+        rv = mp.compute_rv(h, w)
+        small = cv2.resize(synthetic_field(), (int(w / rv), int(h / rv)), interpolation=cv2.INTER_CUBIC)
+        png = cv2.cvtColor(cv2.imread(os.path.join(DATA, "nlm_synthetic_small.png")), cv2.COLOR_BGR2RGB)
+        np.testing.assert_array_equal(png, small)
+
+
 class ReproducesJavaQuirks(unittest.TestCase):
     def test_histogram_retake_when_green_minimum_is_not_near_zero(self):
         ramp = np.tile(np.arange(30, 231, dtype=np.uint8), (10, 1))

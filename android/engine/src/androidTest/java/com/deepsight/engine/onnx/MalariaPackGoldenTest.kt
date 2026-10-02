@@ -160,7 +160,7 @@ class MalariaPackGoldenTest {
 
     private companion object {
         const val TAG = "DeepSightMalaria"
-        const val PACK = "malaria_thin"
+        const val PACK = "mlpacks/malaria_thin"
         const val CHIP = 44
         const val CHIP_FLOATS = CHIP * CHIP * 3
     }
