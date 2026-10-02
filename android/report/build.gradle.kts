@@ -27,6 +27,9 @@ kotlin {
 }
 
 dependencies {
+    // The report reads the engine's contract types; it never computes or changes triage (AGENTS.md).
+    implementation(project(":engine"))
     // Gemma narrates the report; it never decides triage (AGENTS.md). The .litertlm model is not in the APK.
     implementation(libs.litertlm.android)
+    testImplementation(libs.junit)
 }

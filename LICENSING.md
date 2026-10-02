@@ -2,13 +2,13 @@
 
 Last checked: 2026-10-02. Every licence below links to where it was read. Anything not checked says UNVERIFIED and how to check it. This is a record for the team, not legal advice.
 
-## Decisions the team needs to make
+## Project licence
 
-1. **DeepSight has no licence.** There is no LICENSE file, so by default all rights are reserved. Pick one before the repo goes public or anyone outside the team gets the APK.
-2. **The NLM segmentation port is GPLv3.** [`ml/reference/nlm_segmentation.py`](ml/reference/nlm_segmentation.py) is a line-by-line port of GPLv3 Java, so it is GPLv3 too.
-   - If it, or a Kotlin port of it, ships in the APK, the whole app must be distributed under GPLv3, with source (see [GPL obligations](#gpl-obligations)).
-   - The alternative is to keep it as a desktop reference only.
-3. **NLM Malaria Screener weights:** the licence is unclear (S1). They stay out of git until Track E resolves it.
+**DeepSight is GPL-3.0-only.** The licence text is in [`LICENSE`](LICENSE) (the same file as [`LICENSES/GPL-3.0.txt`](LICENSES/GPL-3.0.txt); both match <https://www.gnu.org/licenses/gpl-3.0.txt>, sha256 `3972dc97…6986` with LF line endings). The README's Licence section carries the standard notice.
+- **Why:** the app ships the Kotlin port of NLM's GPLv3 segmentation ([`RbcDetector.kt`](android/engine/src/main/java/com/deepsight/engine/segmentation/RbcDetector.kt)), so the combined app must be GPLv3 whenever it is conveyed (§5c).
+- **Why "only":** NLM's headers say "GNU General Public License v3.0" without "or any later version", and the ported files are already marked GPL-3.0-only.
+- **Agreement:** proposed on the `eval` branch, 2026-10-02. Each teammate holds copyright in their own commits, so **every contributor must agree before this reaches `test`**. Record that agreement here (names and date).
+- **Still open:** the NLM Malaria Screener weights. Their licence is unclear (S1, below), and they are in git only while the repo is private. The GPL covers our code; it does not settle the right to redistribute the weights.
 
 ## NLM Malaria Screener (model and segmentation)
 
@@ -27,7 +27,7 @@ The headers say the code was written under contract. Works written by federal em
 | File | Licence | Why |
 |---|---|---|
 | [`ml/reference/nlm_segmentation.py`](ml/reference/nlm_segmentation.py) | GPL-3.0-only, text in [`LICENSES/GPL-3.0.txt`](LICENSES/GPL-3.0.txt) | Port of the GPLv3 files above. The file header records the source, the original notice and our changes (GPLv3 §5a) |
-| [`ml/reference/malaria_pipeline.py`](ml/reference/malaria_pipeline.py) | Ours; no licence chosen yet | It imports the GPL module only for `--seg nlm`. Distributing the two together makes a combined work, which has to be GPLv3 |
+| [`ml/reference/malaria_pipeline.py`](ml/reference/malaria_pipeline.py) | GPL-3.0-only (the project licence) | It imports the GPL module for `--seg nlm`; the combined work is GPLv3 |
 | [`RbcDetector.kt`](android/engine/src/main/java/com/deepsight/engine/segmentation/RbcDetector.kt), [`NlmHistogram.kt`](android/engine/src/main/java/com/deepsight/engine/segmentation/NlmHistogram.kt) | GPL-3.0-only | Kotlin port of the Python port; the headers record the source and our changes. They ship in the APK, so any APK given out must follow [GPL obligations](#gpl-obligations) |
 
 The parity harness that ran NLM's original Java against the port lives in a scratch folder outside the repo. No NLM Java source is in the repo.
@@ -73,22 +73,31 @@ Read from PyPI and Maven metadata for the pinned versions, 2026-10-02.
 | AndroidX CameraX (camera-core) | 1.6.2 | Apache-2.0 (the POM also lists BSD-3-Clause) |
 | AndroidX Room | 2.8.5 | Apache-2.0 |
 | LiteRT-LM (`litertlm-android`), with its gson 2.14.0, kotlin-reflect 2.4.0 and kotlinx-coroutines-android 1.11.0 | 0.17.1 | Apache-2.0 (all four POMs) |
+| AndroidX Lifecycle (`lifecycle-runtime-compose`, `lifecycle-viewmodel-compose`) | 2.6.1 | Apache-2.0 (POMs) |
+| Compose Material icons (`material-icons-core`, version from the Compose BOM) | 1.7.8 | Apache-2.0 (POM) |
+| Material icon paths copied into `android/app/src/main/res/drawable/ic_*.xml` (camera, image, history, description, science, auto_awesome) | — | Apache-2.0 (Google Material Icons); each file says so |
 | JUnit (tests only) | 4.13.2 | EPL-1.0 |
 | Android SDK tools | pinned in `setup_dev.sh` | [Android SDK terms](https://developer.android.com/studio/terms) |
 
 ## GPL obligations
 
-They apply only when we **convey** the work, which [GPLv3 §0](LICENSES/GPL-3.0.txt) defines as propagation that lets other parties make or receive copies.
+They apply when we **convey** the work, which [GPLv3 §0](LICENSE) defines as propagation that lets other parties make or receive copies.
 - **Not conveying:** a demo on our own phone, because nobody gets a copy.
-- **Conveying:** giving someone the APK, publishing it, or making the repo public with the port in it.
+- **Conveying:** giving someone the APK, publishing it, or making the repo public.
 
-When we convey the GPL code or anything built from it:
-1. License the whole combined work under GPLv3 (§5c).
-2. Give recipients the licence text (§4, §5) and keep all notices.
-3. Mark our changes with a date (§5a). `nlm_segmentation.py` already does.
-4. For an APK, provide the Corresponding Source, meaning the full source of the app (§6).
+How DeepSight meets each obligation:
+
+| Obligation | How | Checked by |
+|---|---|---|
+| Licence text with the work (§4, §5) | [`LICENSE`](LICENSE) in the repo; `GPL-3.0.txt` in the APK's assets (staged from `LICENSES/`) | `HomeAndAboutTest` opens it in the app |
+| Appropriate Legal Notices in the interactive UI (§0, §5d): copyright, no warranty, the right to convey under the GPL, how to view the licence | The About screen (Home, top right) | `HomeAndAboutTest` |
+| Modified files carry prominent notices with a date (§5a) | Headers of `nlm_segmentation.py`, `RbcDetector.kt`, `NlmHistogram.kt` record the source and our changes | Read the headers |
+| Whole combined work under the GPL (§5c) | The project licence above | — |
+| Corresponding Source for anyone given the APK (§6) | The About screen links the repository. **While the repo is private,** give recipients the source of the APK's exact commit some other way (an archive, or access), as §6(a) or a written offer under §6(b) | Do it when you hand out an APK |
+| Keep third-party notices | NLM's notice ships with the pack (`packs/malaria_thin/NOTICE_NLM.txt` in the APK) and the About screen gives the credit it asks for. Apache-2.0 `NOTICE` files of dependencies: **UNVERIFIED** whether any must be reproduced; check each AAR before a public release | `HomeAndAboutTest` opens the NLM notice |
 
 ## Rules for adding anything
 - **New dependency, model or dataset:** add a row here, with where you read the licence. Unknown means UNVERIFIED, and it stays out of git.
-- **Never copy GPL-marked code** into a file that isn't marked GPL-3.0 and listed above.
+- **New code is GPL-3.0-only.** Don't add code under a GPL-incompatible licence (the FSF list flags, for example, EPL-1.0 and GPLv2-only); tests-only tools are the exception, as with JUnit.
+- **Design references aren't code:** the UI follows the guidance in `claude-android-skill` (MIT, kept outside the repo); nothing from it was copied.
 - **Weights and datasets:** never committed (AGENTS.md).

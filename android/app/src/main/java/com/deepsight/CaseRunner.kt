@@ -47,10 +47,12 @@ class CaseRunner(private val loader: PackLoader) {
         }.also { catalog = it }
     }
 
-    suspend fun run(packId: String, caseId: String, images: List<FieldImage>): CaseRun = lock.withLock {
+    /** [onProgress] gets (fields started, total) before each field, on a background thread. */
+    suspend fun run(packId: String, caseId: String, images: List<FieldImage>, onProgress: (Int, Int) -> Unit = { _, _ -> }): CaseRun = lock.withLock {
         withContext(Dispatchers.Default) {
             val pipeline = pipeline(packId)
-            val fields = images.map { image ->
+            val fields = images.mapIndexed { i, image ->
+                onProgress(i + 1, images.size)
                 val bitmap = decode(image.file)
                 try {
                     pipeline.analyzeField(caseId, fieldId(caseId, image.index), bitmap)

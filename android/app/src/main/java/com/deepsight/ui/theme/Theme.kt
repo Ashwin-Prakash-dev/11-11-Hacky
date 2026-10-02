@@ -19,7 +19,11 @@ private val DarkColorScheme = darkColorScheme(
     primaryContainer = Teal30,
     onPrimaryContainer = Teal90,
     secondary = SlateTeal80,
+    secondaryContainer = Color(0xFF324B4B),
+    onSecondaryContainer = Color(0xFFCCE8E7),
     tertiary = Indigo80,
+    tertiaryContainer = Color(0xFF334863),
+    onTertiaryContainer = Color(0xFFD3E4FF),
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -28,7 +32,11 @@ private val LightColorScheme = lightColorScheme(
     primaryContainer = Teal90,
     onPrimaryContainer = Teal20,
     secondary = SlateTeal40,
+    secondaryContainer = Color(0xFFCCE8E7),
+    onSecondaryContainer = Color(0xFF051F1F),
     tertiary = Indigo40,
+    tertiaryContainer = Color(0xFFD3E4FF),
+    onTertiaryContainer = Color(0xFF041C35),
 )
 
 /** Triage colours for the current theme; defaults to light so components also work under a bare MaterialTheme (tests). */
@@ -58,6 +66,7 @@ fun DeepSightTheme(
         MaterialTheme(
             colorScheme = colorScheme,
             typography = Typography,
+            shapes = Shapes,
             content = content
         )
     }

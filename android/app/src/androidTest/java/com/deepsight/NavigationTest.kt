@@ -30,9 +30,10 @@ class NavigationTest {
         rule.onNodeWithText(disclaimer).assertExists()
         packs.forEach { rule.onNodeWithText(it.displayName).assertExists() }
 
-        rule.onNodeWithText(packs.first().displayName).performClick()
+        // Packs not yet validated on a phone are listed but can't be picked (DemoPacks); open the first one that can.
+        rule.onNodeWithText(packs.first { DemoPacks.isReady(it.id) }.displayName).performClick()
         rule.onNodeWithText("Import image").assertExists()
-        rule.onNodeWithText("Show result").assertExists()
+        rule.onNodeWithText("Analyse").assertExists()
         rule.onNodeWithText(disclaimer).assertExists()
 
         pressBack()

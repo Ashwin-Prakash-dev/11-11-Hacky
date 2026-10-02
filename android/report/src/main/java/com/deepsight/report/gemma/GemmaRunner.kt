@@ -8,6 +8,7 @@ import com.google.ai.edge.litertlm.ExperimentalFlags
 import com.google.ai.edge.litertlm.Message
 import com.google.ai.edge.litertlm.MessageCallback
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import com.google.ai.edge.litertlm.Backend as LiteRtBackend
 
 /** LiteRT-LM's own timing for the last message (Conversation.getBenchmarkInfo). */
@@ -65,10 +66,17 @@ class GemmaRunner(
 
     /**
      * Generates a reply to [prompt] in a fresh conversation, calling [onText] with each streamed piece of text.
-     * Blocks until the model finishes or [maxOutputTokens] is reached.
+     * Blocks until the model finishes or [maxOutputTokens] is reached. Stops the model and throws [GemmaStopped]
+     * after [timeoutMs], or as soon as [isCancelled] returns true (polled every [POLL_MS]).
      */
     @OptIn(ExperimentalApi::class)
-    fun generate(prompt: String, maxOutputTokens: Int, onText: (String) -> Unit): GemmaResult {
+    fun generate(
+        prompt: String,
+        maxOutputTokens: Int,
+        timeoutMs: Long = Long.MAX_VALUE,
+        isCancelled: () -> Boolean = { false },
+        onText: (String) -> Unit,
+    ): GemmaResult {
         val loaded = checkNotNull(engine) { "call load() first" }
         loaded.createConversation().use { conversation ->
             val done = CountDownLatch(1)
@@ -98,7 +106,15 @@ class GemmaRunner(
                 },
                 maxOutputToken = maxOutputTokens,
             )
-            done.await()
+            val deadline = if (timeoutMs == Long.MAX_VALUE) Long.MAX_VALUE else start + timeoutMs * 1_000_000
+            while (!done.await(POLL_MS, TimeUnit.MILLISECONDS)) {
+                val timedOut = System.nanoTime() > deadline
+                if (timedOut || isCancelled()) {
+                    conversation.cancelProcess()
+                    done.await(STOP_WAIT_MS, TimeUnit.MILLISECONDS) // let the native side wind down before close()
+                    throw GemmaStopped(timedOut)
+                }
+            }
             failure?.let { throw it }
             val totalMs = (System.nanoTime() - start) / 1_000_000
             val stats = runCatching { conversation.getBenchmarkInfo() }.getOrNull()?.let {
@@ -123,5 +139,10 @@ class GemmaRunner(
     companion object {
         /** Prompt plus output for a short report; far below the model's 32K, to keep the KV cache small. */
         const val DEFAULT_MAX_NUM_TOKENS = 2048
+        private const val POLL_MS = 100L
+        private const val STOP_WAIT_MS = 5_000L
     }
 }
+
+/** [generate] was stopped: by its time limit ([timedOut]) or because the caller cancelled. */
+class GemmaStopped(val timedOut: Boolean) : RuntimeException(if (timedOut) "timed out" else "cancelled")

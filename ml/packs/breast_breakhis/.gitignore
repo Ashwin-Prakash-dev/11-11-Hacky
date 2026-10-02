@@ -1,0 +1,5 @@
+# Local evaluation weights and dataset-derived fixtures must never be committed.
+*.onnx
+/golden/*.png
+/golden/*.bin
+/golden/images/

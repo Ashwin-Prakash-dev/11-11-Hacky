@@ -13,7 +13,7 @@ pick test → capture or import fields → quality gate → router guard → ONN
 - **Packs:** each disease is a pack in `ml/packs/<id>/` with a manifest, an ONNX model and golden tests. Nothing else in the app knows about a specific disease.
 - **Triage is rules only.** The thresholds live in each pack's manifest. The report model narrates the result and can never change the triage level.
 - **The user picks the test.** The router guard only checks that the image matches it, and flags a mismatch or an image that is no known test.
-- **Everything runs on the phone**, except packs marked `compute: hub`, which call an optional laptop on a local hotspot.
+- **Everything runs on the phone**, including the report model. The app requests no internet permission: the network permissions some libraries declare are removed in its manifest. (`compute: hub` packs would need a laptop hub; none ships in the demo.)
 
 Details: [docs/architecture.md](docs/architecture.md).
 
@@ -51,6 +51,18 @@ cd android
 ./gradlew installDebug          # Windows: gradlew.bat installDebug
 adb shell am start -n com.deepsight/.MainActivity
 ```
+
+**The demo flow.** Home → pick a validated test (packs not yet validated on a phone are listed but can't be opened) → **Import image** or **Capture** one or more fields → **Analyse** (progress per field) → result: triage badge, counts, each field with the model's cell boxes drawn on it, and the report → clinician sign-off → **History**, where signed-off cases reopen with the report the clinician saw. **About** (top right on Home) shows the licence notices and credits.
+
+**AI report (optional, recommended).** The report is written on the phone by Gemma 4 E2B through LiteRT-LM, from the result only; it never changes the triage, and a report that doesn't state the exact triage level is replaced by the template. Download `gemma-4-E2B-it.litertlm` (2.6 GB, Apache-2.0) from Hugging Face [`litert-community/gemma-4-E2B-it-litert-lm`](https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm) and push it once per phone:
+
+```sh
+adb push gemma-4-E2B-it.litertlm /sdcard/Android/data/com.deepsight/files/
+```
+
+- Without it, every case gets the deterministic template report, and Home says "Template reports".
+- Gemma loads in the background when the app starts: about 12 s, or 27 s on the first launch after install (measured on the demo phone, [S3](docs/spikes/S3-litertlm-gemma.md)).
+- Don't run `:app:connectedDebugAndroidTest` with the model on the phone: it uninstalls the app, which deletes the model. Use `adb shell am instrument` ([S3](docs/spikes/S3-litertlm-gemma.md), How to reproduce).
 
 **Analyze one malaria field (debug builds).** Open the **DeepSight debug** icon and pick a thin-smear photo. It runs the real engine and shows a box per cell (green below 0.5, orange 0.5–0.8, red above 0.8), the counts, quality, provisional triage and timings.
 - It needs the `malaria_thin` weights in `ml/packs/malaria_thin/`. They're in the private repo; see that pack's README for licence status.
@@ -107,3 +119,27 @@ How to promote a commit from `test` to `main`: the Git section of [AGENTS.md](AG
 | [docs/spikes/S1-malaria-screener.md](docs/spikes/S1-malaria-screener.md) | Malaria reuse licence and conversion findings |
 | [contracts/README.md](contracts/README.md) | Manifest and result contracts, triage order |
 | [LICENSING.md](LICENSING.md) | Licences of our code, models, data and dependencies |
+
+## Licence
+
+DeepSight is free software under the **GNU General Public License, version 3 only** (GPL-3.0-only). The full text is in [LICENSE](LICENSE), also kept as [LICENSES/GPL-3.0.txt](LICENSES/GPL-3.0.txt).
+
+```text
+DeepSight: offline microscopy screening and triage
+Copyright (C) 2026 the DeepSight authors (see the git history)
+
+This program is free software: you can redistribute it and/or modify it under the terms of the
+GNU General Public License version 3 as published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program.
+If not, see <https://www.gnu.org/licenses/>.
+```
+
+- **Why the GPL:** the malaria cell segmentation (`RbcDetector.kt`, `NlmHistogram.kt`, `ml/reference/nlm_segmentation.py`) is a port of GPLv3 code from NLM's Malaria Screener, and the app ships it, so the app as a whole is GPLv3.
+- **In the app:** the About screen shows the copyright notice, the no-warranty statement, the permission to share under the GPL and the full licence text (GPLv3 §5d).
+- **If you give anyone the APK,** also give them the source of the same commit (GPLv3 §6), for example a link to that commit or an archive of it, and keep these notices.
+- **Not covered by the GPL:** model weights, datasets and the Gemma model keep their own terms, and some are still UNVERIFIED (see [LICENSING.md](LICENSING.md)). The NLM notice asks for this credit: courtesy of the U.S. National Library of Medicine.

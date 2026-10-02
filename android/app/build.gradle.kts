@@ -107,6 +107,8 @@ val stageTestAssets = tasks.register<StageTestAssets>("stageTestAssets") {
 androidComponents {
     onVariants { variant ->
         variant.sources.assets?.addGeneratedSourceDirectory(stagePacks, StagePacks::output)
+        // GPLv3 text for the About screen (§5d: the app shows how to view the licence); single source: <repo>/LICENSES.
+        variant.sources.assets?.addStaticSourceDirectory(rootDir.resolve("../LICENSES").canonicalPath)
         variant.androidTest?.sources?.assets?.addGeneratedSourceDirectory(stageTestAssets, StageTestAssets::output)
     }
 }
@@ -122,11 +124,14 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
