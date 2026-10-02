@@ -1,0 +1,13 @@
+{
+  "case_id": "case-0001",
+  "field_id": "field-02",
+  "pack_id": "malaria_thin",
+  "pack_version": "0.1.0",
+  "quality": { "pass": false, "blur_score": 37.2, "exposure_score": 0.004, "reasons": ["blur"] },
+  "router": null,
+  "objects": [],
+  "counts": {},
+  "image_score": null,
+  "uncertainty": null,
+  "timing_ms": { "quality": 17, "total": 17 }
+}

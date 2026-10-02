@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "deepsight/contracts/result.schema.json",
+  "title": "DeepSight results",
+  "description": "Contract 1.x. field_result: one per captured field. case_result: one per case, after aggregation and triage. Semantics: contracts/README.md.",
+  "oneOf": [{ "$ref": "#/$defs/field_result" }, { "$ref": "#/$defs/case_result" }],
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "label": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "unit": { "type": "number", "minimum": 0, "maximum": 1 },
+    "counts": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/label" },
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "uncertainty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["flag"],
+      "properties": {
+        "flag": { "type": "boolean" },
+        "reason": { "type": ["string", "null"] }
+      }
+    },
+    "field_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "field_id", "pack_id", "pack_version", "quality"],
+      "properties": {
+        "case_id": { "type": "string", "minLength": 1 },
+        "field_id": { "type": "string", "minLength": 1 },
+        "pack_id": { "$ref": "#/$defs/id" },
+        "pack_version": { "$ref": "#/$defs/semver" },
+        "quality": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["pass", "blur_score", "exposure_score", "reasons"],
+          "properties": {
+            "pass": { "type": "boolean" },
+            "blur_score": { "type": "number", "minimum": 0, "description": "Variance of Laplacian; higher is sharper." },
+            "exposure_score": { "$ref": "#/$defs/unit", "description": "Clipped-pixel fraction, dark or bright, whichever is larger; lower is better." },
+            "reasons": { "type": "array", "items": { "enum": ["blur", "underexposed", "overexposed"] }, "uniqueItems": true }
+          }
+        },
+        "router": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["verdict", "score"],
+          "properties": {
+            "verdict": { "enum": ["match", "mismatch", "reject"] },
+            "score": { "$ref": "#/$defs/unit" },
+            "predicted": { "type": ["string", "null"], "description": "The router's top class (a pack id), if any." }
+          }
+        },
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["label", "score"],
+            "properties": {
+              "label": { "$ref": "#/$defs/label" },
+              "score": { "$ref": "#/$defs/unit" },
+              "bbox": {
+                "type": ["array", "null"],
+                "items": { "$ref": "#/$defs/unit" },
+                "minItems": 4,
+                "maxItems": 4,
+                "description": "[x, y, w, h], normalized 0-1 to the field image, origin top-left."
+              }
+            }
+          }
+        },
+        "counts": { "$ref": "#/$defs/counts" },
+        "image_score": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "uncertainty": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/uncertainty" }] },
+        "timing_ms": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } }
+      },
+      "if": { "properties": { "quality": { "properties": { "pass": { "const": false } } } } },
+      "then": {
+        "properties": {
+          "router": { "type": "null" },
+          "objects": { "maxItems": 0 },
+          "counts": { "maxProperties": 0 },
+          "image_score": { "type": "null" },
+          "uncertainty": { "type": "null" }
+        }
+      },
+      "else": {
+        "required": ["router", "uncertainty"],
+        "properties": { "router": { "type": "object" }, "uncertainty": { "type": "object" } }
+      }
+    },
+    "case_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "pack_id", "pack_version", "field_ids", "fields_passed", "counts", "uncertainty", "triage"],
+      "properties": {
+        "case_id": { "type": "string", "minLength": 1 },
+        "pack_id": { "$ref": "#/$defs/id" },
+        "pack_version": { "$ref": "#/$defs/semver" },
+        "field_ids": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+        "fields_passed": { "type": "integer", "minimum": 0 },
+        "counts": { "$ref": "#/$defs/counts" },
+        "image_score": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "uncertainty": { "$ref": "#/$defs/uncertainty" },
+        "triage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["level", "rule_id", "provisional"],
+          "properties": {
+            "level": { "enum": ["ABNORMAL_FLAG", "NORMAL_SCREEN", "NEEDS_EXPERT"] },
+            "rule_id": { "type": "string", "pattern": "^(engine\\.)?[a-z][a-z0-9_]*$", "description": "A manifest rule id, or an engine.* id (README)." },
+            "provisional": { "type": "boolean" }
+          }
+        }
+      }
+    }
+  }
+}

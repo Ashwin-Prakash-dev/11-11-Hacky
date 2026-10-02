@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-and-contracts:
+    name: Python and contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install contract validator
+        run: python -m pip install jsonschema==4.26.0
+
+      - name: Check setup script
+        run: |
+          bash -n scripts/setup_dev.sh
+          scripts/setup_dev.sh --help
+
+      - name: Test model downloader
+        run: python -m unittest discover -s ml/tests -v
+
+      - name: Validate contract examples
+        run: python contracts/validate.py contracts/examples/*.json
+
+  android-jvm:
+    name: Android JVM tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Install Android 17 preview SDK
+        run: android sdk install --beta platforms/android-37.0
+
+      - name: Run engine JVM tests
+        working-directory: android
+        run: ./gradlew :engine:testDebugUnitTest --no-daemon
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Validate Kotlin-encoded contracts
+        run: |
+          python -m pip install jsonschema==4.26.0
+          python contracts/validate.py android/engine/build/contract-out/*.json

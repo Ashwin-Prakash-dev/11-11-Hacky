@@ -1,0 +1,48 @@
+{
+  "contract_version": "1.0",
+  "id": "malaria_thin",
+  "version": "0.1.0",
+  "display_name": "Malaria (thin smear)",
+  "task_type": "classifier",
+  "runtime": "onnx",
+  "compute": "phone",
+  "model": { "file": "model.onnx", "sha256": null },
+  "input": { "tensor": "input", "shape": [1, 3, 64, 64], "layout": "NCHW", "dtype": "float32", "color": "RGB" },
+  "preprocess": {
+    "source": "cells",
+    "cell_type": "rbc",
+    "resize": "stretch",
+    "scale": 0.00392156862745098,
+    "mean": [0.0, 0.0, 0.0],
+    "std": [1.0, 1.0, 1.0],
+    "stain_normalization": "none"
+  },
+  "output": { "decoder": "softmax", "labels": ["uninfected", "parasitized"], "image_score_label": "parasitized" },
+  "quality": { "min_blur": 100.0, "max_clipped_fraction": 0.05 },
+  "aggregation": { "image_score": "max", "min_fields": 1 },
+  "triage": {
+    "provisional": true,
+    "source": "PLACEHOLDER numbers for contract tests only. Track E replaces them with sourced thresholds.",
+    "rules": [
+      {
+        "id": "parasite_seen",
+        "level": "ABNORMAL_FLAG",
+        "all": [{ "metric": "count", "labels": ["parasitized"], "op": ">=", "value": 1 }]
+      },
+      {
+        "id": "enough_cells_clear",
+        "level": "NORMAL_SCREEN",
+        "all": [
+          { "metric": "count", "labels": ["uninfected"], "op": ">=", "value": 1000 },
+          { "metric": "count", "labels": ["parasitized"], "op": "==", "value": 0 }
+        ]
+      }
+    ]
+  },
+  "uncertainty": { "method": "score_band", "band": [0.5, 0.65], "max_fraction": 0.05 },
+  "provenance": {
+    "source": "UNVERIFIED: NLM Malaria Screener thin-smear CNN (spike S1)",
+    "licence": "UNVERIFIED",
+    "training_data": ["UNVERIFIED: NLM malaria cell images"]
+  }
+}
