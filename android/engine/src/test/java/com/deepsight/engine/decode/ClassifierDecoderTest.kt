@@ -127,6 +127,15 @@ class ClassifierDecoderTest {
         )
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun `rejects bbox that extends beyond the field`() {
+        ClassifierDecoder.decode(
+            listOf(CropScores(floatArrayOf(1f, 0f), bbox = listOf(0.8, 0.2, 0.3, 0.4))),
+            output(Decoder.SOFTMAX),
+            noUncertainty(),
+        )
+    }
+
     @Test
     fun `decoded field result JSON passes the frozen contract`() {
         val manifest = Contracts.parseManifest(example("manifest.malaria_thin.json"))

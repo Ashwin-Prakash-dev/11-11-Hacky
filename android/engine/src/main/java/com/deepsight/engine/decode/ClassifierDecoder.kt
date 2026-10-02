@@ -135,9 +135,13 @@ object ClassifierDecoder {
         if (bbox == null) return
         require(bbox.size == 4) { "bbox must contain [x, y, w, h]" }
         require(bbox.all { it.isFinite() && it in 0.0..1.0 }) { "bbox values must be finite and between 0 and 1" }
+        require(bbox[0] + bbox[2] <= 1.0 + BBOX_EPSILON && bbox[1] + bbox[3] <= 1.0 + BBOX_EPSILON) {
+            "bbox must stay inside the field"
+        }
     }
 
     private const val DEFAULT_SIGMOID_THRESHOLD = 0.5
+    private const val BBOX_EPSILON = 1e-9
     private const val IMAGE_SCORE_REASON = "image_score_in_band"
     private const val OBJECT_FRACTION_REASON = "object_score_fraction_in_band"
 }
