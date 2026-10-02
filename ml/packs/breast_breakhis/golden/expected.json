@@ -1,0 +1,43 @@
+{
+ "model": "model_logits.onnx",
+ "input": "NCHW float32 RGB /255; whole field stretched to 224x224 with bilinear half-pixel sampling, no anti-aliasing (reference/pipeline.py preprocess). Scores are softmax of the logits.",
+ "tolerance_score": 0.02,
+ "cases": [
+  {
+   "file": "SOB_B_F-14-25197-400-062.png",
+   "label": "benign",
+   "p_benign": 0.0557151253515675,
+   "p_malignant": 0.9442848746484325
+  },
+  {
+   "file": "SOB_B_PT-14-21998AB-400-035.png",
+   "label": "benign",
+   "p_benign": 0.1217998125100858,
+   "p_malignant": 0.8782001874899141
+  },
+  {
+   "file": "SOB_B_TA-14-16184-400-014.png",
+   "label": "benign",
+   "p_benign": 0.988022909555303,
+   "p_malignant": 0.011977090444697
+  },
+  {
+   "file": "SOB_M_DC-14-11031-400-014.png",
+   "label": "malignant",
+   "p_benign": 0.003003318400668957,
+   "p_malignant": 0.9969966815993312
+  },
+  {
+   "file": "SOB_M_DC-14-11951-400-001.png",
+   "label": "malignant",
+   "p_benign": 0.009598170258837788,
+   "p_malignant": 0.9904018297411623
+  },
+  {
+   "file": "SOB_M_DC-14-12312-400-010.png",
+   "label": "malignant",
+   "p_benign": 0.0017053855342288717,
+   "p_malignant": 0.9982946144657713
+  }
+ ]
+}

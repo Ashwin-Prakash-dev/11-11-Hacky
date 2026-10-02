@@ -158,9 +158,10 @@ private fun FieldCard(field: FieldResult, image: File?, positiveLabel: String?, 
             }
             if (image != null && image.isFile) {
                 FieldImage(image, field.objects, positiveLabel)
-                if (positiveLabel != null && field.objects.isNotEmpty()) FieldImageLegend(positiveLabel)
+                if (positiveLabel != null && hasBoxes(field.objects)) FieldImageLegend(positiveLabel)
             }
             field.router?.let { Text(routerMessage(it), style = MaterialTheme.typography.bodyMedium) }
+            wholeFieldPrediction(field.objects)?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
             if (field.quality.pass) {
                 Text(
                     "Counts: ${field.counts.entries.joinToString(" · ") { "${it.key} ${it.value}" }.ifEmpty { "none" }}",
