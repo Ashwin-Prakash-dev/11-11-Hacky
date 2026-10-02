@@ -72,11 +72,42 @@ val stagePacks = tasks.register<StagePacks>("stagePacks") {
     output.set(layout.buildDirectory.dir("generated/packAssets"))
 }
 
-// The fake engine reads the frozen examples straight from contracts/ (single source of truth).
+/** Test APK only: the frozen contract examples (ResultScreenTest) and the engine's smoke pack under testpacks/ (CaseRunnerTest). */
+abstract class StageTestAssets : DefaultTask() {
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val examples: DirectoryProperty
+
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val smokePack: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val output: DirectoryProperty
+
+    @get:Inject
+    abstract val files: FileSystemOperations
+
+    @TaskAction
+    fun stage() {
+        files.sync {
+            from(examples)
+            from(smokePack) { into("testpacks/smoke") }
+            into(output)
+        }
+    }
+}
+
+val stageTestAssets = tasks.register<StageTestAssets>("stageTestAssets") {
+    examples.set(rootDir.resolve("../contracts/examples"))
+    smokePack.set(rootDir.resolve("engine/src/androidTest/assets/smoke"))
+    output.set(layout.buildDirectory.dir("generated/testAssets"))
+}
+
 androidComponents {
     onVariants { variant ->
-        variant.sources.assets?.addStaticSourceDirectory(rootDir.resolve("../contracts/examples").canonicalPath)
         variant.sources.assets?.addGeneratedSourceDirectory(stagePacks, StagePacks::output)
+        variant.androidTest?.sources?.assets?.addGeneratedSourceDirectory(stageTestAssets, StageTestAssets::output)
     }
 }
 

@@ -1,35 +1,43 @@
 package com.deepsight
 
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performTextInput
+import androidx.test.espresso.Espresso.pressBack
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.deepsight.engine.pack.PackLoader
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Walks every screen with the fake engine and checks the disclaimer is always visible. */
+/**
+ * Walks choose test → case → back → history with the packs shipped in the APK, checking the disclaimer on each screen.
+ * Result and sign-off are covered by ResultScreenTest; a real case run by CaseRunnerTest.
+ */
 @RunWith(AndroidJUnit4::class)
 class NavigationTest {
     @get:Rule val rule = createAndroidComposeRule<MainActivity>()
 
-    private fun step(click: String, expect: String) {
-        rule.onNodeWithText(click).performClick()
-        rule.onNodeWithText(expect).assertExists()
-        rule.onNodeWithText("Screening aid. A clinician decides.").assertExists()
-    }
+    private val disclaimer = "Screening aid. A clinician decides."
 
     @Test
     fun everyScreenReachable() {
-        rule.onNodeWithText("Screening aid. A clinician decides.").assertExists()
-        step("Malaria (thin smear)", "Rejected: blur")
-        step("Show result", "ABNORMAL_FLAG")
-        rule.onNodeWithText("PROVISIONAL", substring = true).assertExists()
-        rule.onNodeWithText("Recapture").assertExists() // field-02 was rejected for blur
-        rule.onNodeWithText("Clinician name").performTextInput("Dr Test")
-        rule.onNodeWithText("Sign off").performScrollTo()
-        step("Sign off", "case-0001: ABNORMAL_FLAG")
+        val packs = PackLoader.fromAssets(rule.activity.assets).discover().installed
+        assertTrue("no pack passed PackLoader; check ml/packs", packs.isNotEmpty())
+        rule.waitUntil(5_000) { rule.onAllNodes(hasText(packs.first().displayName)).fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithText(disclaimer).assertExists()
+        packs.forEach { rule.onNodeWithText(it.displayName).assertExists() }
+
+        rule.onNodeWithText(packs.first().displayName).performClick()
+        rule.onNodeWithText("Import image").assertExists()
+        rule.onNodeWithText("Show result").assertExists()
+        rule.onNodeWithText(disclaimer).assertExists()
+
+        pressBack()
+        rule.onNodeWithText("History").performClick()
+        rule.onNodeWithText("Choose test").assertDoesNotExist() // history screen, whatever Room already holds
+        rule.onNodeWithText(disclaimer).assertExists()
     }
 }

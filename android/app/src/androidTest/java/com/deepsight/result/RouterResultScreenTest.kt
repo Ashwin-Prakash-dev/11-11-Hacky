@@ -31,7 +31,7 @@ class RouterResultScreenTest {
     }
 
     private fun show(router: RouterResult) {
-        val assets = InstrumentationRegistry.getInstrumentation().targetContext.assets
+        val assets = InstrumentationRegistry.getInstrumentation().context.assets // the contract examples ship in the test APK
         fun read(name: String) = assets.open(name).bufferedReader().use { it.readText() }
         val case = Contracts.parseCaseResult(read("case_result.malaria_thin.json"))
         val field = Contracts.parseFieldResult(read("field_result.malaria_thin.json")).copy(router = router)
