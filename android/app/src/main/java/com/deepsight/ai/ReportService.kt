@@ -108,8 +108,8 @@ class GemmaNarrator(private val model: File, private val cacheDir: File, private
 
     private companion object {
         const val TAG = "DeepSightReport"
-        const val MAX_OUTPUT_TOKENS = 160
-        const val TIMEOUT_MS = 30_000L
+        const val MAX_OUTPUT_TOKENS = 320
+        const val TIMEOUT_MS = 45_000L
     }
 }
 

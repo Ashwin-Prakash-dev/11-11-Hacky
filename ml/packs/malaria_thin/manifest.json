@@ -27,14 +27,14 @@
       {
         "id": "parasite_seen",
         "level": "ABNORMAL_FLAG",
-        "all": [{ "metric": "count", "labels": ["parasitized"], "op": ">=", "value": 1 }]
+        "all": [{ "metric": "count", "labels": ["parasitized"], "op": ">=", "value": 10 }]
       },
       {
         "id": "enough_cells_clear",
         "level": "NORMAL_SCREEN",
         "all": [
-          { "metric": "count", "labels": ["uninfected"], "op": ">=", "value": 1000 },
-          { "metric": "count", "labels": ["parasitized"], "op": "==", "value": 0 }
+          { "metric": "count", "labels": ["uninfected"], "op": ">=", "value": 100 },
+          { "metric": "count", "labels": ["parasitized"], "op": "<=", "value": 10 }
         ]
       }
     ]
