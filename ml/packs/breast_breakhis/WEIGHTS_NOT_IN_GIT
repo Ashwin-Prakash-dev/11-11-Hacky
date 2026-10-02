@@ -1,4 +1,0 @@
-The original model.onnx and generated model_logits.onnx are local-only evaluation weights.
-Dataset-derived model redistribution remains UNVERIFIED; see README.md and LICENSING.md.
-Obtain the original model with the README SHA-256, then run prepare_pack.py.
-The model hash is checked whenever weights are present; this marker only permits their absence in CI.

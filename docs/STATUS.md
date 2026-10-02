@@ -55,6 +55,7 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
     - **The earlier RBCNet comparison** (C12N negative vs C92P53 positive, `nlm` 5.6% vs 3.6% flagged) had patient-level labels only, so it mostly measured false flags. It is not evidence that the pipeline can't separate them.
     - **Kotlin port:** done (`RbcDetector.kt`, see Track C).
 - **Next:** independently evaluate the fallback model on the licensed NIH-NLM data, export the chosen model to ONNX, and create the first golden case in `ml/packs/malaria_thin/`. Replace every UNVERIFIED and PLACEHOLDER manifest value before enabling the pack.
+- **TODO, breast pack (not implemented):** `ml/packs/breast_breakhis` and its three tests (`test_breast_pack`, `test_breast_reference`, `test_breakhis_eval`) were removed on 2026-10-02 because commit `1678f24` added them without `reference/pipeline.py`, the per-image golden JSONs, or the eval helpers, so CI failed. Nobody has implemented this pack. Recover the old files with `git show 1678f24:<path>` and finish them before re-adding (LICENSING.md still lists its BreakHis terms as UNVERIFIED).
 
 ### B: Android shell (owner: TBD)
 - **Done:** package `com.deepsight`, modules `:app`, `:engine` and `:report`. The stock Compose screen runs on a physical Android phone.
