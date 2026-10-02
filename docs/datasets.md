@@ -1,5 +1,9 @@
 # Datasets and Licences
 
+Every licence is UNVERIFIED until someone has read the source terms and linked them here. A grouping key is what a held-out split must keep together (all of one patient or one source image) so train and test never share a subject.
+
+The router needs at least two sources per test type plus a reject set, with one whole source per class held out. Its split manifest (file lists, no images) lives under `ml/eval/` once issue #8 lands.
+
 | Dataset | Link | Licence | Attribution | What we use it for | Held-out grouping key |
 |---|---|---|---|---|---|
 | NIH-NLM Malaria Screener (Cells) | [link](https://lhncbc.nlm.nih.gov/LHC-publications/pubs/MalariaDatasets.html) | UNVERIFIED | NIH / NLM | Malaria pack (cell classifier) | patient |

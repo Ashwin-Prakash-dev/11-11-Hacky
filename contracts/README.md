@@ -19,7 +19,7 @@ These are the interfaces between packs (`ml/`), the on-device engine (`android/e
 
 ## Conventions
 - **Names:** ids and labels are `lower_snake_case`.
-- **Packs and test types:** a pack id is also the router class for its test type. One case runs one pack.
+- **Packs and test types:** a pack id is also the router class for its test type. One case runs one pack. The router adds one more class, `reject`, for images that are no known test type.
 - **Values:** scores, probabilities and fractions are 0-1.
 - **bbox:** `bbox` is `[x, y, w, h]`, scaled 0-1 relative to the field image, with the origin at top left.
 - **Weights:** phone packs keep weights next to the manifest (`model.file`). Hub packs use `model.endpoint` and set both `runtime` and `compute` to `hub`.
