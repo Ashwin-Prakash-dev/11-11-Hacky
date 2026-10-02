@@ -61,6 +61,7 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
   - **Known #16 parity gap:** compare tensors against #11's Python-reference dumps within 1e-4 when they land; Python/Android parity is currently UNVERIFIED.
   - **Known #17 segmentation gap:** port #10's exact RBC detector when it lands, add the OpenCV Android dependency then measure its APK delta, compare golden counts/boxes, and measure field runtime on a physical Android phone. RBC detection and parity are currently UNVERIFIED.
   - **Known #18 integration gap:** compare decoded objects, scores and uncertainty against #11's real reference outputs when they land; real-model parity is currently UNVERIFIED.
+  - **Known #21 gap (issue closed, follow-up tracked here):** add the real `malaria_thin` goldens from #12 to `PackGoldenTest`, run `:engine:connectedDebugAndroidTest` and record every case passing; replace the `fungal` and `leukaemia_wbc` stubs when Track A ships real models. Until then no real pack is golden-tested on a phone.
   - Aggregation and triage per `contracts/README.md`, as pure Kotlin with JVM tests.
 
 ### D: Gates and report (owner: TBD)
@@ -68,6 +69,7 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
 - **Router classifier (#22), scaffolding only:** `ml/train/router_split.py` (split-manifest loader: every class needs 2+ sources and a named held-out source; labels derived from the manifest, reject last), `ml/eval/router_eval.py` (accuracy per held-out source, overall and confusion) and `ml/train/train_router.py` (MobileNetV2 backbone, softmax output, ONNX export, `labels.json`, `eval.json`). `ml/tests` pass 17/17 in a throwaway uv venv with `ml/requirements.txt` (not the Conda env; Conda is not installed on that laptop); the torch/ONNX test skips without torch, and the `ml-torch` CI job runs it with the pinned packages. CI also validates every `ml/packs/*/manifest.json` and checks each pack's model file against its manifest sha256 (`ml/tools/check_packs.py`). **Not done:** no model trained and no accuracy number, because the split manifest (#8) does not exist yet; golden match/mismatch/reject cases and the #31 entry are pending that training run. ImageNet backbone weights licence UNVERIFIED (check torchvision's weights terms before shipping).
 - **Next:**
   - **Later integration:** match #11's Python reference scores within a stated tolerance once its exact scoring convention and golden outputs land; add the Bitmap/shared image adapter after the joint library decision with #17.
+  - **Known #22 gap (issue closed, follow-up tracked here):** once #8's split manifest exists, train the router, report accuracy on the held-out source in #31, add golden match/mismatch/reject cases, and confirm the ImageNet backbone weights licence. Until then the engine router is the always-match stub (#23).
   - A template report.
 
 ### E: Data, eval, clinical thresholds (owner: TBD)
