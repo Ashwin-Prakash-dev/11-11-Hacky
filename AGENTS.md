@@ -24,6 +24,19 @@ The phone needs no internet. A clinician always signs off. This is screening sup
 - **Never commit:** datasets, downloaded evaluation weights under `ml/models/`, `.litertlm` files, `local.properties`, `build/`, `.idea/`, `.venv/`, `ml/data/`.
 - **Python:** use the Conda environment created by `scripts/setup_dev.sh`, never global Python. ONNX needs protobuf>=6.31, which breaks other globally installed packages.
 
+## Test-first workflow
+- Every new feature, behavior change, and bug fix must add or update the test that proves it.
+- Write or identify the test before production implementation.
+- Run it first and confirm it fails for the expected reason.
+- Implement the smallest change that makes it pass.
+- Never weaken, delete, or loosen an existing test merely to make a change pass.
+- Pure Kotlin logic requires JVM unit tests.
+- Inference or preprocessing changes require golden tests and `connectedDebugAndroidTest` on the demo phone.
+- Python and setup tooling requires automated tests included in CI.
+- UI work requires automated tests for testable logic plus an `installDebug` walkthrough on the demo phone.
+- Documentation, research, and measurement-only changes may use validation or recorded evidence instead of a code test.
+- Every issue and PR must name the test or evidence that proves completion.
+
 ## Layout
 | Path | What |
 |---|---|
