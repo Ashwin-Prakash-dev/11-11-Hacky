@@ -16,6 +16,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -24,18 +26,30 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.deepsight.capture.CaptureScreen
 import com.deepsight.capture.CaseStore
+import com.deepsight.data.CaseDao
+import com.deepsight.data.CaseEntity
+import com.deepsight.data.FieldEntity
 import com.deepsight.engine.contract.CaseResult
+import com.deepsight.engine.contract.Contracts
 import com.deepsight.engine.contract.FieldResult
 import com.deepsight.engine.contract.PackManifest
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 private enum class Screen { CHOOSE, CASE, RESULT, REVIEW, HISTORY }
 
 /** Choose test → case → result → review and sign-off → history. ponytail: in-memory back stack and history; lost on rotation/process death. */
 @Composable
-fun DeepSightApp(engine: FakeEngine) {
+fun DeepSightApp(engine: FakeEngine, dao: CaseDao) {
     val stack = remember { mutableStateListOf(Screen.CHOOSE) }
     val history = remember { mutableStateListOf<CaseResult>() }
     val screen = stack.last()
+    val scope = rememberCoroutineScope()
+    val files = LocalContext.current.filesDir.resolve("cases")
+    // Signed-off cases saved earlier come back into the list (oldest first, like new sign-offs).
+    LaunchedEffect(Unit) {
+        history.addAll(dao.history().first().reversed().mapNotNull { it.caseResultJson?.let(Contracts::parseCaseResult) })
+    }
     fun go(next: Screen) = stack.add(next)
     BackHandler(enabled = stack.size > 1) { stack.removeAt(stack.lastIndex) }
 
@@ -56,6 +70,7 @@ fun DeepSightApp(engine: FakeEngine) {
                 Screen.RESULT -> ResultScreen(engine.caseResult(), onReview = { go(Screen.REVIEW) })
                 Screen.REVIEW -> ReviewScreen(engine.caseResult(), onSignOff = {
                     history.add(it)
+                    scope.launch { saveSignedOff(dao, CaseStore(files), engine.fields(), it) }
                     stack.clear(); stack.addAll(listOf(Screen.CHOOSE, Screen.HISTORY))
                 })
                 Screen.HISTORY -> HistoryScreen(history)
@@ -120,4 +135,12 @@ private fun HistoryScreen(history: List<CaseResult>) {
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items(history) { Card(Modifier.fillMaxWidth()) { Text("${it.caseId}: ${it.triage.level}", Modifier.padding(12.dp)) } }
     }
+}
+
+/** Persists the case, its fields and the case_result JSON as the contract wrote it. Fake-engine fields get captured images by position; sign-off who/note arrive with #29. */
+private suspend fun saveSignedOff(dao: CaseDao, store: CaseStore, fields: List<FieldResult>, result: CaseResult) {
+    val images = store.fields(result.caseId)
+    val rows = fields.mapIndexed { i, f -> FieldEntity(f.fieldId, result.caseId, images.getOrNull(i)?.file?.path, Contracts.encode(f)) }
+    val now = System.currentTimeMillis()
+    dao.upsert(CaseEntity(result.caseId, result.packId, now, Contracts.encode(result), signedAt = now, decision = "signed_off"), rows)
 }
