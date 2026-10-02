@@ -61,8 +61,8 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
-      - name: Install Android SDK platform
-        run: sdkmanager "platforms;android-37"
+      - name: Install Android 17 preview SDK
+        run: android sdk install --beta platforms/android-37.0
 
       - name: Run engine JVM tests
         working-directory: android
