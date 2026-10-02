@@ -17,6 +17,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
@@ -33,12 +36,15 @@ import com.deepsight.engine.contract.CaseResult
 import com.deepsight.engine.contract.Contracts
 import com.deepsight.engine.contract.FieldResult
 import com.deepsight.engine.contract.PackManifest
+import com.deepsight.result.ResultScreen
+import com.deepsight.result.SignOff
+import com.deepsight.result.signOff
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-private enum class Screen { CHOOSE, CASE, RESULT, REVIEW, HISTORY }
+private enum class Screen { CHOOSE, CASE, RESULT, HISTORY }
 
-/** Choose test → case → result → review and sign-off → history. ponytail: in-memory back stack and history; lost on rotation/process death. */
+/** Choose test → case → result and sign-off → history. ponytail: in-memory back stack and history; lost on rotation/process death. */
 @Composable
 fun DeepSightApp(engine: FakeEngine, dao: CaseDao) {
     val stack = remember { mutableStateListOf(Screen.CHOOSE) }
@@ -67,12 +73,20 @@ fun DeepSightApp(engine: FakeEngine, dao: CaseDao) {
             when (screen) {
                 Screen.CHOOSE -> ChooseScreen(engine.tests, onPick = { go(Screen.CASE) }, onHistory = { go(Screen.HISTORY) })
                 Screen.CASE -> CaseScreen(engine.fields(), onDone = { go(Screen.RESULT) })
-                Screen.RESULT -> ResultScreen(engine.caseResult(), onReview = { go(Screen.REVIEW) })
-                Screen.REVIEW -> ReviewScreen(engine.caseResult(), onSignOff = {
-                    history.add(it)
-                    scope.launch { saveSignedOff(dao, CaseStore(files), engine.fields(), it) }
-                    stack.clear(); stack.addAll(listOf(Screen.CHOOSE, Screen.HISTORY))
-                })
+                Screen.RESULT -> {
+                    val case = engine.caseResult()
+                    var signOff by remember { mutableStateOf<SignOff?>(null) }
+                    LaunchedEffect(case.caseId) { signOff = dao.caseById(case.caseId)?.signOff() }
+                    ResultScreen(
+                        case, engine.fields(), report = null, signOff = signOff,
+                        onRecapture = { stack.removeAt(stack.lastIndex) }, // back to the case screen, where capture lives
+                        onSignOff = {
+                            history.add(case)
+                            scope.launch { saveSignedOff(dao, CaseStore(files), engine.fields(), case, it) }
+                            stack.clear(); stack.addAll(listOf(Screen.CHOOSE, Screen.HISTORY))
+                        },
+                    )
+                }
                 Screen.HISTORY -> HistoryScreen(history)
             }
         }
@@ -110,25 +124,6 @@ private fun ColumnScope.CaseScreen(fields: List<FieldResult>, onDone: () -> Unit
 }
 
 @Composable
-private fun ResultScreen(case: CaseResult, onReview: () -> Unit) {
-    Title("Result")
-    // Triage is shown exactly as the engine returned it; the UI never derives or changes it.
-    Text("Triage: ${case.triage.level}")
-    Text("Rule: ${case.triage.ruleId}" + if (case.triage.provisional) " (provisional)" else "")
-    Text("Fields passed: ${case.fieldsPassed} of ${case.fieldIds.size}")
-    Text("Counts: ${case.counts.entries.joinToString { "${it.key} ${it.value}" }}")
-    if (case.uncertainty.flag) Text("Uncertain: ${case.uncertainty.reason}")
-    Button(onClick = onReview, modifier = Modifier.fillMaxWidth()) { Text("Review and sign off") }
-}
-
-@Composable
-private fun ReviewScreen(case: CaseResult, onSignOff: (CaseResult) -> Unit) {
-    Title("Review")
-    Text("Case ${case.caseId}: ${case.triage.level}")
-    Button(onClick = { onSignOff(case) }, modifier = Modifier.fillMaxWidth()) { Text("Sign off") }
-}
-
-@Composable
 private fun HistoryScreen(history: List<CaseResult>) {
     Title("History")
     if (history.isEmpty()) Text("No signed-off cases yet")
@@ -137,10 +132,10 @@ private fun HistoryScreen(history: List<CaseResult>) {
     }
 }
 
-/** Persists the case, its fields and the case_result JSON as the contract wrote it. Fake-engine fields get captured images by position; sign-off who/note arrive with #29. */
-private suspend fun saveSignedOff(dao: CaseDao, store: CaseStore, fields: List<FieldResult>, result: CaseResult) {
+/** Persists the case, its fields and the case_result JSON as the contract wrote it. Fake-engine fields get captured images by position. */
+private suspend fun saveSignedOff(dao: CaseDao, store: CaseStore, fields: List<FieldResult>, result: CaseResult, signOff: SignOff) {
     val images = store.fields(result.caseId)
     val rows = fields.mapIndexed { i, f -> FieldEntity(f.fieldId, result.caseId, images.getOrNull(i)?.file?.path, Contracts.encode(f)) }
-    val now = System.currentTimeMillis()
-    dao.upsert(CaseEntity(result.caseId, result.packId, now, Contracts.encode(result), signedAt = now, decision = "signed_off"), rows)
+    val case = CaseEntity(result.caseId, result.packId, signOff.signedAt, Contracts.encode(result))
+    dao.upsert(signOff.applyTo(case), rows)
 }
