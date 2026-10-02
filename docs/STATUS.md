@@ -1,6 +1,6 @@
 # DeepSight status
 
-**Last updated:** 2026-10-02 (router training scaffolding, docs refresh).
+**Last updated:** 2026-10-02 (Track A, malaria_thin pack format).
 **Hackathon clock:** H0 = TBD. Fill in the start time so everyone can convert H-numbers to clock times.
 
 Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how each fact was verified, or mark it UNVERIFIED.
@@ -32,6 +32,15 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
   - S1 repository/model inspection and thin TFLite conversion proof. The test-first setup/downloader creates the project Conda environment, verifies pinned checksums, excludes unverified candidates by default, and loads the approved MobileNetV2 state dictionary. Baseline CI runs downloader tests, contract validation and engine JVM tests without downloading weights; both jobs passed on PR #1 (run `36971884205`). No dataset or model weight is committed.
   - Leukaemia pack skeleton (issue #41) using `preprocess.source: cells` for WBCs, with placeholder ONNX model, provisional triage thresholds, dummy golden cases, and manifest.
   - Fungal pack skeleton (issue #13) on DeFungi with placeholder ONNX model, provisional triage, dummy golden cases, and manifest.
+- **`ml/packs/malaria_thin/` (NLM thin-smear CNN as ONNX):**
+  - **Done:** pack format. The manifest passes `validate.py`; triage, quality and uncertainty are PLACEHOLDER. Also added: the README, golden expected outputs, and the Python reference, moved to `ml/reference/malaria_pipeline.py`.
+  - **Verified:** `MalariaPackGoldenTest` passed on the edge 50 fusion demo phone via `:engine:connectedDebugAndroidTest` (2026-10-02):
+    - Test A, CPU and XNNPACK: within 6e-7.
+    - PNG chips with a Kotlin `INTER_CUBIC` port: within 5e-5. Android bilinear: 0.149 off, a fail.
+
+    That run was before the move to `malaria_thin`. A rerun from the new path is pending (phone disconnected); the files are unchanged (sha256 checked).
+  - **Not in git:** the weights and the NIH golden chips, until S1 and the cell_images licence are resolved.
+  - **Not validated:** the segmentation stage.
 - **Next:** independently evaluate the fallback model on the licensed NIH-NLM data, export the chosen model to ONNX, and create the first golden case in `ml/packs/malaria_thin/`. Replace every UNVERIFIED and PLACEHOLDER manifest value before enabling the pack.
 
 ### B: Android shell (owner: TBD)

@@ -1,0 +1,49 @@
+{
+  "contract_version": "1.0",
+  "id": "malaria_thin",
+  "version": "0.1.0",
+  "display_name": "Malaria (thin smear)",
+  "task_type": "classifier",
+  "runtime": "onnx",
+  "compute": "phone",
+  "model": { "file": "model.onnx", "sha256": "63e2d8d55d547c2c7052d08fd007fb024d2d9b2107a3c268b0ddbfad26bf812c" },
+  "input": { "tensor": "input", "shape": [1, 44, 44, 3], "layout": "NHWC", "dtype": "float32", "color": "RGB" },
+  "preprocess": {
+    "source": "cells",
+    "cell_type": "rbc",
+    "resize": "stretch",
+    "scale": 0.00392156862745098,
+    "mean": [0.0, 0.0, 0.0],
+    "std": [1.0, 1.0, 1.0],
+    "stain_normalization": "none"
+  },
+  "output": { "decoder": "softmax", "labels": ["parasitized", "uninfected"], "image_score_label": "parasitized" },
+  "quality": { "min_blur": 100.0, "max_clipped_fraction": 0.05 },
+  "aggregation": { "image_score": "max", "min_fields": 1 },
+  "triage": {
+    "provisional": true,
+    "source": "PLACEHOLDER rules copied from contracts/examples/manifest.malaria_thin.json; Track E replaces them with sourced thresholds. 1000 cells matches NLM Malaria Screener's capture target (CameraActivity.totalCellNeeded), which is not a clinical threshold.",
+    "rules": [
+      {
+        "id": "parasite_seen",
+        "level": "ABNORMAL_FLAG",
+        "all": [{ "metric": "count", "labels": ["parasitized"], "op": ">=", "value": 1 }]
+      },
+      {
+        "id": "enough_cells_clear",
+        "level": "NORMAL_SCREEN",
+        "all": [
+          { "metric": "count", "labels": ["uninfected"], "op": ">=", "value": 1000 },
+          { "metric": "count", "labels": ["parasitized"], "op": "==", "value": 0 }
+        ]
+      }
+    ]
+  },
+  "uncertainty": { "method": "score_band", "band": [0.5, 0.65], "max_fraction": 0.05 },
+  "provenance": {
+    "source": "NLM Malaria Screener thin-smear CNN (https://github.com/LHNCBC/MalariaScreener), converted from TensorFlow to ONNX with tf2onnx 1.17.0. Exact upstream file and hash: UNVERIFIED (see README).",
+    "licence": "UNVERIFIED: the root LICENSE is BSD-style with NLM attribution, but 85+ source files carry GPLv3 headers and the weights have no licence or provenance file (docs/spikes/S1-malaria-screener.md). Weights stay out of git until resolved.",
+    "training_data": ["UNVERIFIED: not documented by NLM; probably the NIH malaria cell_images set (27,558 cell crops)"],
+    "notes": "quality and uncertainty values are PLACEHOLDERS from the contract example; calibrate them on this pack's field images. Output column 0 is P(parasitized), so labels are [parasitized, uninfected]."
+  }
+}
