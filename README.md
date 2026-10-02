@@ -96,3 +96,4 @@ How to promote a commit from `test` to `main`: the Git section of [AGENTS.md](AG
 | [docs/datasets.md](docs/datasets.md) | Datasets, licences and leak-free grouping keys |
 | [docs/spikes/S1-malaria-screener.md](docs/spikes/S1-malaria-screener.md) | Malaria reuse licence and conversion findings |
 | [contracts/README.md](contracts/README.md) | Manifest and result contracts, triage order |
+| [LICENSING.md](LICENSING.md) | Licences of our code, models, data and dependencies |
