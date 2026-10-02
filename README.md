@@ -61,6 +61,7 @@ adb shell am start -n com.deepsight/.MainActivity
 | On-device tests (phone connected) | `cd android && ./gradlew :engine:connectedDebugAndroidTest` |
 | Python tests | `conda run -n deepsight python -m unittest discover -s ml/tests -v` |
 | Contract files | `python contracts/validate.py <files>` |
+| Pack model hashes | `python ml/tools/check_packs.py` |
 
 Tests that need torch skip themselves outside the Conda environment; the `ml-torch` CI job installs the pinned packages and runs them. "It works" means it ran on a physical phone: a green build or CI run is not enough.
 
