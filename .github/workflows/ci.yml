@@ -91,9 +91,9 @@ jobs:
       - name: Install Android 17 preview SDK
         run: android sdk install --beta platforms/android-37.0
 
-      - name: Run engine JVM tests
+      - name: Run Android JVM tests
         working-directory: android
-        run: ./gradlew :engine:testDebugUnitTest --no-daemon
+        run: ./gradlew :engine:testDebugUnitTest :app:testDebugUnitTest --no-daemon
 
       - name: Set up Python
         uses: actions/setup-python@v7

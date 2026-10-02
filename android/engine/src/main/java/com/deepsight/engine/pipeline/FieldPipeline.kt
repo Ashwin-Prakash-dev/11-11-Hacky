@@ -5,7 +5,6 @@ import com.deepsight.engine.contract.CaseResult
 import com.deepsight.engine.contract.CellType
 import com.deepsight.engine.contract.FieldResult
 import com.deepsight.engine.contract.InputSource
-import com.deepsight.engine.contract.RouterResult
 import com.deepsight.engine.contract.RouterVerdict
 import com.deepsight.engine.decode.ClassifierDecoder
 import com.deepsight.engine.decode.CropScores
@@ -15,6 +14,8 @@ import com.deepsight.engine.pack.LoadedPack
 import com.deepsight.engine.preprocess.TensorPreprocessor
 import com.deepsight.engine.quality.PixelImage
 import com.deepsight.engine.quality.QualityGate
+import com.deepsight.engine.router.AlwaysMatchRouterGuard
+import com.deepsight.engine.router.RouterGuard
 import com.deepsight.engine.segmentation.CellCrop
 import com.deepsight.engine.triage.TriageEvaluator
 
@@ -35,6 +36,7 @@ class FieldPipeline(
     private val pack: LoadedPack,
     private val accelerator: OnnxModel.Accelerator = OnnxModel.Accelerator.XNNPACK,
     private val cellFinder: CellFinder? = null,
+    private val routerGuard: RouterGuard = AlwaysMatchRouterGuard,
 ) : AutoCloseable {
     private val manifest = pack.manifest
 
@@ -65,8 +67,11 @@ class FieldPipeline(
             return FieldResultFactory.rejected(caseId, fieldId, manifest, quality, timing)
         }
 
-        // ponytail: router stub, always match until #23 lands the real router guard.
-        val router = timed("router") { RouterResult(RouterVerdict.MATCH, 1.0) }
+        val router = timed("router") { routerGuard.evaluate(image, manifest.id) }
+        if (router.verdict != RouterVerdict.MATCH) {
+            timing["total"] = (System.nanoTime() - start) / 1_000_000
+            return FieldResultFactory.routerBlocked(caseId, fieldId, manifest, quality, router, timing)
+        }
 
         val input = manifest.input
         val crops = when (manifest.preprocess.source) {

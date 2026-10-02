@@ -64,7 +64,12 @@ class AndroidFixturesMatchGenerator(unittest.TestCase):
         rv = mp.compute_rv(h, w)
         small = cv2.resize(synthetic_field(), (int(w / rv), int(h / rv)), interpolation=cv2.INTER_CUBIC)
         png = cv2.cvtColor(cv2.imread(os.path.join(DATA, "nlm_synthetic_small.png")), cv2.COLOR_BGR2RGB)
-        np.testing.assert_array_equal(png, small)
+        # OpenCV's cubic SIMD path rounds channels differently across CPU architectures (about 1.2% on macOS ARM,
+        # two channels on Linux x86). Keep this tight enough that a changed source, size or interpolation still fails:
+        # at most 2% of channels may differ, and only by one intensity level.
+        diff = np.abs(png.astype(np.int16) - small.astype(np.int16))
+        self.assertLessEqual(int(diff.max()), 1)
+        self.assertLessEqual(int(np.count_nonzero(diff)), png.size // 50)
 
 
 class ReproducesJavaQuirks(unittest.TestCase):

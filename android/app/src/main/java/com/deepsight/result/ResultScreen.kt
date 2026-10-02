@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.deepsight.engine.contract.CaseResult
 import com.deepsight.engine.contract.FieldResult
-import com.deepsight.engine.contract.RouterVerdict
 
 /** Stateless except for the sign-off form. [report] is null until the report module (#24) is wired in. */
 @Composable
@@ -74,13 +73,7 @@ private fun FieldCard(field: FieldResult, onRecapture: (String) -> Unit) = Card(
             OutlinedButton(onClick = { onRecapture(field.fieldId) }) { Text("Recapture") }
         }
         field.router?.let { r ->
-            Text(
-                when (r.verdict) {
-                    RouterVerdict.MATCH -> "Image matches the selected test"
-                    RouterVerdict.MISMATCH -> "Image looks like another test: ${r.predicted ?: "unknown"}"
-                    RouterVerdict.REJECT -> "Image is not a recognised test type"
-                },
-            )
+            Text(routerMessage(r))
         }
         if (field.quality.pass) {
             Text("Counts: ${field.counts.entries.joinToString { "${it.key} ${it.value}" }.ifEmpty { "none" }}")
