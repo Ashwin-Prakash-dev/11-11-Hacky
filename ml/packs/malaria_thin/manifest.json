@@ -18,7 +18,7 @@
     "stain_normalization": "none"
   },
   "output": { "decoder": "softmax", "labels": ["parasitized", "uninfected"], "image_score_label": "parasitized" },
-  "quality": { "min_blur": 100.0, "max_clipped_fraction": 0.05 },
+  "quality": { "min_blur": 8.0, "max_clipped_fraction": 0.45 },
   "aggregation": { "image_score": "max", "min_fields": 1 },
   "triage": {
     "provisional": true,
@@ -44,6 +44,6 @@
     "source": "NLM Malaria Screener's Sudan-retrained thin-smear CNN, malaria_thinsmear_44_retrainSudan_20P_4000C_separate.pb: the model the NLM app loads (CameraActivity.java line 277, https://github.com/LHNCBC/MalariaScreener commit c485a21). Converted from TensorFlow to ONNX with tf2onnx 1.17.0; parity with the original graph is UNVERIFIED (see README).",
     "licence": "UNVERIFIED: the root LICENSE is BSD-style with NLM attribution, but 85+ source files carry GPLv3 headers and the weights have no licence or provenance file (docs/spikes/S1-malaria-screener.md). Weights stay out of git until resolved.",
     "training_data": ["UNVERIFIED: not documented by NLM; the file name suggests retraining on 20 patients / 4000 cells, possibly from Sudan"],
-    "notes": "Chosen for the demo because NLM pairs it with this segmentation; replace it after measurement on annotated field images. quality and uncertainty values are PLACEHOLDERS from the contract example. Output column 0 is P(parasitized) (TensorFlowClassifier.recongnize_batch), so labels are [parasitized, uninfected]."
+    "notes": "Chosen for the demo because NLM pairs it with this segmentation; replace it after measurement on annotated field images. quality is PROVISIONAL, from 8 RBCNet fields (5312x2988): QualityGate blur 12.8-15.8 and 33-37% exactly-black pixels from the eyepiece vignette; uncertainty values are PLACEHOLDERS from the contract example. Output column 0 is P(parasitized) (TensorFlowClassifier.recongnize_batch), so labels are [parasitized, uninfected]."
   }
 }
