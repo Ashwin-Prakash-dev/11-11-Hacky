@@ -35,6 +35,9 @@ jobs:
           bash -n scripts/setup_dev.sh
           scripts/setup_dev.sh --help
 
+      - name: Test Android tool installers
+        run: python -m unittest discover -s scripts/tests -v
+
       - name: Test model downloader
         run: python -m unittest discover -s ml/tests -v
 
