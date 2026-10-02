@@ -32,7 +32,7 @@ adb shell am start -n com.deepsight/.MainActivity
 | Branch | Holds |
 |---|---|
 | `test` (default) | Where all work lands. CI-checked, but may not have run on the phone yet. |
-| `main` | Only commits verified on the demo phone. Build demos from here. |
+| `main` | Only commits verified on a physical Android phone. Build demos from here. |
 
 How to promote a commit from `test` to `main`: the Git section of [AGENTS.md](AGENTS.md).
 

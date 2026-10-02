@@ -12,7 +12,7 @@ Related: #
 - Command:
 - Result:
 
-## Demo-phone verification
+## Device verification
 
 - Command/walkthrough and result, or why not applicable:
 

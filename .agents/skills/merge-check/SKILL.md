@@ -1,11 +1,11 @@
 ---
 name: merge-check
-description: Final pre-merge gate for a DeepSight change, run after code review on the finished diff. Checks correctness, the AGENTS.md hard rules (deterministic triage, frozen contracts, offline, demo-phone proof, sourced facts), tests and commit hygiene, and reports a one-row-per-section table. Use before pushing to test or calling work done.
+description: Final pre-merge gate for a DeepSight change, run after code review on the finished diff. Checks correctness, the AGENTS.md hard rules (deterministic triage, frozen contracts, offline, on-device proof, sourced facts), tests and commit hygiene, and reports a one-row-per-section table. Use before pushing to test or calling work done.
 ---
 
 # Pre-Merge Checklist
 
-The last gate before a change lands on `test`. Promotion to `main` is a separate step after a demo-phone run (AGENTS.md, Git section). We are in a 30-hour hackathon: the bar is **"works on the demo phone and breaks nothing"**, not production polish. MVP first; don't block a merge on elegance.
+The last gate before a change lands on `test`. Promotion to `main` is a separate step after a on-device run (AGENTS.md, Git section). We are in a 30-hour hackathon: the bar is **"works on a physical Android phone and breaks nothing"**, not production polish. MVP first; don't block a merge on elegance.
 
 ## Workflow position
 
@@ -40,7 +40,7 @@ Check each rule in AGENTS.md "Hard rules" against the diff; don't restate them h
 - **Contracts**: no field renamed or removed. Any change is agreed by the team and versioned, and the validator and engine tests were run.
 - **Facts**: every new number (threshold, latency, size, licence, version) has a source or measurement, or says UNVERIFIED with how to check.
 - **Offline**: no network call on the phone path, except `compute: hub` packs.
-- **"Works"** means run on the demo phone (`installDebug` or `connectedDebugAndroidTest`). A green build alone is ⚠️ at best.
+- **"Works"** means run on a physical Android phone (`installDebug` or `connectedDebugAndroidTest`). A green build alone is ⚠️ at best.
 - **Never committed**: datasets, `.litertlm`, `local.properties`, `build/`, `.idea/`, `.venv/`. Check `git status` and the diff's file list.
 
 ## 3. Type safety and contracts in code
@@ -102,7 +102,7 @@ A markdown table with one row per section; skip rows excluded by scope calibrati
 | 0. Scope | — | Moderate: triage logic in `:engine` only, no contract change. |
 | 1. Correctness | ✅ | Tried 0 passed fields, null image_score, boundary 1000 cells. |
 | 2. Hard rules | ⚠️ | Thresholds still `provisional: true` (Track E). |
-| 6. Tests | ❌ | Not yet run on the demo phone. |
+| 6. Tests | ❌ | Not yet run on a physical Android phone. |
 | 9. Final gate | ❌ | Not merge-ready: see 6. |
 
 Legend: ✅ verified · ⚠️ acceptable with a caveat worth flagging · ❌ blocks merge · — skipped.

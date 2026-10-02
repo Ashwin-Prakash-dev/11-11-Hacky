@@ -36,7 +36,7 @@ Create a doc from this table only when you have content for it; no empty scaffol
 1. Read the diff; decide what actually changed.
 2. Find the one doc in the table that owns it.
 3. Edit only that section. Don't regenerate whole documents.
-4. Move a STATUS.md item from "Next" to "Done" with how it was verified (e.g. "ran on demo phone via `connectedDebugAndroidTest`").
+4. Move a STATUS.md item from "Next" to "Done" with how it was verified (e.g. "ran on a phone via `connectedDebugAndroidTest`").
 5. New measured number → STATUS.md "Verified facts" (and `docs/claims.md` if it goes on a slide).
 
 ## Style
