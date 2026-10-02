@@ -1,0 +1,200 @@
+{
+ "model": "model.onnx",
+ "input_layout": "NHWC float32 RGB /255, resized with OpenCV INTER_CUBIC",
+ "tolerance_tensor": 0.0001,
+ "cases": [
+  {
+   "file": "C142P103ThinF_IMG_20151005_221931_cell_190.png",
+   "label": "parasitized",
+   "p_infected": 0.852795,
+   "p_uninfected": 0.147205
+  },
+  {
+   "file": "C45P6ThinF_IMG_20151130_160241_cell_204.png",
+   "label": "parasitized",
+   "p_infected": 0.966808,
+   "p_uninfected": 0.033192
+  },
+  {
+   "file": "C183P144NThinF_IMG_20151201_222917_cell_151.png",
+   "label": "parasitized",
+   "p_infected": 0.999832,
+   "p_uninfected": 0.000168
+  },
+  {
+   "file": "C108P69ThinF_IMG_20150924_225511_cell_182.png",
+   "label": "parasitized",
+   "p_infected": 0.998774,
+   "p_uninfected": 0.001226
+  },
+  {
+   "file": "C60P21thinF_IMG_20150803_144003_cell_133.png",
+   "label": "parasitized",
+   "p_infected": 0.014091,
+   "p_uninfected": 0.985909
+  },
+  {
+   "file": "C39P4thinF_original_IMG_20150622_111206_cell_78.png",
+   "label": "parasitized",
+   "p_infected": 0.999999,
+   "p_uninfected": 1e-06
+  },
+  {
+   "file": "C70P31_ThinF_IMG_20150813_131708_cell_1.png",
+   "label": "parasitized",
+   "p_infected": 0.978029,
+   "p_uninfected": 0.021971
+  },
+  {
+   "file": "C91P52ThinF_IMG_20150821_124311_cell_23.png",
+   "label": "parasitized",
+   "p_infected": 0.037686,
+   "p_uninfected": 0.962314
+  },
+  {
+   "file": "C80P41ThinF_IMG_20150817_111802_cell_10.png",
+   "label": "parasitized",
+   "p_infected": 0.782271,
+   "p_uninfected": 0.217729
+  },
+  {
+   "file": "C116P77ThinF_IMG_20150930_171844_cell_83.png",
+   "label": "parasitized",
+   "p_infected": 0.88241,
+   "p_uninfected": 0.11759
+  },
+  {
+   "file": "C99P60ThinF_IMG_20150918_141129_cell_131.png",
+   "label": "parasitized",
+   "p_infected": 0.449824,
+   "p_uninfected": 0.550176
+  },
+  {
+   "file": "C136P97ThinF_IMG_20151005_144449_cell_30.png",
+   "label": "parasitized",
+   "p_infected": 0.39655,
+   "p_uninfected": 0.60345
+  },
+  {
+   "file": "C182P143NThinF_IMG_20151201_172759_cell_43.png",
+   "label": "parasitized",
+   "p_infected": 0.544618,
+   "p_uninfected": 0.455382
+  },
+  {
+   "file": "C101P62ThinF_IMG_20150918_155731_cell_66.png",
+   "label": "parasitized",
+   "p_infected": 0.999976,
+   "p_uninfected": 2.4e-05
+  },
+  {
+   "file": "C130P91ThinF_IMG_20151004_141504_cell_146.png",
+   "label": "parasitized",
+   "p_infected": 0.998431,
+   "p_uninfected": 0.001569
+  },
+  {
+   "file": "C48P9thinF_IMG_20150721_160406_cell_216.png",
+   "label": "parasitized",
+   "p_infected": 0.730526,
+   "p_uninfected": 0.269474
+  },
+  {
+   "file": "C134P95ThinF_IMG_20151005_121425_cell_53.png",
+   "label": "uninfected",
+   "p_infected": 0.0064,
+   "p_uninfected": 0.9936
+  },
+  {
+   "file": "C117P78ThinF_IMG_20150930_222228_cell_71.png",
+   "label": "uninfected",
+   "p_infected": 0.00758,
+   "p_uninfected": 0.99242
+  },
+  {
+   "file": "C2NThinF_IMG_20150604_115238_cell_259.png",
+   "label": "uninfected",
+   "p_infected": 0.106661,
+   "p_uninfected": 0.893339
+  },
+  {
+   "file": "C158P119ThinF_IMG_20151115_181136_cell_113.png",
+   "label": "uninfected",
+   "p_infected": 0.007058,
+   "p_uninfected": 0.992942
+  },
+  {
+   "file": "C213ThinF_IMG_20151106_112759_cell_148.png",
+   "label": "uninfected",
+   "p_infected": 0.005325,
+   "p_uninfected": 0.994675
+  },
+  {
+   "file": "C101P62ThinF_IMG_20150918_151006_cell_59.png",
+   "label": "uninfected",
+   "p_infected": 0.011891,
+   "p_uninfected": 0.988109
+  },
+  {
+   "file": "C73P34_ThinF_IMG_20150815_111114_cell_97.png",
+   "label": "uninfected",
+   "p_infected": 0.004876,
+   "p_uninfected": 0.995124
+  },
+  {
+   "file": "C101P62ThinF_IMG_20150918_151942_cell_57.png",
+   "label": "uninfected",
+   "p_infected": 0.017489,
+   "p_uninfected": 0.982511
+  },
+  {
+   "file": "C204ThinF_IMG_20151029_112231_cell_46.png",
+   "label": "uninfected",
+   "p_infected": 0.006981,
+   "p_uninfected": 0.993019
+  },
+  {
+   "file": "C124P85ThinF_IMG_20151002_155223_cell_79.png",
+   "label": "uninfected",
+   "p_infected": 0.003764,
+   "p_uninfected": 0.996236
+  },
+  {
+   "file": "C116P77ThinF_IMG_20150930_171558_cell_64.png",
+   "label": "uninfected",
+   "p_infected": 0.088295,
+   "p_uninfected": 0.911705
+  },
+  {
+   "file": "C216ThinF_IMG_20151106_135337_cell_8.png",
+   "label": "uninfected",
+   "p_infected": 0.00458,
+   "p_uninfected": 0.99542
+  },
+  {
+   "file": "C179P140ThinF_IMG_20151127_153350_cell_145.png",
+   "label": "uninfected",
+   "p_infected": 0.007366,
+   "p_uninfected": 0.992634
+  },
+  {
+   "file": "C183P144NThinF_IMG_20151201_222119_cell_122.png",
+   "label": "uninfected",
+   "p_infected": 0.010152,
+   "p_uninfected": 0.989847
+  },
+  {
+   "file": "C104P65ThinF_IMG_20150918_172053_cell_160.png",
+   "label": "uninfected",
+   "p_infected": 0.003304,
+   "p_uninfected": 0.996696
+  },
+  {
+   "file": "C105P66ThinF_IMG_20150924_095716_cell_3.png",
+   "label": "uninfected",
+   "p_infected": 0.00321,
+   "p_uninfected": 0.99679
+  }
+ ],
+ "model_sha256": "4ae012394333316790a0c5c7902edaaf3f46c0e23b80858a89d2f09f419a6471"
+}

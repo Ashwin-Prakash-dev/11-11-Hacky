@@ -1,0 +1,49 @@
+{
+  "contract_version": "1.0",
+  "id": "malaria_thin",
+  "version": "0.1.0",
+  "display_name": "Malaria (thin smear)",
+  "task_type": "classifier",
+  "runtime": "onnx",
+  "compute": "phone",
+  "model": { "file": "model.onnx", "sha256": "4ae012394333316790a0c5c7902edaaf3f46c0e23b80858a89d2f09f419a6471" },
+  "input": { "tensor": "input", "shape": [1, 44, 44, 3], "layout": "NHWC", "dtype": "float32", "color": "RGB" },
+  "preprocess": {
+    "source": "cells",
+    "cell_type": "rbc",
+    "resize": "stretch",
+    "scale": 0.00392156862745098,
+    "mean": [0.0, 0.0, 0.0],
+    "std": [1.0, 1.0, 1.0],
+    "stain_normalization": "none"
+  },
+  "output": { "decoder": "softmax", "labels": ["parasitized", "uninfected"], "image_score_label": "parasitized" },
+  "quality": { "min_blur": 8.0, "max_clipped_fraction": 0.45 },
+  "aggregation": { "image_score": "max", "min_fields": 1 },
+  "triage": {
+    "provisional": true,
+    "source": "PLACEHOLDER rules copied from contracts/examples/manifest.malaria_thin.json; Track E replaces them with sourced thresholds. 1000 cells matches NLM Malaria Screener's capture target (CameraActivity.totalCellNeeded), which is not a clinical threshold.",
+    "rules": [
+      {
+        "id": "parasite_seen",
+        "level": "ABNORMAL_FLAG",
+        "all": [{ "metric": "count", "labels": ["parasitized"], "op": ">=", "value": 1 }]
+      },
+      {
+        "id": "enough_cells_clear",
+        "level": "NORMAL_SCREEN",
+        "all": [
+          { "metric": "count", "labels": ["uninfected"], "op": ">=", "value": 1000 },
+          { "metric": "count", "labels": ["parasitized"], "op": "==", "value": 0 }
+        ]
+      }
+    ]
+  },
+  "uncertainty": { "method": "score_band", "band": [0.5, 0.65], "max_fraction": 0.05 },
+  "provenance": {
+    "source": "NLM Malaria Screener's Sudan-retrained thin-smear CNN, malaria_thinsmear_44_retrainSudan_20P_4000C_separate.pb: the model the NLM app loads (CameraActivity.java line 277, https://github.com/LHNCBC/MalariaScreener commit c485a21). Converted from TensorFlow to ONNX with tf2onnx 1.17.0; parity with the original graph is UNVERIFIED (see README).",
+    "licence": "UNVERIFIED: the root LICENSE is BSD-style with NLM attribution, but 85+ source files carry GPLv3 headers and the weights have no licence or provenance file (docs/spikes/S1-malaria-screener.md). Weights stay out of git until resolved.",
+    "training_data": ["UNVERIFIED: not documented by NLM; the file name suggests retraining on 20 patients / 4000 cells, possibly from Sudan"],
+    "notes": "Chosen for the demo because NLM pairs it with this segmentation; replace it after measurement on annotated field images. quality is PROVISIONAL, from 8 RBCNet fields (5312x2988): QualityGate blur 12.8-15.8 and 33-37% exactly-black pixels from the eyepiece vignette; uncertainty values are PLACEHOLDERS from the contract example. model.onnx is malaria_thin_44_sudan.onnx with its final Softmax removed (ml/tools/onnx_logits.py): ClassifierDecoder applies softmax itself. Logit 0 is parasitized (TensorFlowClassifier.recongnize_batch), so labels are [parasitized, uninfected]."
+  }
+}

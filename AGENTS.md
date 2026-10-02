@@ -49,6 +49,7 @@ The phone needs no internet. A clinician always signs off. This is screening sup
 | `hub/` | Optional laptop hub (Ollama + PathOS) |
 | `docs/STATUS.md` | Current state. Update it with every change that matters. |
 | `docs/architecture.md` | Target pipeline, design rules, pack format (from the build plan) |
+| `LICENSING.md` | Licences of our code, models, data and dependencies. Read it before adding any of them, or before reusing third-party code (GPL rules). |
 
 ## Commands
 Run Gradle commands from `android/`. On Windows, use `gradlew.bat`.
@@ -58,6 +59,7 @@ Run Gradle commands from `android/`. On Windows, use `gradlew.bat`.
 | Install and run on the phone | `./gradlew installDebug`, then `adb shell am start -n com.deepsight/.MainActivity` |
 | JVM tests | `./gradlew :engine:testDebugUnitTest` |
 | On-device tests | `./gradlew :engine:connectedDebugAndroidTest` (phone connected) |
+| Analyze one field (debug build) | "DeepSight debug" icon, or `adb shell am start -n com.deepsight/.DebugAnalyzeActivity --es path <file in /sdcard/Android/data/com.deepsight/files/>`, then `adb logcat -s DeepSightDebug` |
 | Device logs | `adb logcat -s DeepSightS2` (or your tag) |
 | Validate contract files | `python contracts/validate.py <files>` |
 | Python setup | `scripts/setup_dev.sh`, then `conda activate deepsight` |

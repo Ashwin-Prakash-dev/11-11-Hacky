@@ -19,6 +19,15 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
+    // Golden tests read ml/tests/data at the asset root; <repo>/ml/packs is staged under packs/ (stageGoldenPacks).
+    // ml/data/android_parity is local-only RBCNet parity data; the test skips when it is absent.
+    sourceSets {
+        named("androidTest") {
+            assets.srcDir(rootDir.resolve("../ml/tests/data"))
+            assets.srcDir(rootDir.resolve("../ml/data/android_parity"))
+        }
+    }
 }
 
 // Every pack's manifest, model and golden cases live in ml/packs; PackGoldenTest reads them from the test APK's
@@ -37,6 +46,7 @@ tasks.configureEach { if (name.endsWith("AndroidTestAssets")) dependsOn(stageGol
 dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.onnxruntime.android)
+    implementation(libs.opencv)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.test.runner)

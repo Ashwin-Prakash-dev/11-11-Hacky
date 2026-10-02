@@ -14,6 +14,7 @@ testRunner = "1.5.2"
 camerax = "1.6.2" # latest stable on Google Maven, 2026-10-02
 room = "2.8.5"
 ksp = "2.3.12"
+opencv = "4.14.0" # keep equal to opencv-python-headless in ml/requirements.txt (segmentation parity)
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -40,6 +41,7 @@ androidx-test-runner = { group = "androidx.test", name = "runner", version.ref =
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+opencv = { group = "org.opencv", name = "opencv", version.ref = "opencv" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

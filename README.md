@@ -52,6 +52,16 @@ cd android
 adb shell am start -n com.deepsight/.MainActivity
 ```
 
+**Analyze one malaria field (debug builds).** Open the **DeepSight debug** icon and pick a thin-smear photo. It runs the real engine and shows a box per cell (green below 0.5, orange 0.5–0.8, red above 0.8), the counts, quality, provisional triage and timings.
+- It needs the `malaria_thin` weights in `ml/packs/malaria_thin/`. They're not in git; see that pack's README.
+- Without the photo picker:
+
+  ```sh
+  adb push field.jpg /sdcard/Android/data/com.deepsight/files/field.jpg
+  adb shell am start -n com.deepsight/.DebugAnalyzeActivity --es path /sdcard/Android/data/com.deepsight/files/field.jpg
+  adb logcat -s DeepSightDebug
+  ```
+
 ## Tests
 
 | What | Command |
@@ -96,3 +106,4 @@ How to promote a commit from `test` to `main`: the Git section of [AGENTS.md](AG
 | [docs/datasets.md](docs/datasets.md) | Datasets, licences and leak-free grouping keys |
 | [docs/spikes/S1-malaria-screener.md](docs/spikes/S1-malaria-screener.md) | Malaria reuse licence and conversion findings |
 | [contracts/README.md](contracts/README.md) | Manifest and result contracts, triage order |
+| [LICENSING.md](LICENSING.md) | Licences of our code, models, data and dependencies |

@@ -39,10 +39,44 @@ android {
     }
 }
 
+/** Copies <repo>/ml/packs, without golden test data, to packs/ in the APK assets, where PackLoader looks. */
+abstract class StagePacks : DefaultTask() {
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val packs: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val output: DirectoryProperty
+
+    @get:Inject
+    abstract val files: FileSystemOperations
+
+    @TaskAction
+    fun stage() {
+        // Only finished packs: a directory without manifest.json (a module still being added) stays out.
+        val ready = packs.get().asFile.listFiles().orEmpty().filter { it.resolve("manifest.json").isFile }
+        files.sync {
+            ready.forEach { pack ->
+                from(pack) {
+                    exclude("**/golden/**")
+                    into("packs/${pack.name}")
+                }
+            }
+            into(output)
+        }
+    }
+}
+
+val stagePacks = tasks.register<StagePacks>("stagePacks") {
+    packs.set(rootDir.resolve("../ml/packs"))
+    output.set(layout.buildDirectory.dir("generated/packAssets"))
+}
+
 // The fake engine reads the frozen examples straight from contracts/ (single source of truth).
 androidComponents {
     onVariants { variant ->
         variant.sources.assets?.addStaticSourceDirectory(rootDir.resolve("../contracts/examples").canonicalPath)
+        variant.sources.assets?.addGeneratedSourceDirectory(stagePacks, StagePacks::output)
     }
 }
 

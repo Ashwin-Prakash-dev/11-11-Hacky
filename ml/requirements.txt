@@ -10,3 +10,4 @@ onnxruntime==1.30.0  # keep equal to onnxruntime-android in android/gradle/libs.
 numpy==2.5.3
 Pillow==12.3.0
 jsonschema==4.26.0
+opencv-python-headless==4.14.0.94  # ml/reference segmentation; same OpenCV as the planned Android port

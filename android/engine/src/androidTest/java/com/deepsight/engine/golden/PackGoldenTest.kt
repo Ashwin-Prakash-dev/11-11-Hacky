@@ -9,6 +9,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.deepsight.engine.contract.Contracts
 import com.deepsight.engine.onnx.OnnxModel
 import com.deepsight.engine.pack.PackLoader
+import com.deepsight.engine.pipeline.CellFinders
 import com.deepsight.engine.pipeline.FieldPipeline
 import org.junit.Assert.fail
 import org.junit.Test
@@ -48,7 +49,8 @@ class PackGoldenTest(private val packPath: String, private val case: String?) {
             ?: throw AssertionError("$dir/$name.png could not be decoded")
 
         val pack = PackLoader.fromAssets(assets, packsRoot = packsRoot).load(packId)
-        val actual = FieldPipeline(pack, OnnxModel.Accelerator.CPU).use { it.analyzeField(expected.caseId, expected.fieldId, bitmap) }
+        val actual = FieldPipeline(pack, OnnxModel.Accelerator.CPU, CellFinders.forPack(pack.manifest))
+            .use { it.analyzeField(expected.caseId, expected.fieldId, bitmap) }
         val diffs = GoldenComparator.compare(expected, actual, tolerance, bitmap.width, bitmap.height)
         if (diffs.isNotEmpty()) throw AssertionError(diffs.joinToString("; "))
     }

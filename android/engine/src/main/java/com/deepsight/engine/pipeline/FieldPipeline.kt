@@ -15,13 +15,16 @@ import com.deepsight.engine.pack.LoadedPack
 import com.deepsight.engine.preprocess.TensorPreprocessor
 import com.deepsight.engine.quality.PixelImage
 import com.deepsight.engine.quality.QualityGate
-import com.deepsight.engine.segmentation.CellCropper
-import com.deepsight.engine.segmentation.PixelRect
+import com.deepsight.engine.segmentation.CellCrop
 import com.deepsight.engine.triage.TriageEvaluator
 
-/** Finds cell boxes for packs with `preprocess.source = cells`. No implementation exists yet (Python-only in #10/#11). */
+/**
+ * Finds and cuts out the cells for packs with `preprocess.source = cells`. Returns crops rather than boxes because a
+ * detector may need to mask or resize them (NLM's sets the background to black and resizes bicubic); a box-only
+ * finder can return `CellCropper.crop(field, boxes)`. [CellFinders.forPack] picks the engine's finder for a pack.
+ */
 fun interface CellFinder {
-    fun find(field: PixelImage, cellType: CellType?): List<PixelRect>
+    fun find(field: PixelImage, cellType: CellType?): List<CellCrop>
 }
 
 /**
@@ -70,7 +73,7 @@ class FieldPipeline(
             InputSource.FIELD -> listOf(image to null)
             InputSource.CELLS -> {
                 val finder = checkNotNull(cellFinder) { "Pack '${manifest.id}' uses cells but no CellFinder was provided" }
-                CellCropper.crop(image, finder.find(image, manifest.preprocess.cellType)).map { it.image to it.normalizedBbox }
+                timed("cells") { finder.find(image, manifest.preprocess.cellType) }.map { it.image to it.normalizedBbox }
             }
         }
         val tensors = timed("preprocess") {
