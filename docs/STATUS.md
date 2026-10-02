@@ -1,6 +1,6 @@
 # DeepSight status
 
-**Last updated:** 2026-10-02 10:41 IST (S1 investigation).
+**Last updated:** 2026-10-02 (S1 fallback setup).
 **Hackathon clock:** H0 = TBD. Fill in the start time so everyone can convert H-numbers to clock times.
 
 Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how each fact was verified, or mark it UNVERIFIED.
@@ -18,7 +18,7 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
 ## Spikes
 | Spike | Question | Owner | State |
 |---|---|---|---|
-| S1 | NLM Malaria Screener: licence, can the model be extracted, does it convert to ONNX? | Codex | **partial:** models and I/O found; thin TFLite converts with exact synthetic-input parity; reuse licence, active-PB parity and thick conversion unresolved ([evidence](spikes/S1-malaria-screener.md)) |
+| S1 | NLM Malaria Screener: licence, can the model be extracted, does it convert to ONNX? | Codex | **partial:** thin TFLite conversion works; upstream reuse remains blocked, while a licensed dataset and evaluation-model fallback are pinned; first pack golden case still pending ([evidence](spikes/S1-malaria-screener.md)) |
 | S2 | ONNX Runtime on Android | C | **code done; phone run pending** (see Track C) |
 | S3 | LiteRT-LM Gemma inside our app | TBD | not started |
 | S4 | Phone → laptop hub over hotspot, cleartext HTTP | TBD | not started |
@@ -28,8 +28,8 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
 ## Tracks
 
 ### A: ML packs (owner: TBD)
-- **Done:** S1 repository/model inspection; thin TFLite-to-ONNX feasibility proven on a deterministic input. No upstream artefact has been copied into this repository.
-- **Next:** resolve the upstream model licence/provenance or start the clearly licensed fallback thin-smear classifier. Develop the chosen malaria path test-first, then create the pack in `ml/packs/malaria_thin/`, starting from `contracts/examples/manifest.malaria_thin.json` and replacing every UNVERIFIED and PLACEHOLDER value. After that priority path is stable, add CI for contract validation and JVM tests.
+- **Done:** S1 repository/model inspection and thin TFLite conversion proof. The test-first setup/downloader creates the project Conda environment, verifies pinned checksums, excludes unverified candidates by default, and loads the approved MobileNetV2 state dictionary. No dataset or model weight is committed.
+- **Next:** independently evaluate the fallback model on the licensed NIH-NLM data, export the chosen model to ONNX, and create the first golden case in `ml/packs/malaria_thin/`. Replace every UNVERIFIED and PLACEHOLDER manifest value before enabling the pack. After the priority path is stable, add CI for contract validation and JVM tests.
 
 ### B: Android shell (owner: TBD)
 - **Done:** package `com.deepsight`, modules `:app`, `:engine` and `:report`. The stock Compose screen runs on the demo phone.
@@ -77,7 +77,7 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
 - **Malaria reuse licence:** the upstream root licence is BSD-like, at least 85 source files say GPLv3, and model provenance/licensing is not stated. See `docs/spikes/S1-malaria-screener.md`; do not vendor upstream artefacts until resolved.
 - **Memory:** Gemma loaded alongside an ONNX pack on ~2.5 GiB of available RAM is untested. This is the biggest S3 risk; measure with `adb shell dumpsys meminfo com.deepsight`.
 - **Hotspot routing (UNVERIFIED):** the phone may route traffic over mobile data when the hotspot has no internet. Test S4 with mobile data off.
-- **Malaria model:** extraction and thin-model conversion are feasible, but reuse licensing and active-model parity remain unresolved (S1). This still blocks G1 reuse; the fallback is to train a model on clearly licensed public data.
+- **Malaria model:** upstream extraction and thin-model conversion are feasible, but reuse licensing and active-model parity remain unresolved. A separately licensed dataset and evaluation model are available, but neither clinical quality nor Android parity has been established.
 
 ## Decisions
 - 2026-10-02: Native Kotlin + Compose, Android only.

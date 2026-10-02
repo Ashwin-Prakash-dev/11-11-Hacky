@@ -68,7 +68,7 @@ Use the Commands table in AGENTS.md.
 - Pure logic (triage, aggregation, gates) has JVM tests: `./gradlew :engine:testDebugUnitTest`.
 - Anything touching inference has golden tests, run on the phone with `:engine:connectedDebugAndroidTest`. A pack isn't done until its golden tests pass on device.
 - Contract or example changes: `python contracts/validate.py <files>` passes.
-- Python changes ran in the repo venv built from `ml/requirements.txt`.
+- Python changes ran in the project Conda environment created by `scripts/setup_dev.sh`.
 
 ## 7. Performance (only obvious regressions)
 

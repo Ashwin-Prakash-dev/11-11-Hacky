@@ -1,7 +1,7 @@
 # S1: NLM Malaria Screener feasibility
 
 **Checked:** 2026-10-02  
-**State:** partial - thin-model conversion proven; licence and end-to-end parity still block reuse
+**State:** partial - thin-model conversion proven and a licensed fallback identified; end-to-end golden parity remains open
 
 ## Question
 
@@ -60,12 +60,21 @@ For the thick TFLite model, `tflite2onnx` produced a graph that ONNX Runtime rej
 
 **S1 remains open.** The reusable algorithm structure and model I/O are known, and thin TFLite-to-ONNX conversion is technically viable. Reusing the upstream implementation or weights is blocked by conflicting licence notices, missing model provenance, lack of a representative upstream test image, and lack of end-to-end count parity with the active `.pb` model.
 
+## Licensed fallback assets
+
+- Dataset: [NIH-NLM Thin Blood Smears Pf](https://data.lhncbc.nlm.nih.gov/public/Malaria/NIH-NLM-ThinBloodSmearsPf/), 193 patients with five annotated fields per patient. Its supplied data licence permits commercial and non-commercial use and redistribution with the notice and attribution retained.
+- Evaluation model: [LocalMedScan MobileNetV2](https://huggingface.co/Svetozar1993/LocalMedScan-malaria-mobilenetv2), pinned in `ml/models.json` to revision `2403c195c4901d179221ee9d5f17ec1128d3cbe1`. The model card and linked source repository declare MIT. Its published metrics are **UNVERIFIED** by DeepSight.
+- The downloaded state dictionary loads strictly into torchvision MobileNetV2 and returns a finite `[1, 2]` output for a synthetic `224 x 224` RGB tensor. This proves loadability only, not clinical quality or Android parity.
+- A second ONNX detector candidate is listed as `unverified` because its linked repository has no licence and its dataset provenance is inconsistent. The setup script excludes it unless a teammate explicitly passes `--include-unverified`.
+
+`scripts/setup_dev.sh` creates the project Conda environment and downloads only checksum-pinned models approved for evaluation. Downloaded weights are ignored by Git.
+
 ## H0-H2 decision
 
 1. Do not vendor Malaria Screener code or weights yet.
 2. Treat the converted thin TFLite result as a feasibility proof only.
-3. Ask Track E to resolve licence/model provenance immediately.
-4. In parallel, prepare the documented fallback: train a small thin-smear classifier on a clearly licensed NLM dataset and retain the classical segmentation idea without copying GPL-marked source.
+3. Ask Track E to resolve the upstream licence/model provenance and independently evaluate the fallback model.
+4. Build the first malaria pack from the licensed NLM dataset and evaluation model, retaining the classical segmentation idea without copying GPL-marked source.
 5. Close S1 only after either:
    - the upstream artefact licence is resolved and an end-to-end representative image matches, or
    - the fallback model produces its first golden case.

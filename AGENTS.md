@@ -21,8 +21,8 @@ The phone needs no internet. A clinician always signs off. This is screening sup
 - **Facts:** don't assume. Every claim about versions, devices, licences, latency or clinical thresholds needs a source or a measurement. Otherwise write UNVERIFIED and say how to check it.
 - **Offline:** everything runs offline on the phone, except packs with `compute: hub`.
 - **Demo phone:** "it works" means it ran on the demo phone through `installDebug` or `connectedDebugAndroidTest`. A successful build is not enough. There is no emulator.
-- **Never commit:** datasets, `.litertlm` files, `local.properties`, `build/`, `.idea/`, `.venv/`.
-- **Python:** use a venv built from `ml/requirements.txt`, never global Python. onnx needs protobuf>=6.31, which breaks other globally installed packages.
+- **Never commit:** datasets, downloaded evaluation weights under `ml/models/`, `.litertlm` files, `local.properties`, `build/`, `.idea/`, `.venv/`, `ml/data/`.
+- **Python:** use the Conda environment created by `scripts/setup_dev.sh`, never global Python. ONNX needs protobuf>=6.31, which breaks other globally installed packages.
 
 ## Layout
 | Path | What |
@@ -31,6 +31,8 @@ The phone needs no internet. A clinician always signs off. This is screening sup
 | `contracts/` | Manifest and result JSON Schemas, examples, `validate.py`, README (triage order) |
 | `ml/packs/<id>/` | One pack per disease: `manifest.json` + weights + golden tests |
 | `ml/train`, `ml/eval`, `ml/reference` | Training, evaluation and smoke models, reference implementations |
+| `ml/models.json` | Pinned external evaluation models, checksums, licence/provenance status |
+| `scripts/setup_dev.sh` | Creates the Conda environment and downloads approved evaluation models |
 | `hub/` | Optional laptop hub (Ollama + PathOS) |
 | `docs/STATUS.md` | Current state. Update it with every change that matters. |
 | `docs/architecture.md` | Target pipeline, design rules, pack format (from the build plan) |
@@ -45,7 +47,7 @@ Run Gradle commands from `android/`. On Windows, use `gradlew.bat`.
 | On-device tests | `./gradlew :engine:connectedDebugAndroidTest` (phone connected) |
 | Device logs | `adb logcat -s DeepSightS2` (or your tag) |
 | Validate contract files | `python contracts/validate.py <files>` |
-| Python setup | `python -m venv .venv`, then `.venv/Scripts/python -m pip install -r ml/requirements.txt` |
+| Python setup | `scripts/setup_dev.sh`, then `conda activate deepsight` |
 
 ## Skills (shared by all agents)
 Workflows live in `.agents/skills/<name>/SKILL.md`: `concise-plan`, `tool-research`, `merge-check` and `project-docs`.

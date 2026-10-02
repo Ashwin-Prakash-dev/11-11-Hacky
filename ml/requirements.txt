@@ -1,8 +1,12 @@
-# CPU tooling for ONNX export and evaluation on a laptop. Install into a venv, not global Python:
-# onnx needs protobuf>=6.31, which conflicts with packages that pin protobuf<6.
-#   python -m venv .venv && .venv\Scripts\python -m pip install -r ml/requirements.txt
+# CPU tooling for ONNX export and evaluation on a laptop. Install through scripts/setup_dev.sh,
+# never into global Python. onnx needs protobuf>=6.31, which conflicts with some global packages.
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.9.1+cpu
+torch==2.9.1; platform_system == "Darwin"
+torch==2.9.1+cpu; platform_system != "Darwin"
+torchvision==0.24.1; platform_system == "Darwin"
+torchvision==0.24.1+cpu; platform_system != "Darwin"
 onnx==1.23.1
 onnxruntime==1.30.0  # keep equal to onnxruntime-android in android/gradle/libs.versions.toml
-numpy
+numpy==2.5.3
+Pillow==12.3.0
+jsonschema==4.26.0

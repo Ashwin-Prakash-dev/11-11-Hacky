@@ -2,7 +2,7 @@
 
 This is the target design from the team's build plan (2026-10-02). For what is built and verified so far, see [STATUS.md](STATUS.md). Interfaces are in [contracts/README.md](../contracts/README.md).
 
-## Pipeline (all on the phone)
+## Pipeline (phone-first, optional local hub)
 
 ```text
 Pick test type  →  Capture (CameraX) or gallery import, one or more fields
@@ -16,7 +16,7 @@ Pick test type  →  Capture (CameraX) or gallery import, one or more fields
   → Human review and sign-off, stored locally (Room)                             :app
 ```
 
-Optional hub: a laptop on its own hotspot, running Ollama and PathOS for breast histopathology. The phone never uses the internet.
+Optional hub: a laptop on its own hotspot, running Ollama and PathOS for breast histopathology. The app needs no internet; hub traffic stays on the local hotspot.
 
 ## Design rules
 
@@ -49,7 +49,7 @@ ml/packs/<id>/
 
 | Module | Runs on | Basis |
 |---|---|---|
-| Malaria (thin smear) | Phone (target) | Prior art runs on Android (NLM Malaria Screener); confirm in spike S1 |
+| Malaria (thin smear) | Phone (target) | Android prior art and an evaluation-model fallback exist; S1 remains partial ([status](STATUS.md)) |
 | Fungal (DeFungi) | Phone (probably) | Small patch classifier; confirm after S2, S5 |
 | Leukaemia | Phone (probably) | Single-cell classifier; needs segmentation or tiling (S1) |
 | Breast (PathOS) | Hub, unless S6 passes | Fine-tuned Gemma VLM via Ollama |

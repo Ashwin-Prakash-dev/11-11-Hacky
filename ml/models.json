@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "artifacts": [
+    {
+      "id": "localmedscan_mobilenetv2",
+      "filename": "localmedscan-malaria-mobilenetv2.pth",
+      "url": "https://huggingface.co/Svetozar1993/LocalMedScan-malaria-mobilenetv2/resolve/2403c195c4901d179221ee9d5f17ec1128d3cbe1/model.pth",
+      "sha256": "65009e560af5fc0b3190f75696695e8d274f57fd7eea56f975c7183bdb3ee14b",
+      "status": "approved_for_evaluation",
+      "license": "MIT",
+      "task": "cell_classifier",
+      "format": "pytorch_state_dict",
+      "input": "RGB 224x224; ImageNet mean/std normalization",
+      "output": "[parasitized, uninfected]",
+      "source": "https://huggingface.co/Svetozar1993/LocalMedScan-malaria-mobilenetv2",
+      "license_source": "https://github.com/Svetozar-Technologies/LocalMedScan/blob/main/LICENSE",
+      "source_revision": "2403c195c4901d179221ee9d5f17ec1128d3cbe1",
+      "notes": "MIT is declared by the model card and the linked source repository. Published metrics remain UNVERIFIED by DeepSight. Evaluation only."
+    },
+    {
+      "id": "lara_yolov8n",
+      "filename": "lara-malaria-yolov8n.onnx",
+      "url": "https://huggingface.co/electricsheepafrica/Lara/resolve/41a6560f7d423dce0b6a2249a2577b96f8c7df10/best_model.onnx",
+      "sha256": "d0f6bd12b6ee9a83b5754e5eefdb6fb99ef45ce19783b29fdc36cb89d6b128ce",
+      "status": "unverified",
+      "license": "UNVERIFIED",
+      "task": "detector",
+      "format": "onnx",
+      "input": "float32 NCHW [1,3,640,640]",
+      "output": "float32 [1,5,8400]",
+      "source": "https://huggingface.co/electricsheepafrica/Lara",
+      "license_source": null,
+      "source_revision": "41a6560f7d423dce0b6a2249a2577b96f8c7df10",
+      "notes": "The model card declares MIT, but the linked source repository has no licence and the derived training-dataset provenance is inconsistent. ONNX checker and ORT load pass. Explicit opt-in only."
+    }
+  ]
+}
