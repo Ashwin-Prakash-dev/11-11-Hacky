@@ -74,7 +74,7 @@ private fun Screen(route: Route, vm: AppViewModel) {
         Route.Case -> {
             val case by vm.case.collectAsStateWithLifecycle()
             case?.let {
-                CaseScreen(it, onImport = vm::importImage, captureFile = vm::captureFile, onCaptured = vm::onCaptured, onDelete = vm::deleteImage, onAnalyse = vm::analyse)
+                CaseScreen(it, onImport = vm::importImage, captureFile = vm::captureFile, onCaptured = vm::onCaptured, onDelete = vm::deleteImage, onAnalyse = vm::analyse, onResume = vm::refreshImages)
             }
         }
         Route.Result -> {

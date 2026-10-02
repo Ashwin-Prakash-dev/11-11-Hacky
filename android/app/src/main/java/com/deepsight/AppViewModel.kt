@@ -153,7 +153,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         open(Route.Case)
     }
 
-    private fun refreshImages() = _case.update { c -> c?.copy(images = store.fields(c.caseId)) }
+    /** Re-reads the case directory: after import, capture or delete, and when the case screen comes back to the foreground. */
+    fun refreshImages() = _case.update { c -> c?.copy(images = store.fields(c.caseId)) }
 
     fun importImage(uri: Uri) {
         val c = _case.value ?: return

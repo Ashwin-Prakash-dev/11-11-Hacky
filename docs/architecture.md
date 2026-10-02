@@ -53,6 +53,7 @@ ml/packs/<id>/
 - **Input:** the case result JSON. **Output:** narrative text.
 - **Triage check:** the report must contain the exact triage level string and no different level.
 - **Fallback:** if the check fails or Gemma times out, the app fills a fixed template from the JSON.
+- **Implemented (branch `eval`):** `:report` `CaseReport.kt` (template, prompt, check) and the app's `ReportWriter`, with Gemma loaded at app start and a 30 s generation limit. The report the clinician saw is saved with the sign-off (Room v2).
 
 ## Planned packs and honest claims
 

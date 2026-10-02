@@ -69,7 +69,40 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
   - **Previews:** `@ThemePreviews` (light and dark) for the badge, the top bar and `ResultScreen`.
   - **Verified on the edge 50 fusion (2026-10-02):** `installDebug`, then all 8 `:app` device tests pass via `am instrument` (`NavigationTest`, new `TopBarNavigationTest` and `TriageBadgeTest`, `RouterResultScreenTest`, `CaseDaoTest`, example). JVM tests pass, including the new `TriageStyleTest` (4). A walkthrough by hand with screenshots was not done, because the phone was in use.
 - **Real engine (#30), verified on a moto g32 (Android 13) and the Nothing A059 (Android 16), 2026-10-02:** `FakeEngine` is gone. The picker lists `PackLoader.discover()` packs (rejected ones are logged under `DeepSight`); each case gets a fresh `case-<millis>` id; "Show result" runs every stored image through `CaseRunner` off the main thread (full-resolution decode + EXIF rotation, `FieldPipeline` with `CellFinders.forPack`, then `closeCase`). The last pack's pipeline is kept, so its model loads once; switching packs frees it, and a pack whose model fails to load can't break the next one. Failures and out-of-memory show on the case screen; a run the user backed out of never opens its result; Recapture deletes the rejected image. Field ids are `<caseId>_field_<n>` (Room keys fields by `field_id` alone). **Evidence:** `:app:connectedDebugAndroidTest` 10 pass + 4 `GemmaOnDeviceTest` skipped (no `.litertlm` on the phone): `CaseRunnerTest` 4/4, `NavigationTest`, `ResultScreenTest`, `RouterResultScreenTest` (now reads the contract examples from the test APK), `CaseDaoTest`. `installDebug` walkthrough driven with adb: picker shows Fungal, Leukaemia and Malaria; two NIH RBCNet field photos (5312x2988, imported byte-identical) gave quality pass, router match and `ABNORMAL_FLAG`/`parasite_seen` (provisional): negative patient `239C12NThinF/IMG_20150614_124212` 226 cells, 15 parasitized (Python reference `ml/data/rbcnet_eval/per_image.csv`, Sudan model + NLM segmentation: 225 cells, 14 flagged); positive patient `234C92P53ThinF/IMG_20150821_150718` 215 cells, 6 parasitized (reference 217, 6). `timing_ms` total 7.3 s and 5.0 s per field (cells 4.0/2.4 s, quality 1.6/1.2 s). Accept and override sign-offs, both cases in History, and their Room rows (signer, decision, note, image path, unchanged triage) survived force-stop + relaunch. A malaria photo in the fungal pack was rejected (blur, underexposed) → `NEEDS_EXPERT`/`engine.insufficient_fields`, Recapture deleted it; malaria then ran again in the same session with the same result. **Nothing A059:** the installed APK pulled back off the phone carries `malaria_thin/model.onnx` with sha256 `4ae01239…`, identical to the repo and the manifest, and no `FakeEngine` class; the positive-patient field gave the same 215 cells / 6 parasitized in about 7 s. **Not checked:** the stub-model ORT failure in the app UI (covered on device by `CaseRunnerTest` with a broken pack), release-build memory (no `largeHeap`), the edge 50 fusion demo phone. **The wiring matches the Python reference; the triage does not separate these patients:** the model flags ~3-7% of cells on both, and `parasite_seen` fires at 1 parasitized cell (Track A/E).
-- **Next:** wire the template report (#24) into the report slot; the G1 gate row (not Track B's) can now point at the main case flow.
+- **Demo app on branch `eval` (2026-10-02, kept off `test` on purpose):** the full flow (photo → real pack → triage → Gemma report → sign-off → history), with the UI redesigned along the guidance in `claude-android-skill` (MIT, kept outside the repo).
+  - **Architecture:** `AppViewModel` holds the back stack and the UI state (`CaseUiState`, `ResultUiState`, `ReportUiState`) as `StateFlow`, collected with `collectAsStateWithLifecycle`. Screens are stateless (`home/`, `capture/CaseScreen`, `result/`, `history/`, `about/`), so state survives rotation. No Hilt or Navigation library: `CaseRunner` and `ReportService` are process singletons. `App.kt` is now a thin router; the case logic from #30 moved into the ViewModel with the same behaviour.
+  - **Design system:**
+    - `ui/theme`: teal scheme, type scale, shapes, triage colours.
+    - `ui/DeepSightIcons`: material-icons-core plus six Material icon drawables.
+    - `ui/components`: disclaimer bar, pills, stat tiles, empty state, and `FieldImage`, which draws the model's cell boxes on the photo.
+    - Light/dark previews.
+  - **Screens:**
+    - **Home:** on-device and AI-report status, and the packs. Packs not yet validated on a phone are shown but can't be opened (`DemoPacks`).
+    - **Case:** step indicator, import/capture, thumbnail grid, per-field progress.
+    - **Result:** triage badge, stats, streaming report, field photos with flagged cells, and a sign-off that waits for the report.
+    - **History:** a read-only detail that shows the report the clinician saw.
+    - **About:** GPL notices, licence text, NLM credit.
+  - **Data:** Room v2 adds `report_text` and `report_source` to `cases` (`CaseDb.MIGRATION_1_2`).
+  - **Offline:** the manifest removes the INTERNET and ACCESS_NETWORK_STATE permissions declared by onnxruntime-android 1.30.0 and media3-common. The APK requests only CAMERA (`aapt2 dump permissions`).
+  - **New libraries (shared catalog):** lifecycle-runtime-compose and lifecycle-viewmodel-compose 2.6.1 (the project's lifecycle version), and material-icons-core (BOM, 1.7.8).
+  - **Verified on the edge 50 fusion (2026-10-02):**
+    - **Device tests:** after `installDebug`, all 22 `:app` device tests pass via `am instrument` (every one except the S3 benchmarks):
+      - `NavigationTest`, updated to open the first validated pack and press "Analyse";
+      - `TopBarNavigationTest`;
+      - new `HomeAndAboutTest`: unvalidated packs stay on Home, no network permission, and the About notices, licence and NLM notice open;
+      - new `ReportCardTest`;
+      - `ResultScreenTest`, `RouterResultScreenTest`, `TriageBadgeTest`;
+      - new `CaseDbMigrationTest`, on a real v1 database;
+      - `CaseRunnerTest`, `CaseDaoTest`, `AnnotatedFieldsDeviceTest`;
+      - new `PipelineReportDeviceTest`.
+    - **JVM tests:** 110 pass (engine, report, app).
+    - **By hand on the phone:** an imported field gave quality pass, 28 parasitized and 388 uninfected, `ABNORMAL_FLAG`, the cell overlay and a Gemma report, analysed in 8.7 s.
+  - **Known gaps:**
+    - Process death loses a case in progress (no `SavedStateHandle`).
+    - Release-build memory is unchecked (no `largeHeap`).
+    - Compose's `LocalLifecycleOwner` shows a deprecation warning until Lifecycle is 2.8 or later.
+    - Not run on another phone model.
+- **Next:** decide whether `eval` merges into `test`; the G1 gate row (not Track B's) can now point at the main case flow.
 
 ### C: On-device engine (owner: TBD)
 - **Done:**
@@ -131,7 +164,7 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
   - **Later integration:** match #11's Python reference scores within a stated tolerance once its exact scoring convention and golden outputs land; add the Bitmap/shared image adapter after the joint library decision with #17.
   - **Known #22 gap (issue closed, follow-up tracked here):** once #8's split manifest exists, train the router, report accuracy on the held-out source in #31, add golden match/mismatch/reject cases, and confirm the ImageNet backbone weights licence. Until then the engine router is the always-match stub (#23).
   - **Known #23 gap (issue remains open):** wire #22's trained ONNX model and `labels.json` into `ScoreRouterGuard`, then replace the fallback when #30 connects the real engine. A fungal image under the malaria test is blocked only in synthetic tests; the real-model phone scenario is UNVERIFIED until those assets land.
-  - A template report.
+  - ~~A template report.~~ Done on branch `eval` (below).
 - **S3, Gemma on LiteRT-LM (branch `Ashwin-Prakash-dev/s3-litertlm-gemma`, 2026-10-02):** details in [docs/spikes/S3-litertlm-gemma.md](spikes/S3-litertlm-gemma.md).
   - **Code:**
     - `report/.../gemma/GemmaRunner.kt`: loads a `.litertlm` from app storage (GPU or CPU, optional MTP) and streams text. It knows nothing about triage.
@@ -145,6 +178,23 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
       - load Gemma at app start on GPU with MTP, with the app's `cacheDir`;
       - keep the exact-triage-string check and the template fallback (`docs/architecture.md`).
       Gemma's output mostly restated the facts, so the prompt needs work.
+
+- **Report (branch `eval`, 2026-10-02):** a template and Gemma narration, wired into the app.
+  - **`:report` `CaseReport.kt`:**
+    - `templateReport`: deterministic; the fallback.
+    - `gemmaPrompt`: facts only and the exact level; Gemma never sees the other level names.
+    - `checkNarrative`: the exact level and no other (docs/architecture.md, Report).
+    - `cleanNarrative`, and `triageMeaning`, which the triage badge shares.
+    - `CaseReportTest`: 7 JVM tests.
+  - **`GemmaRunner.generate`** has a time limit and cancellation (`Conversation.cancelProcess`; throws `GemmaStopped`).
+  - **App `ai/ReportService.kt`:**
+    - `GemmaNarrator` loads Gemma at app start on GPU with MTP, S3's fastest setup.
+    - `ReportWriter` waits up to 45 s for it, then streams, cleans and checks the text. Anything that fails, or no model, gives the template with the reason.
+    - `ReportWriterTest`: 7 JVM tests.
+  - **Measured on the edge 50 fusion** (`PipelineReportDeviceTest`, 3 runs):
+    - **Timings:** `CaseRunner` took 2.2–2.9 s per field. Gemma loaded in the background in 11.8–14.6 s, then streamed the report in 5.2–6.2 s. Every run passed the check (source GEMMA).
+    - **Output:** the same text in all 3 runs: "The malaria thin smear test was performed. 1 of 1 fields passed the image-quality check. Model counts across the passed fields showed 9 parasitized and 101 uninfected. The triage level is ABNORMAL_FLAG, which means a screening rule flagged this case and a clinician should review it."
+    - **Sampling:** whether LiteRT-LM's default sampling is greedy is UNVERIFIED.
 
 ### E: Data, eval, clinical thresholds (owner: TBD)
 - **Done:** Created `docs/datasets.md` mapping datasets, links, licenses, attributions, and grouping keys for ML packs (issue #5).
