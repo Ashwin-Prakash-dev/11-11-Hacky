@@ -22,7 +22,7 @@
   "aggregation": { "image_score": "max", "min_fields": 1 },
   "triage": {
     "provisional": true,
-    "source": "PLACEHOLDER rules copied from contracts/examples/manifest.malaria_thin.json; Track E replaces them with sourced thresholds. 1000 cells matches NLM Malaria Screener's capture target (CameraActivity.totalCellNeeded), which is not a clinical threshold.",
+    "source": "PROVISIONAL, not clinically validated: parasitized >= 1 is a model-prediction review flag, not confirmed parasite detection; uninfected >= 1000 AND parasitized == 0 is an unsupported thin-smear normal-screen rule. NLM's configurable 1000-cell capture target is software provenance only (https://github.com/LHNCBC/MalariaScreener/blob/c485a21/app/src/main/java/gov/nih/nlm/malaria_screener/camera/CameraActivity.java#L151). WHO MM-SOP-08 section 4.2 requires at least 100 high-power fields before a THICK film is reported with no parasites seen (https://www.who.int/docs/default-source/wpro---documents/toolkit/malaria-sop/gmp-sop-08-revised.pdf); this does not validate our thin-smear rule. WHO MM-SOP-09 section 4.2 describes about 20 fields / 5000 RBCs for thin-film parasite counting, not negative screening (https://www.who.int/docs/default-source/wpro---documents/toolkit/malaria-sop/gmp-sop-09-revised.pdf). Also PROVISIONAL: aggregation.min_fields=1, uncertainty.band=[0.5,0.65], uncertainty.max_fraction=0.05, quality.min_blur=8.0 and quality.max_clipped_fraction=0.45. No applicable clinical validation for these automated settings was identified in the reviewed protocols; see README.md#threshold-evidence-issue-7 for evidence and checks needed.",
     "rules": [
       {
         "id": "parasite_seen",

@@ -7,8 +7,32 @@ NLM Malaria Screener's **Sudan-retrained** thin-smear CNN, converted from Tensor
 
 **Not validated for screening:**
 - The weights aren't in git (licence, see below).
-- The triage, quality and uncertainty values in the manifest are placeholders.
+- The triage, quality and uncertainty values remain provisional; see [threshold evidence](#threshold-evidence-issue-7).
 - On field photos it doesn't yet separate a negative patient from a positive one (see Known limits).
+
+## Threshold evidence (issue #7)
+
+Reviewed 2026-10-02. All existing values are retained and `triage.provisional` stays `true`. Protocols for human microscopy do not validate this classifier's predictions.
+
+| Manifest setting | Evidence and status |
+|---|---|
+| `parasite_seen`: `parasitized >= 1` | **PROVISIONAL.** A predicted positive triggers review, not diagnosis. WHO MM-SOP-08 describes human parasite detection; it supplies no validated threshold for this model. |
+| `enough_cells_clear`: `uninfected >= 1000` AND `parasitized == 0` | **PROVISIONAL.** [NLM CameraActivity at c485a21](https://github.com/LHNCBC/MalariaScreener/blob/c485a21/app/src/main/java/gov/nih/nlm/malaria_screener/camera/CameraActivity.java#L151) sets a configurable 1000-cell capture target (lines 151, 450). This is software provenance, not a clinical negative criterion. Zero predicted positives does not establish absence of parasites. |
+| `aggregation.min_fields = 1` | **PROVISIONAL.** Pipeline minimum only; no validated negative-screen examination minimum for this automated thin-smear pack was identified in the reviewed protocols. |
+| `uncertainty.band = [0.5, 0.65]`; `max_fraction = 0.05` | **PROVISIONAL.** Contract-example placeholders, with no applicable protocol or held-out calibration evidence. These are model scores and a fraction of predictions, not parasite density. |
+| `quality.min_blur = 8.0`; `max_clipped_fraction = 0.45` | **PROVISIONAL.** Engineering settings measured on 8 RBCNet fields, as recorded in this manifest's `provenance.notes`; not clinical cutoffs or a validated quality calibration. |
+
+**Examination minimum and applicability:**
+
+- [WHO MM-SOP-08, version 1 (2016), section 4.2, page 4](https://www.who.int/docs/default-source/wpro---documents/toolkit/malaria-sop/gmp-sop-08-revised.pdf): examine at least 100 high-power fields before reporting no parasites seen in a **thick film**. Section 4.3 uses thin films to confirm species and mixed infections. The thick-film minimum cannot be substituted for an RBC count or this pack's minimum accepted images.
+- [WHO MM-SOP-09, version 1 (2016), section 4.2, page 4](https://www.who.int/docs/default-source/wpro---documents/toolkit/malaria-sop/gmp-sop-09-revised.pdf): thin-film parasite counting uses approximately 20 non-overlapping fields with about 250 RBCs each (about 5000 RBCs). This is a quantification procedure when infected cells are present, not evidence for declaring this pack's negative predictions normal.
+- A clinically supported automated thin-smear negative-call minimum remains **UNVERIFIED**. Check an applicable national microscopy protocol with a clinical reviewer and validate the complete pipeline on held-out annotated slides before changing these thresholds or removing provisional status.
+
+**Presentation audit (2026-10-02, source inspection only):** `ResultScreen` displays "PROVISIONAL: thresholds not clinically validated"; `DebugAnalyzeActivity` labels triage "provisional thresholds". The existing `NavigationTest` checks the main-screen provisional badge; it was not rerun for this documentation change. Neither screen presents the placeholder cutoffs as clinical facts. Debug overlay colours are model-score display settings, not clinical severity. No deck or claims file is present in this checkout: external deck compliance is **UNVERIFIED**. Track F must review the actual deck and source or label every threshold claim before issue #7's presentation checkbox is complete.
+
+**Completion evidence:** compare this table with the manifest's `triage.source`, validate the manifest with `conda run -n deepsight python contracts/validate.py ml/packs/malaria_thin/manifest.json`, and confirm a semantic comparison against the base manifest differs only in `triage.source`. No threshold or engine behavior changes are intended.
+
+**Validation recorded (2026-10-02):** in the `deepsight` Conda environment, `contracts/validate.py` passed this manifest and all pack manifests; `ml/tools/check_packs.py` passed (weights excluded by `WEIGHTS_NOT_IN_GIT` remain skipped); and `:engine:testDebugUnitTest` passed 82 tests. PowerShell `ConvertFrom-Json` parsed the edited manifest, a semantic comparison against the rebased parent commit confirmed that only `triage.source` changed, and `git diff --check` passed. These checks do not establish clinical validity or device performance.
 
 ## Files
 
