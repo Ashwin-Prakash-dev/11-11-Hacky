@@ -53,7 +53,7 @@ adb shell am start -n com.deepsight/.MainActivity
 ```
 
 **Analyze one malaria field (debug builds).** Open the **DeepSight debug** icon and pick a thin-smear photo. It runs the real engine and shows a box per cell (green below 0.5, orange 0.5–0.8, red above 0.8), the counts, quality, provisional triage and timings.
-- It needs the `malaria_thin` weights in `ml/packs/malaria_thin/`. They're not in git; see that pack's README.
+- It needs the `malaria_thin` weights in `ml/packs/malaria_thin/`. They're in the private repo; see that pack's README for licence status.
 - Without the photo picker:
 
   ```sh

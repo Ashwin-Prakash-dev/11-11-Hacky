@@ -18,7 +18,7 @@ Source: <https://github.com/nlm-malaria/MalariaScreener> (archived), commit `c48
 |---|---|---|
 | Root `LICENSE` | BSD-style "Informational Notice" from NLM. Redistribution is allowed if the notice and disclaimer are kept and the app credits "Courtesy of the U.S. National Library of Medicine". Copied in [`ml/packs/malaria_thin/NOTICE_NLM.txt`](ml/packs/malaria_thin/NOTICE_NLM.txt) | Read 2026-10-02 |
 | Java source files | Headers say "Copyright 2020 The Malaria Screener Authors. All Rights Reserved. This software was developed under contract funded by the National Library of Medicine [...] Licensed under GNU General Public License v3.0". S1 counted 85+ such files. They include the 5 we ported from (`MarkerBasedWatershed`, `SegmentWatershed`, `OtsuThreshold`, `Histogram`, `Cells`) and `ThinSmearProcessor`, which we read for the call order | Read 2026-10-02. Headers name v3.0 without "or later" |
-| Model weights (`malaria_thin_44.onnx`, `malaria_thin_44_sudan.onnx`) | No licence or provenance file of their own | **UNVERIFIED**. Kept out of git (`.git/info/exclude`). To resolve: ask NLM (LHNCBC) which licence covers the bundled models |
+| Model weights (`malaria_thin_44.onnx`, `malaria_thin_44_sudan.onnx`) | No licence or provenance file of their own | **UNVERIFIED**. In git only because the repo is private (`model.onnx` of the malaria pack; the raw `ml/models/` conversions stay out). To resolve: ask NLM (LHNCBC) which licence covers the bundled models |
 
 The headers say the code was written under contract. Works written by federal employees have no US copyright (17 U.S.C. §105), but contractors' work can, so treat the GPL headers as binding.
 
@@ -36,7 +36,7 @@ The parity harness that ran NLM's original Java against the port lives in a scra
 
 | Model | Licence | Source | In git |
 |---|---|---|---|
-| NLM thin-smear CNN (`ml/packs/malaria_thin/model.onnx`) | UNVERIFIED (above) | S1 | No |
+| NLM thin-smear CNN (`ml/packs/malaria_thin/model.onnx`) | UNVERIFIED (above) | S1 | Yes, private repo only |
 | NLM Sudan-retrained CNN (`ml/models/`, evaluation only) | UNVERIFIED (above) | S1 | No |
 | LocalMedScan MobileNetV2 | MIT | Model card and source repo, recorded in [`ml/models.json`](ml/models.json) | No (downloaded by `setup_dev.sh`) |
 | Lara YOLOv8n | UNVERIFIED: the model card says MIT, but the linked repo has no licence | [`ml/models.json`](ml/models.json) | No (opt-in only) |

@@ -1,2 +1,0 @@
-model.onnx is kept out of git until the licence of NLM Malaria Screener's weights is resolved (S1, LICENSING.md).
-Get it from Ashwin and check it against the sha256 in manifest.json; how it was made is in README.md.

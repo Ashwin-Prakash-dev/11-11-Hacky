@@ -42,7 +42,7 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
   - **Verified:** `MalariaPackGoldenTest` passed 3/3 on the edge 50 fusion demo phone with this model, loaded from `malaria_thin/` (`:engine:connectedDebugAndroidTest`, 2026-10-02):
     - Test A, CPU and XNNPACK: within 6.3e-7.
     - PNG chips with a Kotlin `INTER_CUBIC` port: within 5e-5. Android bilinear: 0.064 off (0.149 with the previous model).
-  - **Not in git:** the weights and the NIH golden chips, until S1 and the cell_images licence are resolved. A `WEIGHTS_NOT_IN_GIT` file marks the pack, so CI's pack-hash check (`ml/tools/check_packs.py`) skips the missing model; a model that is present is still hash-checked.
+  - **In git (private repo only):** `model.onnx`, so the team can test; its licence is unresolved (S1), so it must not leave the private repo. CI's pack-hash check (`ml/tools/check_packs.py`) now checks it. The NIH golden chips stay out of git until the cell_images licence is resolved.
   - **Quality thresholds:** PROVISIONAL `min_blur` 8.0 and `max_clipped_fraction` 0.45, from 8 RBCNet fields (`QualityGate` blur 12.8–15.8; 33–37% black pixels from the vignette). The placeholders (100 / 0.05) rejected every NLM photo.
   - **Field golden:** `golden/field_synthetic.json` holds the Python pipeline's cells and scores on `ml/tests/data/nlm_synthetic.png`, bound to the model by `model_sha256`.
   - **Segmentation:**
