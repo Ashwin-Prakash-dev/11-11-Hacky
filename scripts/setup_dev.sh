@@ -58,7 +58,9 @@ command -v conda >/dev/null 2>&1 || {
 }
 
 if ! conda run -n "$ENV_NAME" python --version >/dev/null 2>&1; then
-  conda create -y -n "$ENV_NAME" -c conda-forge python=3.12 pip
+  conda create -y -n "$ENV_NAME" -c conda-forge python=3.12 pip openjdk=25
+elif ! conda run -n "$ENV_NAME" java -version >/dev/null 2>&1; then
+  conda install -y -n "$ENV_NAME" -c conda-forge openjdk=25
 fi
 
 if ((INSTALL_DEPS)); then

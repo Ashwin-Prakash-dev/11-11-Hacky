@@ -32,7 +32,7 @@ The phone needs no internet. A clinician always signs off. This is screening sup
 | `ml/packs/<id>/` | One pack per disease: `manifest.json` + weights + golden tests |
 | `ml/train`, `ml/eval`, `ml/reference` | Training, evaluation and smoke models, reference implementations |
 | `ml/models.json` | Pinned external evaluation models, checksums, licence/provenance status |
-| `scripts/setup_dev.sh` | Creates the Conda environment and downloads approved evaluation models |
+| `scripts/setup_dev.sh` | Creates the Conda environment with JDK/Python tooling and downloads approved evaluation models |
 | `hub/` | Optional laptop hub (Ollama + PathOS) |
 | `docs/STATUS.md` | Current state. Update it with every change that matters. |
 | `docs/architecture.md` | Target pipeline, design rules, pack format (from the build plan) |
@@ -48,6 +48,7 @@ Run Gradle commands from `android/`. On Windows, use `gradlew.bat`.
 | Device logs | `adb logcat -s DeepSightS2` (or your tag) |
 | Validate contract files | `python contracts/validate.py <files>` |
 | Python setup | `scripts/setup_dev.sh`, then `conda activate deepsight` |
+| Python downloader tests | `conda run -n deepsight python -m unittest discover -s ml/tests -v` |
 
 ## Skills (shared by all agents)
 Workflows live in `.agents/skills/<name>/SKILL.md`: `concise-plan`, `tool-research`, `merge-check` and `project-docs`.
