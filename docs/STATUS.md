@@ -160,3 +160,4 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
 - 2026-10-02: ONNX Runtime and the Python tooling pinned to 1.30.0. Golden outputs depend on this.
 - 2026-10-02: APKs are arm64-v8a only.
 - 2026-10-02: `test` is the default branch, and all work lands there. `main` only gets commits verified on a physical Android phone, promoted by fast-forward (AGENTS.md, Git).
+- 2026-10-02: The repo is private, so the team's model weights and sample data are committed (`ml/models/*.onnx`, `ml/data/`, pack weights and golden images) so everyone can test. Their licences are UNVERIFIED; take them out of git before the repo goes public ([LICENSING.md](../LICENSING.md), AGENTS.md exception). The breast pack is unfinished: its contract goldens, `reference/pipeline.py` and `prepare_pack.py` don't exist yet, so `ml/tests/test_breast_*.py` and `test_breakhis_eval.py` fail until they do.
