@@ -1,0 +1,62 @@
+{
+  "contract_version": "1.0",
+  "id": "smoke",
+  "version": "0.1.0",
+  "display_name": "Synthetic ONNX smoke pack",
+  "task_type": "classifier",
+  "runtime": "onnx",
+  "compute": "phone",
+  "model": {
+    "file": "model.onnx",
+    "sha256": "bd7445667a86ac40fd1dcb55287c39f51a4ec30712b6271e8c5c60babeca96ca"
+  },
+  "input": {
+    "tensor": "input",
+    "shape": [1, 3, 64, 64],
+    "layout": "NCHW",
+    "dtype": "float32",
+    "color": "RGB"
+  },
+  "preprocess": {
+    "source": "field",
+    "resize": "stretch",
+    "scale": 0.00392156862745098,
+    "mean": [0.0, 0.0, 0.0],
+    "std": [1.0, 1.0, 1.0],
+    "stain_normalization": "none"
+  },
+  "output": {
+    "decoder": "softmax",
+    "labels": ["negative", "positive"],
+    "image_score_label": "positive"
+  },
+  "quality": {
+    "min_blur": 0.0,
+    "max_clipped_fraction": 1.0
+  },
+  "aggregation": {
+    "image_score": "max",
+    "min_fields": 1
+  },
+  "triage": {
+    "provisional": true,
+    "source": "Synthetic instrumentation-test rule; not a clinical threshold.",
+    "rules": [
+      {
+        "id": "positive_seen",
+        "level": "ABNORMAL_FLAG",
+        "all": [
+          {"metric": "count", "labels": ["positive"], "op": ">=", "value": 1}
+        ]
+      }
+    ]
+  },
+  "uncertainty": {
+    "method": "none"
+  },
+  "provenance": {
+    "source": "ml/eval/make_smoke_model.py",
+    "licence": "Synthetic test fixture; not for distribution as a clinical model.",
+    "training_data": ["None; random weights"]
+  }
+}
