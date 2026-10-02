@@ -101,6 +101,13 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
   - **For the team:**
     - **Decoder (Track C):** `ClassifierDecoder` applies softmax, but `malaria_thin`'s ONNX graph already ends in Softmax. `FieldAnalyzer` passes log-probabilities so the scores are right; the contract should say whether `softmax` means "apply" or "already applied".
     - **Quality gate (Track D):** `QualityGate` counts the black eyepiece vignette as underexposure (33–37% of every NLM photo) and measures blur over the whole frame.
+    - **Overlap with `FieldPipeline` (#54), to merge with Abhay:** `FieldAnalyzer` duplicates `FieldPipeline`, which the case flow (#30) will call. `FieldPipeline` can't yet run `malaria_thin` correctly:
+      - its `CellFinder` returns boxes only, so crops keep their background, but NLM's classifier expects black-background crops;
+      - crops are resized bilinear (0.064–0.149 off on the phone; NLM used bicubic);
+      - probabilities go to the decoder's softmax again.
+
+      Proposal: `CellFinder` returns masked crops (`CellCrop`) at the model's input size, `RbcDetector` implements it, the softmax question is settled, and then `FieldAnalyzer` folds into `FieldPipeline`.
+    - **`PackGoldenTest` (#21):** 4 rows fail by design on this branch: `fungal`, `leukaemia_wbc`, `malaria_thin` (no golden in the harness format, and no `CellFinder`) and a local untracked `breast_breakhis` folder. The other 21 engine device tests pass on the edge 50 fusion (2026-10-02).
   - Aggregation and triage per `contracts/README.md`, as pure Kotlin with JVM tests.
 
 ### D: Gates and report (owner: TBD)

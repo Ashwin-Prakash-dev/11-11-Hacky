@@ -20,51 +20,13 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
-    // Golden tests read ml/tests/data at the asset root and <repo>/ml/packs under mlpacks/ (StageTestPacks).
+    // Golden tests read ml/tests/data at the asset root; <repo>/ml/packs is staged under packs/ (stageGoldenPacks).
     // ml/data/android_parity is local-only RBCNet parity data; the test skips when it is absent.
     sourceSets {
         named("androidTest") {
             assets.srcDir(rootDir.resolve("../ml/tests/data"))
             assets.srcDir(rootDir.resolve("../ml/data/android_parity"))
         }
-    }
-}
-
-/** Copies <repo>/ml/packs to mlpacks/ in the test APK; the asset root holds PackLoaderDeviceTest's smoke pack. */
-abstract class StageTestPacks : DefaultTask() {
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val packs: DirectoryProperty
-
-    @get:OutputDirectory
-    abstract val output: DirectoryProperty
-
-    @get:Inject
-    abstract val files: FileSystemOperations
-
-    @TaskAction
-    fun stage() {
-        // Only finished packs: a directory without manifest.json (a module still being added) stays out.
-        val ready = packs.get().asFile.listFiles().orEmpty().filter { it.resolve("manifest.json").isFile }
-        files.sync {
-            ready.forEach { pack ->
-                from(pack) {
-                    into("mlpacks/${pack.name}")
-                }
-            }
-            into(output)
-        }
-    }
-}
-
-val stageTestPacks = tasks.register<StageTestPacks>("stageTestPacks") {
-    packs.set(rootDir.resolve("../ml/packs"))
-    output.set(layout.buildDirectory.dir("generated/testPackAssets"))
-}
-
-androidComponents {
-    onVariants { variant ->
-        variant.androidTest?.sources?.assets?.addGeneratedSourceDirectory(stageTestPacks, StageTestPacks::output)
     }
 }
 

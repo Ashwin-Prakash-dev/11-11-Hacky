@@ -32,8 +32,8 @@ import kotlin.math.sqrt
 class FieldAnalyzerTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val assets = instrumentation.context.assets
-    // The test APK holds <repo>/ml/packs under mlpacks/ (engine/build.gradle.kts, StageTestPacks).
-    private val pack: LoadedPack? by lazy { runCatching { PackLoader.fromAssets(assets, packsRoot = "mlpacks").load("malaria_thin") }.getOrNull() }
+    // The test APK holds <repo>/ml/packs under packs/ (engine/build.gradle.kts, stageGoldenPacks).
+    private val pack: LoadedPack? by lazy { runCatching { PackLoader.fromAssets(assets, packsRoot = "packs").load("malaria_thin") }.getOrNull() }
 
     @Before
     fun packInstalled() = assumeTrue("malaria_thin weights are not installed", pack != null)
@@ -45,7 +45,7 @@ class FieldAnalyzerTest {
         val open = loaded.copy(manifest = loaded.manifest.copy(quality = QualitySpec(minBlur = 0.0, maxClippedFraction = 1.0)))
         FieldAnalyzer(open).use { analyzer ->
             val analysis = analyzer.analyze("case-test", "field-01", copyAsset("nlm_synthetic.png").path)
-            val ok = compare("synthetic", analysis, json("mlpacks/malaria_thin/golden/field_synthetic.json"))
+            val ok = compare("synthetic", analysis, json("packs/malaria_thin/golden/field_synthetic.json"))
             assertTrue(problems.joinToString(), ok)
         }
     }
