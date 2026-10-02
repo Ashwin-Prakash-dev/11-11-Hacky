@@ -6,7 +6,7 @@ NLM Malaria Screener's **Sudan-retrained** thin-smear CNN, converted from Tensor
 - **Python reference** for the whole photo → counts pipeline: [ml/reference/malaria_pipeline.py](../../reference/malaria_pipeline.py).
 
 **Not validated for screening:**
-- The weights aren't in git (licence, see below).
+- The weights are in git, in this private repo only (licence unresolved, see below).
 - The triage, quality and uncertainty values in the manifest are placeholders.
 - On field photos it doesn't yet separate a negative patient from a positive one (see Known limits).
 
@@ -15,7 +15,7 @@ NLM Malaria Screener's **Sudan-retrained** thin-smear CNN, converted from Tensor
 | Path | In git | What |
 |---|---|---|
 | `manifest.json` | yes | Contract v1.0. Passes `contracts/validate.py` |
-| `model.onnx` | **no** | 1.5 MB, sha256 `4ae01239…`: NLM's Sudan model with its final Softmax removed (`python ml/tools/onnx_logits.py ml/models/malaria_thin_44_sudan.onnx model.onnx`). Get it from Ashwin and check it against the manifest |
+| `model.onnx` | yes (private repo) | 1.5 MB, sha256 `4ae01239…`: NLM's Sudan model with its final Softmax removed (`python ml/tools/onnx_logits.py ml/models/malaria_thin_44_sudan.onnx model.onnx`). CI hash-checks it against the manifest |
 | `golden/expected.json`, `golden/verify.py` | yes | Expected outputs of this model for 32 chips (`model_sha256` records which model); desktop golden test |
 | `golden/chips/*.png`, `golden/input_32x44x44x3_float32.bin` | **no** | 32 NIH cell chips (16 parasitized, 16 uninfected) and the exact input tensor. Dataset licence UNVERIFIED |
 | `NOTICE_NLM.txt` | yes | NLM notice. Must ship with the app if the weights do |
@@ -85,5 +85,5 @@ This model trades sensitivity for specificity. It raises fewer false alarms but 
 ## Licence
 - NLM's root `LICENSE` is BSD-style. It requires shipping `NOTICE_NLM.txt` and the credit "Courtesy of the U.S. National Library of Medicine".
 - But 85+ upstream source files carry GPLv3 headers, and the weights have no licence or provenance file of their own. Reuse is UNVERIFIED ([S1](../../../docs/spikes/S1-malaria-screener.md)).
-- Don't commit the weights until Track E resolves this.
+- The weights are committed because the repo is private. **Resolve this before the repo goes public or the app is distributed:** history keeps the file even after a later delete.
 - The segmentation port (`ml/reference/nlm_segmentation.py`) and the open licensing decisions: see [LICENSING.md](../../../LICENSING.md).
