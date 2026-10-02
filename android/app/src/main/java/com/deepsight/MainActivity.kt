@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import com.deepsight.data.CaseDb
 import com.deepsight.ui.theme.DeepSightTheme
 
 class MainActivity : ComponentActivity() {
@@ -11,6 +12,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val engine = FakeEngine(this)
-        setContent { DeepSightTheme { DeepSightApp(engine) } }
+        setContent { DeepSightTheme { DeepSightApp(engine, CaseDb.get(this).dao()) } }
     }
 }
