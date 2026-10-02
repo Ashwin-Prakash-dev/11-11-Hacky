@@ -20,7 +20,7 @@
   "preprocess": {
     "source": "field",
     "resize": "stretch",
-    "scale": 0.00392156862745098,
+    "scale": 0.000980392156862745,
     "mean": [0.0, 0.0, 0.0],
     "std": [1.0, 1.0, 1.0],
     "stain_normalization": "none"
