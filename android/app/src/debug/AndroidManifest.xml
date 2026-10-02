@@ -4,6 +4,17 @@
     <!-- Debug builds only. largeHeap: the quality gate holds a 5312x2988 field as ARGB ints (~64 MB). -->
     <application android:largeHeap="true">
         <activity
+            android:name=".DebugGemmaActivity"
+            android:exported="true"
+            android:label="DeepSight Gemma"
+            android:theme="@style/Theme.DeepSight">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
             android:name=".DebugAnalyzeActivity"
             android:exported="true"
             android:label="DeepSight debug"

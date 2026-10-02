@@ -1,6 +1,6 @@
 # DeepSight status
 
-**Last updated:** 2026-10-02 (malaria field pipeline on the phone).
+**Last updated:** 2026-10-02 (S3: Gemma in our app on the phone).
 **Hackathon clock:** H0 = TBD. Fill in the start time so everyone can convert H-numbers to clock times.
 
 Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how each fact was verified, or mark it UNVERIFIED.
@@ -20,7 +20,7 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
 |---|---|---|---|
 | S1 | NLM Malaria Screener: licence, can the model be extracted, does it convert to ONNX? | Codex | **partial:** thin TFLite conversion works; upstream reuse remains blocked, while a licensed dataset and evaluation-model fallback are pinned; first pack golden case still pending ([evidence](spikes/S1-malaria-screener.md)) |
 | S2 | ONNX Runtime on Android | C | **yes:** CPU and XNNPACK outputs passed on the Nothing A059 within 1e-5; timings recorded below |
-| S3 | LiteRT-LM Gemma inside our app | TBD | not started |
+| S3 | LiteRT-LM Gemma inside our app | D | **yes:** Gemma 4 E2B streams in our own app on the edge 50 fusion (LiteRT-LM 0.17.1, GPU, GPU+MTP and CPU). With the malaria ONNX pack loaded too: 820–982 MiB PSS, 1.5 GiB still available. Warm GPU load 12 s, 50 tokens in 3.7 s with MTP. So the phone report can use Gemma; the template stays the fallback ([evidence](spikes/S3-litertlm-gemma.md)) |
 | S4 | Phone → laptop hub over hotspot, cleartext HTTP | TBD | not started |
 | S5 | DeFungi classes | Gemini | **done:** 5 classes (TSH, BASH, GMA, SHC, BBH), no normal class. Yes, leak-free split is possible via filename prefixes. |
 | S6 | PathOS conversion | TBD | not started |
@@ -121,6 +121,19 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
   - **Later integration:** match #11's Python reference scores within a stated tolerance once its exact scoring convention and golden outputs land; add the Bitmap/shared image adapter after the joint library decision with #17.
   - **Known #22 gap (issue closed, follow-up tracked here):** once #8's split manifest exists, train the router, report accuracy on the held-out source in #31, add golden match/mismatch/reject cases, and confirm the ImageNet backbone weights licence. Until then the engine router is the always-match stub (#23).
   - A template report.
+- **S3, Gemma on LiteRT-LM (branch `Ashwin-Prakash-dev/s3-litertlm-gemma`, 2026-10-02):** details in [docs/spikes/S3-litertlm-gemma.md](spikes/S3-litertlm-gemma.md).
+  - **Code:**
+    - `report/.../gemma/GemmaRunner.kt`: loads a `.litertlm` from app storage (GPU or CPU, optional MTP) and streams text. It knows nothing about triage.
+    - Debug-only `DebugGemmaActivity` ("DeepSight Gemma" icon): backend and MTP chips, an optional malaria ONNX pack, streaming output and timings.
+    - `GemmaOnDeviceTest` (`:app` androidTest): GPU, GPU+MTP, CPU, and memory with the ONNX pack.
+  - **Verified on the edge 50 fusion** (`am instrument` and the debug screen; not on the Nothing A059): all 4 Gemma tests pass and text streams on screen. Timings and meminfo are in the spike file.
+  - **For the team:**
+    - **Don't run `:app:connectedDebugAndroidTest` with the model on the phone.** It uninstalls the app, which deletes the 2.6 GB model. Use `am instrument` (spike file, How to reproduce).
+    - **Kotlin:** LiteRT-LM 0.17.1 is a Kotlin 2.4 binary. `:report` skips the metadata check, and the app's runtime kotlin-stdlib is now 2.4.0. Upgrading the project to Kotlin 2.4 is the proper fix (team decision).
+    - **The report (#24) should:**
+      - load Gemma at app start on GPU with MTP, with the app's `cacheDir`;
+      - keep the exact-triage-string check and the template fallback (`docs/architecture.md`).
+      Gemma's output mostly restated the facts, so the prompt needs work.
 
 ### E: Data, eval, clinical thresholds (owner: TBD)
 - **Done:** Created `docs/datasets.md` mapping datasets, links, licenses, attributions, and grouping keys for ML packs (issue #5).
@@ -138,17 +151,21 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
 | Test phone storage: 29 GB free | `adb shell df -h /data`, 2026-10-02 |
 | ONNX smoke model on Nothing A059: CPU load 2.2 ms, median 0.6 ms batch 1 / 72.1 ms batch 256; XNNPACK load 3.3 ms, median 0.7 ms / 68.3 ms | `OnnxSmokeTest.logTimings`: 3 warmups then median of 10 runs; `connectedDebugAndroidTest`, 2026-10-02 |
 | Gemma-4-E2B-it on GPU in AI Edge Gallery 1.0.19: prefill 283.6 tok/s, decode 10.79 tok/s, first token 1.07 s, init 42.5 s first / 17.9 s steady. Model file 2.59 GB. | Measured in the Gallery app; measurement device is UNVERIFIED. Re-run on the Nothing A059 before using this claim. |
-| Report latency: about 15 s for 150 tokens, plus init unless the model is preloaded at app start | Arithmetic on the row above |
+| Gemma 4 E2B in our app on the edge 50 fusion (LiteRT-LM 0.17.1, 94-token prompt, 50 output tokens): GPU+MTP warm load 12.0 s, first text 1.5 s, done in 3.7 s (decode 14.8 tok/s). GPU without MTP decodes at 8.7 tok/s. The first load after install is 27 s on GPU and 52 s on CPU. | `GemmaOnDeviceTest` and `DebugGemmaActivity`, wall clock, 2026-10-02 ([S3](spikes/S3-litertlm-gemma.md)). LiteRT-LM's own init time reads 2.0× wall clock |
+| Gemma (GPU) and the malaria ONNX pack loaded together: 982 MiB PSS (device test) / 820 MiB (debug screen), with 1.46–1.55 GiB still available. lowmemorykiller kills 3–6 background apps during each Gemma load, never ours. | `dumpsys meminfo com.deepsight`, `/proc/meminfo`, logcat, 2026-10-02 (S3) |
+| LiteRT-LM `litertlm-android` 0.17.1: AAR minSdk 24, Apache-2.0, `liblitertlm_jni.so` 20.8 MiB (arm64). It is a Kotlin 2.4 binary, so the Kotlin 2.2.10 compiler rejects it unless the metadata check is skipped. | AAR manifest, POM, APK contents, compile error (S3) |
+| Gemma model: `gemma-4-E2B-it.litertlm` from Hugging Face `litert-community/gemma-4-E2B-it-litert-lm`, 2,588,147,712 bytes, sha256 `181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c`, Apache-2.0, ungated | Hugging Face model API; `sha256sum` on the phone matches (S3) |
 | Toolchain: Gradle 9.6.0, AGP 9.4.1, Kotlin 2.2.10, compile/target SDK 37, minSdk 24. Gradle provisions JDK 25 itself (foojay). | Builds pass; `gradlew --version` |
 | onnxruntime-android 1.30.0 (latest on Maven Central, 2026-09-14) requires minSdk 24 | AAR manifest |
 | APKs are arm64-v8a only (`abiFilters`): app 43 MB. ORT's native library is 31.5 MB; all 4 ABIs would be about 129 MB. | APK contents |
-| Our app can't read Gallery's copy of the model (Android 11+ scoped storage). It needs its own copy: `adb push` to `/sdcard/Android/data/com.deepsight/files/`. | Android docs; the push path is UNVERIFIED |
+| Our app can't read Gallery's copy of the model (Android 11+ scoped storage). It needs its own copy: `adb push` to `/sdcard/Android/data/com.deepsight/files/`, and the app reads it from there. | Scoped storage: Android docs. Push path: on the edge 50 fusion the app loaded a copy there owned by the adb shell user, and `adb push` writes files with the same owner (S3, 2026-10-02) |
 | Cleartext HTTP to the hub needs a network security config (blocked by default for targetSdk 28+) | Android network security config docs |
 | Ollama listens on 127.0.0.1 by default. Set `OLLAMA_HOST=0.0.0.0` and open port 11434 in the firewall. | Ollama FAQ |
 
 ## Open risks
 - **Malaria reuse licence:** the upstream root licence is BSD-like, at least 85 source files say GPLv3, and model provenance/licensing is not stated. See `docs/spikes/S1-malaria-screener.md`; do not vendor upstream artefacts until resolved.
-- **Memory:** Gemma loaded alongside an ONNX pack with ~2.3 GiB available during S2 is untested. This is the biggest S3 risk; measure on the Nothing A059 with `adb shell dumpsys meminfo com.deepsight`.
+- **Memory:** measured on the edge 50 fusion (S3): Gemma and the malaria ONNX pack fit (982 MiB PSS, ~1.5 GiB left), but loading Gemma makes Android kill background apps. Not measured on the Nothing A059 (same 7.3 GiB RAM) or on any smaller phone. Close other apps before a demo.
+- **Kotlin 2.4:** LiteRT-LM 0.17.1 needs `-Xskip-metadata-version-check` in `:report`, and the app's runtime kotlin-stdlib is now 2.4.0 while the compiler is 2.2.10. Upgrading the project to Kotlin 2.4 is the proper fix (team decision; shared `libs.versions.toml`).
 - **Hotspot routing (UNVERIFIED):** the phone may route traffic over mobile data when the hotspot has no internet. Test S4 with mobile data off.
 - **Malaria model:** upstream extraction and thin-model conversion are feasible, but reuse licensing and active-model parity remain unresolved. A separately licensed dataset and evaluation model are available, but neither clinical quality nor Android parity has been established.
 

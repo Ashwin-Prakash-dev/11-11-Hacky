@@ -15,6 +15,7 @@ camerax = "1.6.2" # latest stable on Google Maven, 2026-10-02
 room = "2.8.5"
 ksp = "2.3.12"
 opencv = "4.14.0" # keep equal to opencv-python-headless in ml/requirements.txt (segmentation parity)
+litertlm = "0.17.1" # latest on Google Maven, 2026-09-16; AAR minSdk 24
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -42,6 +43,7 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 opencv = { group = "org.opencv", name = "opencv", version.ref = "opencv" }
+litertlm-android = { group = "com.google.ai.edge.litertlm", name = "litertlm-android", version.ref = "litertlm" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
