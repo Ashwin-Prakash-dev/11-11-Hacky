@@ -40,7 +40,7 @@ The parity harness that ran NLM's original Java against the port lives in a scra
 | NLM Sudan-retrained CNN (`ml/models/`, evaluation only) | UNVERIFIED (above) | S1 | No |
 | LocalMedScan MobileNetV2 | MIT | Model card and source repo, recorded in [`ml/models.json`](ml/models.json) | No (downloaded by `setup_dev.sh`) |
 | Lara YOLOv8n | UNVERIFIED: the model card says MIT, but the linked repo has no licence | [`ml/models.json`](ml/models.json) | No (opt-in only) |
-| Gemma 4 E2B (report, via LiteRT-LM) | UNVERIFIED. To check: read the licence on the model's Kaggle or Hugging Face page | — | No (`*.litertlm` is never committed) |
+| Gemma 4 E2B (report, via LiteRT-LM; `gemma-4-E2B-it.litertlm`) | Apache-2.0 | Hugging Face [`litert-community/gemma-4-E2B-it-litert-lm`](https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm) model API (`license: apache-2.0`, ungated), 2026-10-02; sha256 in [S3](docs/spikes/S3-litertlm-gemma.md) | No (`*.litertlm` is never committed; pushed to the phone) |
 
 ## Datasets
 
@@ -54,7 +54,7 @@ The parity harness that ran NLM's original Java against the port lives in a scra
 ## Software dependencies
 
 Read from PyPI and Maven metadata for the pinned versions, 2026-10-02.
-- **What ships in the APK** (onnxruntime-android, OpenCV, kotlinx-serialization, CameraX, Room) uses MIT, Apache-2.0 or BSD-3-Clause. The [FSF licence list](https://www.gnu.org/licenses/license-list.html) rates all of these GPLv3-compatible.
+- **What ships in the APK** (onnxruntime-android, OpenCV, kotlinx-serialization, CameraX, Room, LiteRT-LM) uses MIT, Apache-2.0 or BSD-3-Clause. The [FSF licence list](https://www.gnu.org/licenses/license-list.html) rates all of these GPLv3-compatible.
 - **JUnit's EPL-1.0** is GPL-incompatible on that list. It's used in tests only and never shipped.
 - **The Python packages** run on laptops only.
 
@@ -70,6 +70,7 @@ Read from PyPI and Maven metadata for the pinned versions, 2026-10-02.
 | kotlinx-serialization-json | 1.9.0 | Apache-2.0 |
 | AndroidX CameraX (camera-core) | 1.6.2 | Apache-2.0 (the POM also lists BSD-3-Clause) |
 | AndroidX Room | 2.8.5 | Apache-2.0 |
+| LiteRT-LM (`litertlm-android`), with its gson 2.14.0, kotlin-reflect 2.4.0 and kotlinx-coroutines-android 1.11.0 | 0.17.1 | Apache-2.0 (all four POMs) |
 | JUnit (tests only) | 4.13.2 | EPL-1.0 |
 | Android SDK tools | pinned in `setup_dev.sh` | [Android SDK terms](https://developer.android.com/studio/terms) |
 

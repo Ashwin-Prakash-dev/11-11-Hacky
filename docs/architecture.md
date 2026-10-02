@@ -62,6 +62,6 @@ ml/packs/<id>/
 | Fungal (DeFungi) | Phone (probably) | Small patch classifier. S2 and S5 are done; the pack still has a placeholder model |
 | Leukaemia | Phone (probably) | Single-cell classifier on WBC crops; needs segmentation or tiling. Placeholder model today |
 | Breast (PathOS) | Hub, unless S6 passes | Fine-tuned Gemma VLM via Ollama |
-| Gemma reports | Phone | Measured in AI Edge Gallery, see STATUS.md facts |
+| Gemma reports | Phone | S3 passed: Gemma 4 E2B streams in our app next to an ONNX pack ([evidence](spikes/S3-litertlm-gemma.md)); the template stays the fallback |
 
 Deck wording: "Phone-only screening for the lightweight modules, with an optional local hub for heavier ones." Don't claim everything runs on a budget phone unless every module has passed on it.
