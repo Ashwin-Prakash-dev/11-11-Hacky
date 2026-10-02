@@ -15,16 +15,17 @@ Use these; don't create a new doc when one of them fits.
 |---|---|---|
 | `docs/STATUS.md` | Current state: gates, spikes, per-track done/next, verified facts, risks, decisions | Any change that matters. Edit only your track's section and rows you own, in the same commit as the work. |
 | `AGENTS.md` | Rules, layout, commands (rarely changes) | A rule or command changes. Shared file: pull first, keep it minimal. |
+| `docs/architecture.md` | Target pipeline, design rules, pack format, honest per-module claims | The design changes (team agreement). |
 | `contracts/README.md` | Contract semantics and triage order | Only with a team-agreed contract change. |
 | `ml/packs/<id>/README.md` | Dataset, licence, held-out metrics, known limits for that pack | The pack's model, data or metrics change. |
 | `docs/claims.md` | Every number used in the deck or demo, each with its source or measurement | A number is measured or will be said on stage. |
-| `README.md` (repo root) | What DeepSight is, how to install and run the demo | Near the end, for judges. One screen. |
+| `README.md` (repo root) | What DeepSight is, how to install and run, links to the other docs | Run steps change; final pass before judging. One screen. |
 
 Create a doc from this table only when you have content for it; no empty scaffolds.
 
 ## Principles
 
-1. Docs reflect what is built and measured, never the plan. Planned work goes in STATUS.md "Next".
+1. Docs reflect what is built and measured, never the plan. Planned work goes in STATUS.md "Next". The one exception is `docs/architecture.md`, which is the agreed target design.
 2. Source of truth: implementation → tests/measurements → docs. Never invent features, thresholds, latencies or behaviour.
 3. Anything unverified says UNVERIFIED and how to check it (AGENTS.md "Facts").
 4. One fact, one place. Link instead of copying.

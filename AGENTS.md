@@ -33,6 +33,7 @@ The phone needs no internet. A clinician always signs off. This is screening sup
 | `ml/train`, `ml/eval`, `ml/reference` | Training, evaluation and smoke models, reference implementations |
 | `hub/` | Optional laptop hub (Ollama + PathOS) |
 | `docs/STATUS.md` | Current state. Update it with every change that matters. |
+| `docs/architecture.md` | Target pipeline, design rules, pack format (from the build plan) |
 
 ## Commands
 Run Gradle commands from `android/`. On Windows, use `gradlew.bat`.
