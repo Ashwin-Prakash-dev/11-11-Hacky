@@ -6,14 +6,14 @@ Built in a 30-hour hackathon. Current state: [docs/STATUS.md](docs/STATUS.md).
 
 ## Development setup
 
-Requires Conda. The setup script creates the `deepsight` environment, installs OpenJDK 25 and the pinned Python packages, and downloads checksum-verified models approved for evaluation. Model weights stay untracked.
+Requires Conda. The setup script creates the `deepsight` environment; installs OpenJDK 25, the pinned Python packages, and the Google Android SDK toolchain; and downloads checksum-verified models approved for evaluation. The SDK bootstrap supports Intel/Apple Silicon macOS and x86_64 Linux/Windows. Model weights stay untracked.
 
 ```sh
 scripts/setup_dev.sh
 conda activate deepsight
 ```
 
-Run `scripts/setup_dev.sh --help` for a different environment name or to skip dependencies/models. Candidates with unresolved licensing or provenance require the explicit `--include-unverified` option.
+Run `scripts/setup_dev.sh --help` for a different environment name or to skip dependencies, the Android SDK or models. Android command-line tools, platform-tools 37.0.1, API 37.0 and Build Tools 36.0.0 are pinned to Google's versioned packages and checksums; their use is subject to the [Android SDK terms](https://developer.android.com/studio/terms). Candidates with unresolved licensing or provenance require the explicit `--include-unverified` option.
 
 Pull requests and pushes to `test` and `main` run Python tests, contract validation, setup-script checks, and Android engine JVM tests in GitHub Actions. Model downloads and phone-only tests are intentionally excluded.
 

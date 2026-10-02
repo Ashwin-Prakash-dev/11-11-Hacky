@@ -1,6 +1,6 @@
 # DeepSight status
 
-**Last updated:** 2026-10-02 (S1 fallback setup).
+**Last updated:** 2026-10-02 (S2 ONNX device pass).
 **Hackathon clock:** H0 = TBD. Fill in the start time so everyone can convert H-numbers to clock times.
 
 Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how each fact was verified, or mark it UNVERIFIED.
@@ -19,7 +19,7 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
 | Spike | Question | Owner | State |
 |---|---|---|---|
 | S1 | NLM Malaria Screener: licence, can the model be extracted, does it convert to ONNX? | Codex | **partial:** thin TFLite conversion works; upstream reuse remains blocked, while a licensed dataset and evaluation-model fallback are pinned; first pack golden case still pending ([evidence](spikes/S1-malaria-screener.md)) |
-| S2 | ONNX Runtime on Android | C | **code done; phone run pending** (see Track C) |
+| S2 | ONNX Runtime on Android | C | **yes:** CPU and XNNPACK outputs passed on the Nothing A059 within 1e-5; timings recorded below |
 | S3 | LiteRT-LM Gemma inside our app | TBD | not started |
 | S4 | Phone → laptop hub over hotspot, cleartext HTTP | TBD | not started |
 | S5 | DeFungi classes | TBD | not started |
@@ -38,13 +38,12 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
 ### C: On-device engine (owner: TBD)
 - **Done:**
   - Contract types and JSON in `engine/.../contract/`. 4/4 JVM tests pass, and the JSON they write passes `validate.py`.
-  - S2 code:
+  - S2:
     - `engine/.../onnx/OnnxModel.kt` runs on CPU or XNNPACK (onnxruntime-android 1.30.0).
-    - The golden test `OnnxSmokeTest` uses `ml/eval/make_smoke_model.py`: a 64×64 cell-crop-sized CNN with random weights. The exported model matches PyTorch to within 1e-5.
-    - It builds; it has **not yet run on the phone**.
+    - `OnnxSmokeTest` uses `ml/eval/make_smoke_model.py`: a 64×64 cell-crop-sized CNN with random weights. CPU and XNNPACK outputs matched the desktop golden output within 1e-5 on the Nothing A059 via `:engine:connectedDebugAndroidTest` (2/2 tests passed).
+    - Median inference: CPU 0.6 ms at batch 1 and 72.1 ms at batch 256; XNNPACK 0.7 ms and 68.3 ms. See Verified facts for the measurement method.
 - **Next:**
-  - Run `:engine:connectedDebugAndroidTest`, then record the timings below.
-  - After that: aggregation and triage per `contracts/README.md`, as pure Kotlin with JVM tests.
+  - Aggregation and triage per `contracts/README.md`, as pure Kotlin with JVM tests.
 
 ### D: Gates and report (owner: TBD)
 - **Done:** nothing yet.
@@ -62,9 +61,10 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
 ## Verified facts
 | Fact | How verified |
 |---|---|
-| Demo phone: motorola edge 50 fusion, Android 15 (API 35), SoC SM7435, arm64-v8a, 7.3 GiB RAM total, ~2.5 GiB available at idle, OpenCL present | adb getprop, /proc/meminfo |
-| Demo phone storage: 8.2 GB free | adb df, 2026-10-02 |
-| Gemma-4-E2B-it on GPU in AI Edge Gallery 1.0.19: prefill 283.6 tok/s, decode 10.79 tok/s, first token 1.07 s, init 42.5 s first / 17.9 s steady. Model file 2.59 GB. | Measured in the Gallery app. Gallery is installed on the demo phone, so it was probably measured there (confirm). |
+| Demo phone: Nothing A059, Android 16 (API 36), SoC SM7635, arm64-v8a, 7.3 GiB RAM total, ~2.3 GiB available during the S2 run | `adb getprop`, `/proc/meminfo`, 2026-10-02 |
+| Demo phone storage: 29 GB free | `adb shell df -h /data`, 2026-10-02 |
+| ONNX smoke model on Nothing A059: CPU load 2.2 ms, median 0.6 ms batch 1 / 72.1 ms batch 256; XNNPACK load 3.3 ms, median 0.7 ms / 68.3 ms | `OnnxSmokeTest.logTimings`: 3 warmups then median of 10 runs; `connectedDebugAndroidTest`, 2026-10-02 |
+| Gemma-4-E2B-it on GPU in AI Edge Gallery 1.0.19: prefill 283.6 tok/s, decode 10.79 tok/s, first token 1.07 s, init 42.5 s first / 17.9 s steady. Model file 2.59 GB. | Measured in the Gallery app; measurement device is UNVERIFIED. Re-run on the Nothing A059 before using this claim. |
 | Report latency: about 15 s for 150 tokens, plus init unless the model is preloaded at app start | Arithmetic on the row above |
 | Toolchain: Gradle 9.6.0, AGP 9.4.1, Kotlin 2.2.10, compile/target SDK 37, minSdk 24. Gradle provisions JDK 25 itself (foojay). | Builds pass; `gradlew --version` |
 | onnxruntime-android 1.30.0 (latest on Maven Central, 2026-09-14) requires minSdk 24 | AAR manifest |
@@ -75,7 +75,7 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
 
 ## Open risks
 - **Malaria reuse licence:** the upstream root licence is BSD-like, at least 85 source files say GPLv3, and model provenance/licensing is not stated. See `docs/spikes/S1-malaria-screener.md`; do not vendor upstream artefacts until resolved.
-- **Memory:** Gemma loaded alongside an ONNX pack on ~2.5 GiB of available RAM is untested. This is the biggest S3 risk; measure with `adb shell dumpsys meminfo com.deepsight`.
+- **Memory:** Gemma loaded alongside an ONNX pack with ~2.3 GiB available during S2 is untested. This is the biggest S3 risk; measure on the Nothing A059 with `adb shell dumpsys meminfo com.deepsight`.
 - **Hotspot routing (UNVERIFIED):** the phone may route traffic over mobile data when the hotspot has no internet. Test S4 with mobile data off.
 - **Malaria model:** upstream extraction and thin-model conversion are feasible, but reuse licensing and active-model parity remain unresolved. A separately licensed dataset and evaluation model are available, but neither clinical quality nor Android parity has been established.
 

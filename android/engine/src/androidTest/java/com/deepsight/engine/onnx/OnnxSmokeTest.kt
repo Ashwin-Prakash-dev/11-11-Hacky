@@ -31,7 +31,7 @@ class OnnxSmokeTest {
             OnnxModel(modelBytes, accelerator).use { model ->
                 val got = model.run(smokeInput(batch), shapeOf(batch))
                 assertEquals("$accelerator output size", want.size, got.size)
-                want.indices.forEach { assertEquals("$accelerator[$it]", want[it], got[it], 1e-4f) }
+                want.indices.forEach { assertEquals("$accelerator[$it]", want[it], got[it], 1e-5f) }
             }
         }
     }

@@ -6,17 +6,19 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 ENV_NAME="${DEEPSIGHT_ENV_NAME:-deepsight}"
 INSTALL_DEPS=1
 DOWNLOAD_MODELS=1
+INSTALL_ANDROID_SDK=1
 INCLUDE_UNVERIFIED=0
 
 usage() {
   echo "Usage: scripts/setup_dev.sh [options]"
   echo
-  echo "Creates or updates the DeepSight Conda environment and downloads pinned models."
+  echo "Creates or updates the DeepSight Conda environment, Android tools and pinned models."
   echo
   echo "Options:"
   echo "  --env-name NAME         Conda environment name (default: deepsight)"
   echo "  --skip-deps             Do not install ml/requirements.txt"
   echo "  --skip-models           Do not download approved evaluation models"
+  echo "  --skip-android-sdk      Do not install the pinned Android SDK and adb"
   echo "  --include-unverified    Also download explicitly unverified candidates"
   echo "  -h, --help              Show this help"
 }
@@ -34,6 +36,10 @@ while (($#)); do
       ;;
     --skip-models)
       DOWNLOAD_MODELS=0
+      shift
+      ;;
+    --skip-android-sdk|--skip-platform-tools)
+      INSTALL_ANDROID_SDK=0
       shift
       ;;
     --include-unverified)
@@ -61,6 +67,11 @@ if ! conda run -n "$ENV_NAME" python --version >/dev/null 2>&1; then
   conda create -y -n "$ENV_NAME" -c conda-forge python=3.12 pip openjdk=25
 elif ! conda run -n "$ENV_NAME" java -version >/dev/null 2>&1; then
   conda install -y -n "$ENV_NAME" -c conda-forge openjdk=25
+fi
+
+if ((INSTALL_ANDROID_SDK)); then
+  conda run -n "$ENV_NAME" python "$REPO_ROOT/scripts/install_android_sdk.py" --project-root "$REPO_ROOT"
+  conda run -n "$ENV_NAME" adb version
 fi
 
 if ((INSTALL_DEPS)); then
