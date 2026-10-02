@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">DeepSight</string>
+    <string name="disclaimer">Screening aid. A clinician decides.</string>
 </resources>

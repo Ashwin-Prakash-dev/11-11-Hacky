@@ -38,8 +38,16 @@ android {
     }
 }
 
+// The fake engine reads the frozen examples straight from contracts/ (single source of truth).
+androidComponents {
+    onVariants { variant ->
+        variant.sources.assets?.addStaticSourceDirectory(rootDir.resolve("../contracts/examples").canonicalPath)
+    }
+}
+
 dependencies {
     implementation(project(":engine"))
+    implementation(libs.kotlinx.serialization.json) // :engine exposes Contracts.json but keeps this as implementation
     implementation(project(":report"))
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
