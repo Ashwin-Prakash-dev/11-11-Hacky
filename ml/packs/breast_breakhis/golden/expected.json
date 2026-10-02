@@ -1,0 +1,43 @@
+{
+ "model": "model.onnx",
+ "input": "NCHW float32 RGB /255, PIL bilinear resize of full image to 224x224 (no crop)",
+ "tolerance_tensor": 0.0001,
+ "cases": [
+  {
+   "file": "SOB_B_PT-14-21998AB-400-035.png",
+   "label": "benign",
+   "p_benign": 0.07383,
+   "p_malignant": 0.92617
+  },
+  {
+   "file": "SOB_B_F-14-25197-400-062.png",
+   "label": "benign",
+   "p_benign": 0.128002,
+   "p_malignant": 0.871998
+  },
+  {
+   "file": "SOB_B_TA-14-16184-400-014.png",
+   "label": "benign",
+   "p_benign": 0.961495,
+   "p_malignant": 0.038505
+  },
+  {
+   "file": "SOB_M_DC-14-11031-400-014.png",
+   "label": "malignant",
+   "p_benign": 0.020866,
+   "p_malignant": 0.979134
+  },
+  {
+   "file": "SOB_M_DC-14-12312-400-010.png",
+   "label": "malignant",
+   "p_benign": 0.035906,
+   "p_malignant": 0.964094
+  },
+  {
+   "file": "SOB_M_DC-14-11951-400-001.png",
+   "label": "malignant",
+   "p_benign": 0.014113,
+   "p_malignant": 0.985887
+  }
+ ]
+}

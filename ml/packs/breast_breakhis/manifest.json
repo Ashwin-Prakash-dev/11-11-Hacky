@@ -1,0 +1,40 @@
+{
+  "contract_version": "1.0",
+  "id": "breast_breakhis",
+  "version": "0.1.0",
+  "display_name": "Breast histology (evaluation)",
+  "task_type": "classifier",
+  "runtime": "onnx",
+  "compute": "phone",
+  "model": { "file": "model_logits.onnx", "sha256": null },
+  "input": { "tensor": "input", "shape": [1, 3, 224, 224], "layout": "NCHW", "dtype": "float32", "color": "RGB" },
+  "preprocess": {
+    "source": "field",
+    "resize": "stretch",
+    "scale": 0.00392156862745098,
+    "mean": [0.0, 0.0, 0.0],
+    "std": [1.0, 1.0, 1.0],
+    "stain_normalization": "none"
+  },
+  "output": { "decoder": "softmax", "labels": ["benign", "malignant"], "image_score_label": "malignant" },
+  "quality": { "min_blur": 0.0, "max_clipped_fraction": 1.0 },
+  "aggregation": { "image_score": "max", "min_fields": 1 },
+  "triage": {
+    "provisional": true,
+    "source": "Engineering-only evaluation policy: every case requires expert review. No clinical threshold has been validated on held-out patients. This pack never issues NORMAL_SCREEN or ABNORMAL_FLAG.",
+    "rules": [
+      {
+        "id": "expert_review_required",
+        "level": "NEEDS_EXPERT",
+        "all": [{ "metric": "count", "labels": ["benign", "malignant"], "op": ">=", "value": 0 }]
+      }
+    ]
+  },
+  "uncertainty": { "method": "none" },
+  "provenance": {
+    "source": "DenseNet-121 checkpoint saved/models/BCDensenet/0224_034642/model_best.pth from https://github.com/mrdvince/breast_cancer_detection, recorded upstream revision 8c5028c. Original local ONNX SHA-256: 0a6274f45f33a644b5ba11fe852bcc30a8ec7beb018f02a262564d81fa6573c0. prepare_pack.py removes final Softmax using ml/tools/onnx_logits.py.",
+    "licence": "Upstream repository declares MIT; NOTICE_MIT_mrdvince.txt is included. Dataset-derived model redistribution is UNVERIFIED; resolve against UFPR BreakHis terms before distributing weights.",
+    "training_data": ["BreakHis breast tumour H&E histology; upstream training split and held-out patient performance are UNVERIFIED by DeepSight."],
+    "notes": "Evaluation only. Quality rejection is DISABLED (min_blur=0, max_clipped_fraction=1), pending calibration; a quality pass is not proof of suitability. No uncertainty estimator is calibrated (method none). Max score aggregation and min_fields=1 are engineering conventions, not clinical thresholds. Normalization is inside the graph: supply RGB/255 only. Labels are benign, malignant; the model outputs logits and the engine applies softmax once. Android uses floating-point bilinear stretch; historical Pillow-resize metrics do not establish performance for this preprocessing. No held-out accuracy or latency claim is made."
+  }
+}
