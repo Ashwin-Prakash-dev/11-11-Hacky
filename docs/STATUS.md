@@ -33,7 +33,8 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
 
 ### B: Android shell (owner: TBD)
 - **Done:** package `com.deepsight`, modules `:app`, `:engine` and `:report`. The stock Compose screen runs on the demo phone.
-- **Next:** case flow: pick test type → CameraX capture or gallery import → result screen.
+- **Skeleton (issue #26):** choose test → case → result → review/sign-off → history with a fake engine (`FakeEngine`, reads `contracts/examples`); disclaimer on every screen. **Verified on a phone (moto g32, Android 13, 2026-10-02):** `installDebug` installed and `:app:connectedDebugAndroidTest` passed 2/2, including `NavigationTest` (all screens + disclaimer). Not yet checked by hand on the edge 50 fusion demo phone.
+- **Next:** CameraX capture or gallery import in the case flow; persist history (Room).
 
 ### C: On-device engine (owner: TBD)
 - **Done:**
