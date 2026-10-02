@@ -107,7 +107,7 @@ This model trades sensitivity for specificity. It raises fewer false alarms but 
     - `demo_negative` gives a false `ABNORMAL_FLAG` (3 flags);
     - `golden_negative` gives `NEEDS_EXPERT` (fewer than 1000 clear cells).
   - **Not accuracy:** 6 fields from 3 reserved patients, and NLM may have trained on these patients (UNVERIFIED).
-  - **Not run on the phone:** the Kotlin port closely matched the Python on the RBCNet fields (Track C in STATUS.md), but these six fields haven't been run on the phone.
+  - **Same on the phone:** the app's own case run (`CaseRunner`, real pack) on the edge 50 fusion gave identical parasitized counts on all six fields, and cell counts identical or within 1, in 1.7–2.5 s per field (`AnnotatedFieldsDeviceTest`, 2026-10-02).
 - **The earlier RBCNet comparison was a weak test.** `ml/eval/eval_segmentation.py` compared 4 fields from a negative patient (C12N) with 4 from a positive one (C92P53). It found the positive patient flagged no more often: `nlm` with this model gave 5.6% vs 3.6% of cells; `simple` gave 1.4% vs 0.7%; the previous default model gave 18.0% vs 15.8% with `nlm`. But RBCNet only labels the patient, not the cells, so nobody knows how many infected cells those positive fields hold. The comparison mostly measured false flags.
   - Seen in the overlays:
     - NLM boxes merged clumps of 2–4 touching cells, which get flagged.

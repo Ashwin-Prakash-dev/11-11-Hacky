@@ -51,7 +51,7 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
     - **Per-cell check on the six annotated reserved fields** (`ml/eval/eval_annotated_fields.py`, `nlm`, Python reference, 2026-10-02):
       - **Segmentation:** cell counts within 5% of the annotation; 39 of 40 infected cells inside a detected box.
       - **Sudan model:** flags 28 of 40 infected cells, with 18 false flags among 861 uninfected cells. 14 of them are on one slide (C38P3). The previous model flags 35 of 40, with 64 false flags.
-      - **Not accuracy:** 3 reserved patients, and NLM's training overlap is UNVERIFIED. Not run on the phone. Table in the [pack README](../ml/packs/malaria_thin/README.md#known-limits).
+      - **Not accuracy:** 3 reserved patients, and NLM's training overlap is UNVERIFIED. On the edge 50 fusion, the app's `CaseRunner` gives the same counts: parasitized identical on all six fields, cells within 1 (`AnnotatedFieldsDeviceTest`). Table in the [pack README](../ml/packs/malaria_thin/README.md#known-limits).
     - **The earlier RBCNet comparison** (C12N negative vs C92P53 positive, `nlm` 5.6% vs 3.6% flagged) had patient-level labels only, so it mostly measured false flags. It is not evidence that the pipeline can't separate them.
     - **Kotlin port:** done (`RbcDetector.kt`, see Track C).
 - **Next:** independently evaluate the fallback model on the licensed NIH-NLM data, export the chosen model to ONNX, and create the first golden case in `ml/packs/malaria_thin/`. Replace every UNVERIFIED and PLACEHOLDER manifest value before enabling the pack.
