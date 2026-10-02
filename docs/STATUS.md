@@ -103,6 +103,7 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
     - Release-build memory is unchecked (no `largeHeap`).
     - Compose's `LocalLifecycleOwner` shows a deprecation warning until Lifecycle is 2.8 or later.
     - Not run on another phone model.
+- **Patient profile and pre-capture selection UI (#63):** Home has a profile directory with name-or-UID search and read-only details. Starting a screening now requires choosing an existing profile or entering name, UID, date of birth and blood group for a new profile; the selected patient is shown before image capture. This is UI-only POC scaffolding backed by session memory so CSV/text storage can replace it later; it does not add a database, persist profiles, attach patient data to saved case records/reports, or provision Gemma. **Verified on the Nothing A059 (Android 16, 2026-10-03):** `installDebug`; app JVM tests and lint passed; focused navigation/profile instrumentation passed 5/5; the full in-place app instrumentation run returned `OK (29 tests)`, with tests requiring absent local Gemma/annotated-field assets skipped.
 - **Next:** decide whether `eval` merges into `test`; the G1 gate row (not Track B's) can now point at the main case flow.
 
 ### C: On-device engine (owner: TBD)

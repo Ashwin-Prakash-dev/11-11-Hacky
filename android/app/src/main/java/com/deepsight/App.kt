@@ -19,6 +19,10 @@ import com.deepsight.capture.CaseScreen
 import com.deepsight.history.HistoryScreen
 import com.deepsight.history.SavedCaseScreen
 import com.deepsight.home.HomeScreen
+import com.deepsight.patient.NewPatientScreen
+import com.deepsight.patient.PatientChoiceScreen
+import com.deepsight.patient.PatientDetailsScreen
+import com.deepsight.patient.PatientSearchScreen
 import com.deepsight.result.ResultScreen
 import com.deepsight.ui.DeepSightIcons
 import com.deepsight.ui.components.DeepSightTopBar
@@ -54,6 +58,11 @@ fun DeepSightApp(vm: AppViewModel) {
 @Composable
 private fun title(route: Route): String = when (route) {
     Route.Home -> stringResource(R.string.app_name)
+    Route.Profiles -> "Patient profiles"
+    is Route.PatientDetails -> "Patient details"
+    is Route.PatientChoice -> "Select patient"
+    Route.ExistingPatient -> "Existing patient"
+    Route.NewPatient -> "New patient"
     Route.Case -> "New case"
     Route.Result -> "Result"
     Route.History -> "History"
@@ -69,7 +78,37 @@ private fun Screen(route: Route, vm: AppViewModel) {
             val packs by vm.packs.collectAsStateWithLifecycle()
             val ai by vm.aiStatus.collectAsStateWithLifecycle()
             val history by vm.history.collectAsStateWithLifecycle()
-            HomeScreen(packs, ai, history.size, onPick = vm::startCase, onHistory = { vm.open(Route.History) })
+            HomeScreen(
+                packs, ai, history.size,
+                onPick = vm::beginPatientSelection,
+                onPatients = vm::openProfiles,
+                onHistory = { vm.open(Route.History) },
+            )
+        }
+        Route.Profiles -> {
+            val patients by vm.patients.collectAsStateWithLifecycle()
+            PatientSearchScreen(patients, onSelect = vm::openPatientDetails)
+        }
+        is Route.PatientDetails -> {
+            val patients by vm.patients.collectAsStateWithLifecycle()
+            PatientDetailsScreen(patients.firstOrNull { it.uid.equals(route.uid, ignoreCase = true) })
+        }
+        is Route.PatientChoice -> {
+            val packs by vm.packs.collectAsStateWithLifecycle()
+            val casePack = packs.orEmpty().firstOrNull { it.manifest.id == route.packId }
+            PatientChoiceScreen(
+                packName = casePack?.manifest?.displayName ?: "New screening",
+                onExisting = vm::selectExistingPatient,
+                onNew = vm::createNewPatient,
+            )
+        }
+        Route.ExistingPatient -> {
+            val patients by vm.patients.collectAsStateWithLifecycle()
+            PatientSearchScreen(patients, onSelect = vm::selectPatient, supporting = "Select the patient for this screening.")
+        }
+        Route.NewPatient -> {
+            val patients by vm.patients.collectAsStateWithLifecycle()
+            NewPatientScreen(patients.map { it.uid }.toSet(), onContinue = vm::addAndSelectPatient)
         }
         Route.Case -> {
             val case by vm.case.collectAsStateWithLifecycle()

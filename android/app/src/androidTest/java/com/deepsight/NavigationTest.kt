@@ -2,8 +2,10 @@ package com.deepsight
 
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.espresso.Espresso.pressBack
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deepsight.engine.pack.PackLoader
@@ -32,13 +34,16 @@ class NavigationTest {
 
         // Packs not yet validated on a phone are listed but can't be picked (DemoPacks); open the first one that can.
         rule.onNodeWithText(packs.first { DemoPacks.isReady(it.id) }.displayName).performClick()
+        rule.onNodeWithText("Existing patient").performClick()
+        rule.onNodeWithText("Asha Nair").performClick()
         rule.onNodeWithText("Import image").assertExists()
         rule.onNodeWithText("Analyse").assertExists()
         rule.onNodeWithText(disclaimer).assertExists()
 
-        pressBack()
-        rule.onNodeWithText("History").performClick()
-        rule.onNodeWithText("Choose test").assertDoesNotExist() // history screen, whatever Room already holds
+        // Case → existing-patient search → patient choice → home.
+        repeat(3) { pressBack() }
+        rule.onNodeWithText("History").performScrollTo().performClick()
+        rule.onNodeWithContentDescription("Back").assertExists()
         rule.onNodeWithText(disclaimer).assertExists()
     }
 }

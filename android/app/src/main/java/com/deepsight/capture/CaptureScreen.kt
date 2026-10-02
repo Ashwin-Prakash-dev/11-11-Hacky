@@ -110,6 +110,7 @@ fun CaseScreen(
         ) {
             Text(state.pack.displayName, style = MaterialTheme.typography.headlineSmall)
             Text(state.caseId, style = Mono, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            PatientSummary(state)
             Steps(current = if (state.running) 2 else 1)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FilledTonalButton(
@@ -152,6 +153,20 @@ fun CaseScreen(
             state.error?.let { NoticeRow(it, DeepSightIcons.Warning, color = MaterialTheme.colorScheme.error) }
         }
         AnalyseBar(state, onAnalyse)
+    }
+}
+
+@Composable
+private fun PatientSummary(state: CaseUiState) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer), modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Icon(DeepSightIcons.Person, contentDescription = null, Modifier.size(28.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(state.patient.fullName, style = MaterialTheme.typography.titleMedium)
+                Text(state.patient.uid, style = Mono)
+                Text("DOB ${state.patient.dateOfBirth} · ${state.patient.bloodGroup}", style = MaterialTheme.typography.bodyMedium)
+            }
+        }
     }
 }
 

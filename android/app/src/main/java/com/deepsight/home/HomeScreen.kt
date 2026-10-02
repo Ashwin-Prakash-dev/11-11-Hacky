@@ -39,6 +39,7 @@ fun HomeScreen(
     aiStatus: AiStatus,
     historyCount: Int,
     onPick: (PackManifest) -> Unit,
+    onPatients: () -> Unit,
     onHistory: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -56,8 +57,22 @@ fun HomeScreen(
             packs.isEmpty() -> Text("No test packs installed.", style = MaterialTheme.typography.bodyMedium)
         }
         packs?.forEach { PackCard(it, onPick) }
+        SectionHeader("Patients")
+        PatientCard(onPatients)
         SectionHeader("Records")
         HistoryCard(historyCount, onHistory)
+    }
+}
+
+@Composable
+private fun PatientCard(onPatients: () -> Unit) {
+    OutlinedCard(onClick = onPatients, modifier = Modifier.fillMaxWidth()) {
+        ListRow(
+            icon = DeepSightIcons.Person,
+            title = "Patient profiles",
+            supporting = "Search by name or UID",
+            trailing = { Icon(DeepSightIcons.Forward, contentDescription = null) },
+        )
     }
 }
 

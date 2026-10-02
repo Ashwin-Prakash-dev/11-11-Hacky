@@ -21,6 +21,9 @@ import com.deepsight.engine.contract.Contracts
 import com.deepsight.engine.contract.FieldResult
 import com.deepsight.engine.contract.PackManifest
 import com.deepsight.engine.contract.TriageLevel
+import com.deepsight.patient.DemoPatients
+import com.deepsight.patient.PatientDirectory
+import com.deepsight.patient.PatientProfile
 import com.deepsight.result.SignOff
 import com.deepsight.result.signOff
 import java.io.File
@@ -40,6 +43,11 @@ import kotlinx.coroutines.withContext
 /** Where the user is. The back stack lives in [AppViewModel], so it survives rotation. */
 sealed interface Route {
     data object Home : Route
+    data object Profiles : Route
+    data class PatientDetails(val uid: String) : Route
+    data class PatientChoice(val packId: String) : Route
+    data object ExistingPatient : Route
+    data object NewPatient : Route
     data object Case : Route
     data object Result : Route
     data object History : Route
@@ -54,6 +62,7 @@ data class PackItem(val manifest: PackManifest, val ready: Boolean)
 data class CaseUiState(
     val pack: PackManifest,
     val caseId: String,
+    val patient: PatientProfile,
     val images: List<FieldImage> = emptyList(),
     val running: Boolean = false,
     /** (field being analysed, total) while [running]. */
@@ -93,6 +102,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val writer = ReportWriter(narrator)
     private val dao = CaseDb.get(app).dao()
     private val store = CaseStore(app.filesDir.resolve("cases"))
+    private val patientDirectory = PatientDirectory(DemoPatients.profiles)
 
     private val _stack = MutableStateFlow<List<Route>>(listOf(Route.Home))
     val stack: StateFlow<List<Route>> = _stack.asStateFlow()
@@ -101,6 +111,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val packs: StateFlow<List<PackItem>?> = _packs.asStateFlow()
 
     val aiStatus: StateFlow<AiStatus> = narrator.status
+    val patients: StateFlow<List<PatientProfile>> = patientDirectory.profiles
 
     private val _case = MutableStateFlow<CaseUiState?>(null)
     val case: StateFlow<CaseUiState?> = _case.asStateFlow()
@@ -124,6 +135,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private var analysis: Job? = null
     private var reporting: Job? = null
+    private var pendingPack: PackManifest? = null
 
     init {
         viewModelScope.launch { _packs.value = runner.packs().map { PackItem(it, DemoPacks.isReady(it.id)) } }
@@ -148,9 +160,27 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // Case
 
-    fun startCase(pack: PackManifest) {
-        _case.value = CaseUiState(pack, caseId = "case-${System.currentTimeMillis()}")
+    fun beginPatientSelection(pack: PackManifest) {
+        pendingPack = pack
+        open(Route.PatientChoice(pack.id))
+    }
+
+    fun openProfiles() = open(Route.Profiles)
+
+    fun openPatientDetails(profile: PatientProfile) = open(Route.PatientDetails(profile.uid))
+
+    fun selectExistingPatient() = open(Route.ExistingPatient)
+
+    fun createNewPatient() = open(Route.NewPatient)
+
+    fun selectPatient(patient: PatientProfile) {
+        val pack = pendingPack ?: return
+        _case.value = CaseUiState(pack, caseId = "case-${System.currentTimeMillis()}", patient = patient)
         open(Route.Case)
+    }
+
+    fun addAndSelectPatient(patient: PatientProfile) {
+        if (patientDirectory.add(patient)) selectPatient(patient)
     }
 
     /** Re-reads the case directory: after import, capture or delete, and when the case screen comes back to the foreground. */
