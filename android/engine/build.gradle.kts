@@ -19,6 +19,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
+    // Pack golden tests read <repo>/ml/packs directly; asset paths start with the pack directory.
+    sourceSets {
+        named("androidTest") { assets.srcDir(rootDir.resolve("../ml/packs")) }
+    }
 }
 
 // Every pack's manifest, model and golden cases live in ml/packs; PackGoldenTest reads them from the test APK's
