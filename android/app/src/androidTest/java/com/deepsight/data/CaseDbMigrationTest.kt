@@ -3,6 +3,8 @@ package com.deepsight.data
 import android.database.sqlite.SQLiteDatabase
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.deepsight.profiles.Patient
+import com.deepsight.profiles.Sex
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -10,7 +12,7 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Phones that already hold signed-off cases (schema v1) keep them when the report columns arrive (v2). */
+/** Phones that already hold signed-off cases keep them across every schema change (v1 → v2 → v3 → v4). */
 @RunWith(AndroidJUnit4::class)
 class CaseDbMigrationTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
@@ -47,6 +49,38 @@ class CaseDbMigrationTest {
             dao.upsert(old.copy(reportText = "Triage: ABNORMAL_FLAG.", reportSource = "template", analysedAt = 1_790_998_807_000L))
             assertEquals("Triage: ABNORMAL_FLAG.", dao.caseById("case-1")!!.reportText)
             assertEquals(1_790_998_807_000L, dao.caseById("case-1")!!.analysedAt)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun version3CasesSurviveAsSignedWithoutAPatient() = runBlocking {
+        context.deleteDatabase(name)
+        // Room's own v3 schema (generated CaseDb_Impl before MIGRATION_3_4), with one signed-off case and its field.
+        SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath(name), null).use { db ->
+            db.execSQL("CREATE TABLE IF NOT EXISTS `cases` (`case_id` TEXT NOT NULL, `pack_id` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `case_result_json` TEXT, `signed_by` TEXT, `signed_at` INTEGER, `decision` TEXT, `note` TEXT, `report_text` TEXT, `report_source` TEXT, `analysed_at` INTEGER, PRIMARY KEY(`case_id`))")
+            db.execSQL("CREATE TABLE IF NOT EXISTS `fields` (`field_id` TEXT NOT NULL, `case_id` TEXT NOT NULL, `image_path` TEXT, `field_result_json` TEXT NOT NULL, PRIMARY KEY(`field_id`), FOREIGN KEY(`case_id`) REFERENCES `cases`(`case_id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_fields_case_id` ON `fields` (`case_id`)")
+            db.execSQL("INSERT INTO cases VALUES ('case-3', 'malaria_thin', 1000, '{}', 'Dr Old', 2000, 'accept', '', 'Report.', 'template', 1500)")
+            db.execSQL("INSERT INTO fields VALUES ('case-3_field_1', 'case-3', '/files/f1.jpg', '{}')")
+            db.version = 3
+        }
+
+        val db = CaseDb.build(context, name)
+        try {
+            val dao = db.dao()
+            val old = dao.caseById("case-3")!!
+            assertEquals(CaseStatus.SIGNED, old.status)
+            assertNull(old.patientUid)
+            assertNull(old.error)
+            assertEquals("Dr Old", old.signedBy)
+            assertEquals(1500L, old.analysedAt)
+            assertEquals(listOf("/files/f1.jpg"), dao.fields("case-3").map { it.imagePath })
+
+            val patient = Patient("P-0000-0001", "Ada Example", "1990-05-17", Sex.F, createdAt = 3000L)
+            db.patientDao().insert(patient)
+            assertEquals(patient, db.patientDao().byUid(patient.uid))
         } finally {
             db.close()
         }
