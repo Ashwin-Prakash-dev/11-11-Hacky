@@ -41,10 +41,12 @@ class CaseDbMigrationTest {
             assertEquals("Dr Old", old.signedBy)
             assertNull(old.reportText)
             assertNull(old.reportSource)
+            assertNull(old.analysedAt)
             assertEquals(1, dao.fields("case-1").size)
 
-            dao.upsert(old.copy(reportText = "Triage: ABNORMAL_FLAG.", reportSource = "template"))
+            dao.upsert(old.copy(reportText = "Triage: ABNORMAL_FLAG.", reportSource = "template", analysedAt = 1_790_998_807_000L))
             assertEquals("Triage: ABNORMAL_FLAG.", dao.caseById("case-1")!!.reportText)
+            assertEquals(1_790_998_807_000L, dao.caseById("case-1")!!.analysedAt)
         } finally {
             db.close()
         }

@@ -93,6 +93,7 @@ data class SavedCaseUiState(
     val images: Map<String, File>,
     val report: CaseReportText?,
     val signOff: SignOff?,
+    val analysedAt: Long?,
     val classificationOnly: Boolean = false,
 )
 
@@ -258,7 +259,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val rows = r.run.fields.map { f -> FieldEntity(f.fieldId, case.caseId, r.images[f.fieldId]?.path, Contracts.encode(f)) }
         val entity = CaseEntity(
             case.caseId, case.packId, signOff.signedAt, Contracts.encode(case),
-            reportText = report?.text, reportSource = report?.source?.name?.lowercase(),
+            reportText = report?.text, reportSource = report?.source?.name?.lowercase(), analysedAt = r.run.analysedAt,
         )
         dao.upsert(signOff.applyTo(entity), rows)
     }
@@ -281,6 +282,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 images = fieldRows.mapNotNull { f -> f.imagePath?.let { f.fieldId to File(it) } }.toMap(),
                 report = row.reportText?.let { CaseReportText(it, if (row.reportSource == "gemma") ReportSource.GEMMA else ReportSource.TEMPLATE) },
                 signOff = row.signOff(),
+                analysedAt = row.analysedAt,
                 classificationOnly = pack?.triage?.rules?.all { it.level == TriageLevel.NEEDS_EXPERT } == true,
             )
         }

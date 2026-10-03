@@ -35,6 +35,8 @@ data class CaseEntity(
     val note: String? = null,
     @ColumnInfo(name = "report_text") val reportText: String? = null,
     @ColumnInfo(name = "report_source") val reportSource: String? = null,
+    /** Epoch millis when the analysis finished; null for cases saved before it was recorded (schema v3). */
+    @ColumnInfo(name = "analysed_at") val analysedAt: Long? = null,
 )
 
 /** One field. [imagePath] is null when the field has no image (fake engine fields until #30); must be a file under filesDir (copy picker/camera images in): content:// URIs lose permission after a restart. */
@@ -74,7 +76,7 @@ interface CaseDao {
     suspend fun fields(caseId: String): List<FieldEntity>
 }
 
-@Database(entities = [CaseEntity::class, FieldEntity::class], version = 2, exportSchema = false)
+@Database(entities = [CaseEntity::class, FieldEntity::class], version = 3, exportSchema = false)
 abstract class CaseDb : RoomDatabase() {
     abstract fun dao(): CaseDao
 
@@ -89,8 +91,15 @@ abstract class CaseDb : RoomDatabase() {
             }
         }
 
+        /** v2 → v3: when the analysis ran. Existing cases keep every column; their time is null. */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `cases` ADD COLUMN `analysed_at` INTEGER")
+            }
+        }
+
         fun build(context: Context, name: String = "cases.db"): CaseDb =
-            Room.databaseBuilder(context.applicationContext, CaseDb::class.java, name).addMigrations(MIGRATION_1_2).build()
+            Room.databaseBuilder(context.applicationContext, CaseDb::class.java, name).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
 
         fun get(context: Context): CaseDb = instance ?: synchronized(this) {
             instance ?: build(context).also { instance = it }
