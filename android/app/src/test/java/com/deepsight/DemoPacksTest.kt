@@ -8,6 +8,7 @@ class DemoPacksTest {
     @Test
     fun onlyPhoneValidatedPacksArePickable() {
         assertTrue(DemoPacks.isReady("malaria_thin"))
-        listOf("fungal", "leukaemia_wbc", "breast_breakhis", "smoke").forEach { assertFalse(it, DemoPacks.isReady(it)) }
+        assertTrue(DemoPacks.isReady("breast_breakhis")) // its 6 golden cases pass on a phone
+        listOf("fungal", "leukaemia_wbc", "smoke").forEach { assertFalse(it, DemoPacks.isReady(it)) }
     }
 }

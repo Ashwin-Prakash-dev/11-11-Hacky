@@ -1,0 +1,32 @@
+{
+  "case_id": "golden",
+  "field_id": "SOB_B_TA-14-16184-400-014",
+  "pack_id": "breast_breakhis",
+  "pack_version": "0.1.0",
+  "quality": {
+    "pass": true,
+    "blur_score": 83.87517329541953,
+    "exposure_score": 9.316770186335403e-06,
+    "reasons": []
+  },
+  "router": {
+    "verdict": "match",
+    "score": 1.0
+  },
+  "objects": [
+    {
+      "label": "benign",
+      "score": 0.988022909555303,
+      "bbox": null
+    }
+  ],
+  "counts": {
+    "benign": 1,
+    "malignant": 0
+  },
+  "image_score": 0.011977090444697,
+  "uncertainty": {
+    "flag": false,
+    "reason": null
+  }
+}
