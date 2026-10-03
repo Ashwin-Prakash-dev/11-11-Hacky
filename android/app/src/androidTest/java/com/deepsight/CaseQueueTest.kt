@@ -119,8 +119,7 @@ class CaseQueueTest {
         assertEquals(2, dao.fields("c1").size)
 
         store.fields("c1").first().file.delete()
-        q.submit(null, "malaria_thin", "c1")
-        withTimeout(10_000) { dao.observe("c1").first { it?.status == CaseStatus.QUEUED || it?.status == CaseStatus.RUNNING } }
+        q.submit(null, "malaria_thin", "c1") // commits QUEUED before it returns, so the next DONE is the re-run's
         awaitFinished("c1")
 
         assertEquals(listOf(fieldId("c1", 2)), dao.fields("c1").map { it.fieldId })

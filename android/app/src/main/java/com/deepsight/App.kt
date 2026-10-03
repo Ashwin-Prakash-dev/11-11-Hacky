@@ -91,7 +91,7 @@ private fun Screen(route: Route, vm: AppViewModel) {
             result?.let { r ->
                 ResultScreen(
                     r.run.case, r.run.fields, r.report, r.signOff, onRecapture = vm::recapture, onSignOff = vm::signOff,
-                    testName = r.pack.displayName, images = r.images, positiveLabel = r.pack.output.imageScoreLabel, analysedAt = r.run.analysedAt,
+                    testName = r.pack.displayName, images = r.images, positiveLabel = r.pack.output.imageScoreLabel, analysedAt = r.run.analysedAt, canRecapture = r.canRecapture,
                 )
             }
         }

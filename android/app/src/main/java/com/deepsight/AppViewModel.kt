@@ -86,6 +86,8 @@ data class ResultUiState(
     val images: Map<String, File>,
     val report: ReportUiState,
     val signOff: SignOff? = null,
+    /** Only from the case screen: Recapture goes back there to capture again. Not for a result opened from History. */
+    val canRecapture: Boolean = true,
 )
 
 data class HistoryItem(
@@ -252,12 +254,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             _case.update { if (it?.caseId == c.caseId) it.copy(running = false, progress = null, ahead = null) else it }
             // Only the case still on screen may show its result: the user may have backed out.
             if (_case.value?.caseId != c.caseId || _stack.value.last() != Route.Case) return@launch
-            if (row.status == CaseStatus.FAILED) _case.update { it?.copy(error = "Analysis failed: ${row.error}") } else showResult(c.caseId)
+            if (row.status == CaseStatus.FAILED) _case.update { it?.copy(error = "Analysis failed: ${row.error}") } else showResult(c.caseId, canRecapture = true)
         }
     }
 
     /** The result as the queue stored it, ready for review and sign-off. */
-    private suspend fun showResult(caseId: String) {
+    private suspend fun showResult(caseId: String, canRecapture: Boolean) {
         val row = dao.caseById(caseId) ?: return
         val case = row.caseResultJson?.let(Contracts::parseCaseResult) ?: return
         val pack = _packs.value.orEmpty().firstOrNull { it.manifest.id == row.packId }?.manifest ?: return
@@ -265,7 +267,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val fields = case.fieldIds.mapNotNull { fieldRows[it] } // the run's order; field_id sorts field_10 before field_2
         val run = CaseRun(fields.map { Contracts.parseFieldResult(it.fieldResultJson) }, case, row.analysedAt ?: 0L)
         val images = fields.mapNotNull { f -> f.imagePath?.let { f.fieldId to File(it) } }.toMap()
-        _result.value = ResultUiState(pack, run, images, ReportUiState.Writing(""))
+        _result.value = ResultUiState(pack, run, images, ReportUiState.Writing(""), canRecapture = canRecapture)
         open(Route.Result)
         writeReport(pack, run)
     }
@@ -307,7 +309,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun openSaved(caseId: String) {
         val status = history.value.firstOrNull { it.caseId == caseId }?.status
         if (status == CaseStatus.DONE) {
-            viewModelScope.launch { showResult(caseId) }
+            viewModelScope.launch { showResult(caseId, canRecapture = false) } // no case screen behind it to capture on
             return
         }
         if (status != CaseStatus.SIGNED) return
