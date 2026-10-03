@@ -18,6 +18,7 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -39,7 +40,15 @@ import com.deepsight.ui.theme.DeepSightTheme
  * its controls are disabled. A finished batch opens for sign-off ([onOpen]).
  */
 @Composable
-fun BatchScreen(batches: List<BatchItem>, onOpen: (String) -> Unit, onUseSingle: () -> Unit, modifier: Modifier = Modifier) {
+fun BatchScreen(
+    batches: List<BatchItem>,
+    onOpen: (String) -> Unit,
+    onUseSingle: () -> Unit,
+    modifier: Modifier = Modifier,
+    onSelectImages: () -> Unit = {},
+    draftImages: Int = 0,
+    onContinue: () -> Unit = {},
+) {
     Column(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -54,15 +63,23 @@ fun BatchScreen(batches: List<BatchItem>, onOpen: (String) -> Unit, onUseSingle:
                         Icon(DeepSightIcons.Batch, contentDescription = null, Modifier.padding(10.dp).size(28.dp))
                     }
                     Spacer(Modifier.width(12.dp))
-                    StatusPill("Coming soon", tone = PillTone.NEUTRAL)
+                    StatusPill("Router: placeholder", tone = PillTone.CAUTION)
                 }
                 Text("Screen many fields at once", style = MaterialTheme.typography.headlineSmall)
-                Text("Batch upload is being designed. You'll add many field images here in one go.", style = MaterialTheme.typography.bodyMedium)
-                Button(onClick = {}, enabled = false) {
+                Text(
+                    "Add many field images at once. A router suggests a test module for each, you check and change them, then submit them together.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Button(onClick = onSelectImages) {
                     Icon(DeepSightIcons.Gallery, contentDescription = null, Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text("Select images")
                 }
+            }
+        }
+        if (draftImages > 0) {
+            OutlinedButton(onClick = onContinue, modifier = Modifier.fillMaxWidth()) {
+                Text("Continue allocating ${if (draftImages == 1) "1 image" else "$draftImages images"}")
             }
         }
         SectionHeader("Batches", supporting = if (batches.isEmpty()) null else "Run one at a time, in the order they were submitted.")

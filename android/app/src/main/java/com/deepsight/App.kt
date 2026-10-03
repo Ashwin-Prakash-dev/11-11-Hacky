@@ -1,6 +1,9 @@
 package com.deepsight
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,9 +22,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.deepsight.about.AboutScreen
 import com.deepsight.about.DocumentScreen
+import com.deepsight.batch.BatchAllocateScreen
 import com.deepsight.batch.BatchScreen
+import com.deepsight.batch.BatchViewModel
 import com.deepsight.capture.CaseScreen
 import com.deepsight.history.HistoryScreen
 import com.deepsight.history.SavedCaseScreen
@@ -100,6 +106,7 @@ private fun tabIcon(tab: Tab): ImageVector = when (tab) {
 @Composable
 private fun title(route: Route): String = when (route) {
     Route.Batch -> "Batch upload"
+    Route.BatchAllocate -> "Allocate images"
     Route.Profile -> "Profiles"
     Route.Home -> stringResource(R.string.app_name)
     Route.Case -> "New case"
@@ -119,7 +126,33 @@ private fun Screen(route: Route, vm: AppViewModel) {
     when (route) {
         Route.Batch -> {
             val batches by vm.batches.collectAsStateWithLifecycle()
-            BatchScreen(batches, onOpen = vm::openBatch, onUseSingle = { vm.selectTab(Tab.SINGLE) })
+            val bvm: BatchViewModel = viewModel()
+            val draft by bvm.draft.collectAsStateWithLifecycle()
+            val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
+                if (uris.isNotEmpty()) {
+                    bvm.addImages(uris)
+                    vm.open(Route.BatchAllocate)
+                }
+            }
+            BatchScreen(
+                batches, onOpen = vm::openBatch, onUseSingle = { vm.selectTab(Tab.SINGLE) },
+                onSelectImages = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                draftImages = draft.images.size, onContinue = { vm.open(Route.BatchAllocate) },
+            )
+        }
+        Route.BatchAllocate -> {
+            val bvm: BatchViewModel = viewModel()
+            val draft by bvm.draft.collectAsStateWithLifecycle()
+            val packs by bvm.packs.collectAsStateWithLifecycle()
+            val patients by bvm.patients.collectAsStateWithLifecycle()
+            val busy by bvm.busy.collectAsStateWithLifecycle()
+            val error by bvm.error.collectAsStateWithLifecycle()
+            BatchAllocateScreen(
+                draft, packs, patients, busy, error,
+                onReassign = bvm::reassign, onRemove = bvm::remove, onPatient = bvm::setPatient, onVerified = bvm::setVerified,
+                onSubmit = { bvm.submit { vm.back() } }, // the queue list on the Batch tab shows what was submitted
+                onClear = { bvm.clear(); vm.back() },
+            )
         }
         Route.Profile -> {
             val profiles by vm.profiles.collectAsStateWithLifecycle()

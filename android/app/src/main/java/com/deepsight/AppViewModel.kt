@@ -52,6 +52,7 @@ import kotlinx.coroutines.withContext
 /** Where the user is. The back stacks live in [AppViewModel] ([NavState]), so they survive rotation. */
 sealed interface Route {
     data object Batch : Route
+    data object BatchAllocate : Route
     data object Profile : Route
     data object Home : Route
     data object Case : Route
