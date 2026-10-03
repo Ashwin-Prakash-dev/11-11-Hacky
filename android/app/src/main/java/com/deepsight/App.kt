@@ -3,47 +3,62 @@ package com.deepsight
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.deepsight.about.AboutScreen
 import com.deepsight.about.DocumentScreen
+import com.deepsight.batch.BatchScreen
 import com.deepsight.capture.CaseScreen
 import com.deepsight.history.HistoryScreen
 import com.deepsight.history.SavedCaseScreen
 import com.deepsight.home.HomeScreen
+import com.deepsight.profile.ProfileScreen
 import com.deepsight.result.ResultScreen
 import com.deepsight.ui.DeepSightIcons
 import com.deepsight.ui.components.DeepSightTopBar
 import com.deepsight.ui.components.DisclaimerBar
 
-/** Home → case → result and sign-off → history; about and the licence from home. State lives in [AppViewModel]. */
+/**
+ * Three tabs, each with its own back stack ([NavState]): Batch, Single (home → case → result and sign-off → history)
+ * and Profile (profiles, about and the licences). State lives in [AppViewModel].
+ */
 @Composable
 fun DeepSightApp(vm: AppViewModel) {
-    val stack by vm.stack.collectAsStateWithLifecycle()
-    val route = stack.last()
-    BackHandler(enabled = stack.size > 1) { vm.back() }
+    val nav by vm.nav.collectAsStateWithLifecycle()
+    val route = nav.route
+    BackHandler(enabled = nav.back() != null) { vm.back() }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             DeepSightTopBar(
                 title = title(route),
-                canGoBack = stack.size > 1,
+                canGoBack = nav.stack.size > 1,
                 onBack = { vm.back() },
                 actions = {
                     if (route == Route.Home) IconButton(onClick = { vm.open(Route.About) }) { Icon(DeepSightIcons.Info, contentDescription = "About") }
                 },
             )
         },
-        bottomBar = { DisclaimerBar() },
+        bottomBar = {
+            Column {
+                DisclaimerBar()
+                TabBar(nav.tab, onSelect = vm::selectTab)
+            }
+        },
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
             Crossfade(targetState = route, label = "screen") { screen -> Screen(screen, vm) }
@@ -52,7 +67,36 @@ fun DeepSightApp(vm: AppViewModel) {
 }
 
 @Composable
+private fun TabBar(selected: Tab, onSelect: (Tab) -> Unit) {
+    NavigationBar {
+        Tab.entries.forEach { tab ->
+            NavigationBarItem(
+                selected = tab == selected,
+                onClick = { onSelect(tab) },
+                icon = { Icon(tabIcon(tab), contentDescription = null) },
+                label = { Text(tabLabel(tab)) },
+            )
+        }
+    }
+}
+
+private fun tabLabel(tab: Tab): String = when (tab) {
+    Tab.BATCH -> "Batch"
+    Tab.SINGLE -> "Single"
+    Tab.PROFILE -> "Profile"
+}
+
+@Composable
+private fun tabIcon(tab: Tab): ImageVector = when (tab) {
+    Tab.BATCH -> DeepSightIcons.Batch
+    Tab.SINGLE -> DeepSightIcons.Science
+    Tab.PROFILE -> DeepSightIcons.Person
+}
+
+@Composable
 private fun title(route: Route): String = when (route) {
+    Route.Batch -> "Batch upload"
+    Route.Profile -> "Profiles"
     Route.Home -> stringResource(R.string.app_name)
     Route.Case -> "New case"
     Route.Result -> "Result"
@@ -65,6 +109,11 @@ private fun title(route: Route): String = when (route) {
 @Composable
 private fun Screen(route: Route, vm: AppViewModel) {
     when (route) {
+        Route.Batch -> BatchScreen(onUseSingle = { vm.selectTab(Tab.SINGLE) })
+        Route.Profile -> {
+            val profiles by vm.profiles.collectAsStateWithLifecycle()
+            ProfileScreen(profiles, onAdd = vm::addProfile, onSelect = vm::selectProfile, onAbout = { vm.open(Route.About) })
+        }
         Route.Home -> {
             val packs by vm.packs.collectAsStateWithLifecycle()
             val ai by vm.aiStatus.collectAsStateWithLifecycle()
