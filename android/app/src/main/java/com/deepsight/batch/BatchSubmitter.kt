@@ -1,6 +1,7 @@
 package com.deepsight.batch
 
 import com.deepsight.capture.CaseStore
+import com.deepsight.data.SubmissionSource
 
 /** A case made from one module's images and handed to the queue. */
 data class SubmittedBatch(val caseId: String, val packId: String, val imageCount: Int)
@@ -12,7 +13,7 @@ data class SubmittedBatch(val caseId: String, val packId: String, val imageCount
  */
 class BatchSubmitter(
     private val store: CaseStore,
-    private val enqueue: suspend (patientUid: String, packId: String, caseId: String) -> Unit,
+    private val enqueue: suspend (patientUid: String, packId: String, caseId: String, source: SubmissionSource) -> Unit,
     private val clock: () -> Long = System::currentTimeMillis,
 ) {
     suspend fun submit(draft: BatchDraft, packOrder: List<String>): List<SubmittedBatch> {
@@ -25,7 +26,7 @@ class BatchSubmitter(
             }
             SubmittedBatch(caseId, packId, images.size)
         }
-        prepared.forEach { enqueue(checkNotNull(draft.patientUid), it.packId, it.caseId) }
+        prepared.forEach { enqueue(checkNotNull(draft.patientUid), it.packId, it.caseId, SubmissionSource.BATCH) }
         return prepared
     }
 }

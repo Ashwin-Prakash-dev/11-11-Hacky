@@ -63,8 +63,9 @@ class BatchEndToEndDeviceTest {
         assertEquals(false, draft.canSubmit) // not verified yet
         val verified = draft.setVerified(true)
 
-        val submitted = BatchSubmitter(store, { uid, pack, caseId -> queue.submit(uid, pack, caseId) }).submit(verified, packIds)
+        val submitted = BatchSubmitter(store, queue::submit).submit(verified, packIds)
         assertEquals(listOf("malaria_thin" to 2, "breast_breakhis" to 2), submitted.map { it.packId to it.imageCount })
+        assertEquals("the Batch list shows every submitted case", submitted.map { it.caseId }, db.dao().batchSubmissions().first().map { it.caseId })
 
         for (batch in submitted) {
             val row = withTimeout(180_000) { db.dao().observe(batch.caseId).first { it?.status == CaseStatus.DONE || it?.status == CaseStatus.FAILED } }!!

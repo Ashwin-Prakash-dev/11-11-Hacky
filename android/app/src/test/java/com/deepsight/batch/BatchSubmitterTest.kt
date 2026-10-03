@@ -1,6 +1,7 @@
 package com.deepsight.batch
 
 import com.deepsight.capture.CaseStore
+import com.deepsight.data.SubmissionSource
 import java.io.File
 import java.nio.file.Files
 import kotlinx.coroutines.runBlocking
@@ -13,7 +14,7 @@ import org.junit.Test
 class BatchSubmitterTest {
     private lateinit var dir: File
     private lateinit var store: CaseStore
-    private val queued = mutableListOf<Triple<String, String, String>>()
+    private val queued = mutableListOf<List<Any>>()
     private val packs = listOf("malaria_thin", "breast_breakhis")
 
     @Before
@@ -30,7 +31,7 @@ class BatchSubmitterTest {
         return BatchDraft().add(files.toList(), byName, packs).let { d -> patient?.let(d::withPatient) ?: d }.setVerified(true)
     }
 
-    private fun submitter() = BatchSubmitter(store, { uid, pack, caseId -> queued += Triple(uid, pack, caseId) }, clock = { 1_000L })
+    private fun submitter() = BatchSubmitter(store, { uid, pack, caseId, source -> queued += listOf(uid, pack, caseId, source) }, clock = { 1_000L })
 
     @Test
     fun oneCasePerModuleWithItsImagesCopiedUnchanged() = runBlocking {
@@ -43,7 +44,7 @@ class BatchSubmitterTest {
         assertEquals(listOf("malaria_thin", "breast_breakhis"), submitted.map { it.packId })
         assertEquals(listOf(2, 1), submitted.map { it.imageCount })
         assertEquals(2, submitted.map { it.caseId }.toSet().size)
-        assertEquals(submitted.map { Triple("P-1", it.packId, it.caseId) }, queued)
+        assertEquals(submitted.map { listOf("P-1", it.packId, it.caseId, SubmissionSource.BATCH) }, queued)
         val malaria = store.fields(submitted[0].caseId)
         assertEquals(listOf("malaria-one", "malaria-two"), malaria.map { it.file.readText() })
         assertEquals(listOf("jpg", "jpg"), malaria.map { it.file.extension })

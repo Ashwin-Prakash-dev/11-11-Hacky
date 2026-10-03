@@ -107,7 +107,7 @@ class BatchViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             try {
                 val submitted = withContext(Dispatchers.IO) {
-                    BatchSubmitter(store, { uid, pack, caseId -> queue.submit(uid, pack, caseId) }).submit(draft, packs.value.map { it.id })
+                    BatchSubmitter(store, queue::submit).submit(draft, packs.value.map { it.id })
                 }
                 clear()
                 onDone(submitted)
