@@ -25,6 +25,8 @@ import com.deepsight.capture.CaseScreen
 import com.deepsight.history.HistoryScreen
 import com.deepsight.history.SavedCaseScreen
 import com.deepsight.home.HomeScreen
+import com.deepsight.profiles.ProfilesScreen
+import com.deepsight.profiles.NewPatientScreen
 import com.deepsight.profile.ProfileScreen
 import com.deepsight.result.ResultScreen
 import com.deepsight.ui.DeepSightIcons
@@ -32,8 +34,8 @@ import com.deepsight.ui.components.DeepSightTopBar
 import com.deepsight.ui.components.DisclaimerBar
 
 /**
- * Three tabs, each with its own back stack ([NavState]): Batch, Single (home → case → result and sign-off → history)
- * and Profile (profiles, about and the licences). State lives in [AppViewModel].
+ * Three tabs, each with its own back stack ([NavState]): Batch, Single (home → patient → case → result and sign-off →
+ * history; the patient list) and Profile (the phone's users, about and the licences). State lives in [AppViewModel].
  */
 @Composable
 fun DeepSightApp(vm: AppViewModel) {
@@ -103,13 +105,19 @@ private fun title(route: Route): String = when (route) {
     Route.History -> "History"
     is Route.SavedCase -> "Signed-off case"
     Route.About -> "About"
+    Route.Profiles -> "Patients"
+    Route.PickPatient -> "Choose patient"
+    Route.NewPatient -> "New patient"
     is Route.Document -> route.title
 }
 
 @Composable
 private fun Screen(route: Route, vm: AppViewModel) {
     when (route) {
-        Route.Batch -> BatchScreen(onUseSingle = { vm.selectTab(Tab.SINGLE) })
+        Route.Batch -> {
+            val batches by vm.batches.collectAsStateWithLifecycle()
+            BatchScreen(batches, onOpen = vm::openBatch, onUseSingle = { vm.selectTab(Tab.SINGLE) })
+        }
         Route.Profile -> {
             val profiles by vm.profiles.collectAsStateWithLifecycle()
             ProfileScreen(profiles, onAdd = vm::addProfile, onSelect = vm::selectProfile, onAbout = { vm.open(Route.About) })
@@ -118,7 +126,11 @@ private fun Screen(route: Route, vm: AppViewModel) {
             val packs by vm.packs.collectAsStateWithLifecycle()
             val ai by vm.aiStatus.collectAsStateWithLifecycle()
             val history by vm.history.collectAsStateWithLifecycle()
-            HomeScreen(packs, ai, history.size, onPick = vm::startCase, onHistory = { vm.open(Route.History) })
+            val patients by vm.patients.collectAsStateWithLifecycle()
+            HomeScreen(
+                packs, ai, history.size, patients.size,
+                onPick = vm::startCase, onHistory = { vm.open(Route.History) }, onProfiles = { vm.open(Route.Profiles) },
+            )
         }
         Route.Case -> {
             val case by vm.case.collectAsStateWithLifecycle()
@@ -131,7 +143,7 @@ private fun Screen(route: Route, vm: AppViewModel) {
             result?.let { r ->
                 ResultScreen(
                     r.run.case, r.run.fields, r.report, r.signOff, onRecapture = vm::recapture, onSignOff = vm::signOff,
-                    testName = r.pack.displayName, images = r.images, positiveLabel = r.pack.output.imageScoreLabel, analysedAt = r.run.analysedAt,
+                    testName = r.pack.displayName, images = r.images, positiveLabel = r.pack.output.imageScoreLabel, analysedAt = r.run.analysedAt, canRecapture = r.canRecapture,
                     classificationOnly = r.pack.triage.rules.all { it.level.name == "NEEDS_EXPERT" },
                 )
             }
@@ -143,6 +155,18 @@ private fun Screen(route: Route, vm: AppViewModel) {
         is Route.SavedCase -> {
             val saved by vm.saved.collectAsStateWithLifecycle()
             SavedCaseScreen(saved?.takeIf { it.case.caseId == route.caseId })
+        }
+        Route.Profiles -> {
+            val patients by vm.patients.collectAsStateWithLifecycle()
+            ProfilesScreen(patients)
+        }
+        Route.PickPatient -> {
+            val patients by vm.patients.collectAsStateWithLifecycle()
+            ProfilesScreen(patients, onSelect = { vm.selectPatient(it.id) }, onNew = { vm.open(Route.NewPatient) })
+        }
+        Route.NewPatient -> {
+            val error by vm.patientError.collectAsStateWithLifecycle()
+            NewPatientScreen(error, onSave = vm::createPatient)
         }
         Route.About -> AboutScreen(onOpenDocument = { title, asset -> vm.open(Route.Document(title, asset)) })
         is Route.Document -> DocumentScreen(route.asset)

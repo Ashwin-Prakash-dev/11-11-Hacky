@@ -107,6 +107,39 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
     - Release-build memory is unchecked (no `largeHeap`).
     - Compose's `LocalLifecycleOwner` shows a deprecation warning until Lifecycle is 2.8 or later.
     - Not run on another phone model.
+- **Patients and the FCFS case queue (#64, branch `Abhay-Mmmm/b-patient-records-and-a-sequential-fcfs-case-que`, 2026-10-03):**
+  - **Base:** includes Ashwin's `b-profiles-ui` (the patient Profiles screen; it isn't on `test` on its own) and the bottom nav from `test` (#67, which also brought `b-analysis-timestamp`). It replaces #63/PR #66's UI. The case flow runs in the Single tab's back stack. The Profile tab (the phone's users, in memory) is separate from patients (Room); see `AppViewModel.profiles` vs `patients`.
+  - **Room v4 (`MIGRATION_3_4`):**
+    - A `patients` table: UID `P-XXXX-XXXX` (Crockford base32, `SecureRandom`, retried on a clash), name, ISO date of birth and sex. These are the fields the Profiles screen shows; blood group was dropped.
+    - Cases gain `patient_uid` (foreign key, no cascade), `status` (old rows become `SIGNED`) and `error`.
+    - `Patient` validates itself and is the only validator.
+  - **Flow:** choose test → choose patient or add one → case.
+    - **Analyse:** submits the batch to `CaseQueue`, which runs one batch at a time, first in first out, and survives leaving the screen. Restart recovery re-runs `QUEUED`/`RUNNING` rows. A failed batch is marked `FAILED` and the queue moves on.
+    - **History:** a finished, unsigned case opens for sign-off.
+    - **Sign-off:** an UPDATE (`CaseDao.sign`), not a REPLACE.
+    - **Profiles:** the screen reads Room.
+  - **Backup:** the database and `files/cases/` are excluded from cloud backup and device transfer.
+  - **Tests:**
+    - JVM, written first and passing: `PatientTest` (8), `ProfilesOfTest` (2).
+    - New device tests, written first: `CaseDbMigrationTest` (v3 → v4), `PatientDaoTest`, `CaseQueueTest` (fake runner: order, failure, restart, recapture, sign-off), `QueueParityDeviceTest` (real malaria pack; needs a field photo pushed as `queue_parity.jpg`).
+    - Updated for the patient step: `NavigationTest` and `ProfilesScreenTest`. `ProfilesNavigationTest` seeds Room instead of using `SampleProfiles`. `NavigationTest` and `TopBarNavigationTest` now scroll to History, which the Profiles card pushed below the fold.
+    - **Verified on the edge 50 fusion (Android 15, 2026-10-03):** after `installDebug installDebugAndroidTest`, the full `:app` device suite passed through `am instrument`: OK (46 tests). These are skipped because their files aren't on the phone: Annotated, Breast, Gemma, PipelineReport.
+    - The phone had another machine's debug signature, so the app was uninstalled first. Its data was a v2 database with no cases plus 2 photos, backed up locally first.
+  - **Walkthrough on the edge 50 fusion (2026-10-03), driven with adb; Room checked after each step:**
+    - **Migration:** the phone's own v2 database opened as v4.
+    - **New patients:** 2 created, getting `P-V9JH-XPR4` and `P-WXZY-KRCW`.
+    - **Back out:** backing out during a 4-field run, that run finished `DONE` in the background.
+    - **Queue:** patient 2's batch, submitted during patient 1's 8-field run, showed "Queued behind 1 batch".
+    - **Force-stop:** the app was force-stopped with batch 1 `RUNNING` and batch 2 `QUEUED`. After relaunch, both finished in submit order with the right `patient_uid`. Another force-stop mid-run also recovered (4/4 fields).
+    - **Sign-off from History:** "Ready for sign-off" opened the result without Recapture. The case became `SIGNED`, keeping its `patient_uid`, field and `analysed_at`.
+  - **Measured on the edge 50 fusion:**
+    - **Disk:** about 2.6 MB per imported NIH field (5312x2988 JPEG, stored unchanged) and about 1 MB per camera capture. Room adds about 29 KB per field; the database was 1.4 MB for 10 cases and 28 fields (`du`, sqlite).
+    - **Camera:** a capture during a running 8-field batch succeeded. Preview smoothness was not measured.
+  - **UNVERIFIED (moto g32):** the same MB-per-patient figure, and whether CameraX stays usable during inference on a low-end phone.
+  - **Batch tab shows the queue; the patient list is now "Patients" (2026-10-03):**
+    - **Batch tab:** its "Batches" section lists every unsigned case in submit order: running (field i/n), queued (place in line), ready for sign-off (tapping opens it in Single, without Recapture) or failed (with the error). Bulk image selection is still disabled until it's specified.
+    - **Rename:** the patient list's title and the Home card say "Patients"; the Profile tab (the phone's users) keeps "Profiles".
+    - **Tests:** `BatchesTest` (JVM, 3, written first; passes). `BatchScreenTest` and the renamed `ProfilesNavigationTest` compile; **not yet run on a phone** (the phone is off).
 - **Bottom navigation (branch `Ashwin-Prakash-dev/b-bottom-nav`, 2026-10-03):** three tabs, each with its own back stack (`NavState` in `Navigation.kt`). **Batch** is UI only: its controls are disabled until the batch mechanism is specified. **Single** is the existing flow unchanged (choose test → case → result → sign-off → history) and is where the app starts and where back ends. **Profile** lets you add and pick profiles (`profile/Profiles.kt`), in memory only: nothing saves them and nothing else reads them yet. It also links to About. An analysis still running when you switch tabs puts its result on Single without switching to it. Reselecting Single, or backing out, cancels it as before. The disclaimer bar sits just above the tab bar on every screen.
   - **Verified:** `:app:testDebugUnitTest` passes (36 tests, including the new `NavStateTest` 8 and `ProfilesTest` 5). `:app:compileDebugAndroidTestKotlin` passes.
   - **Not yet run on a phone** (none connected): `installDebug` and the new `BottomNavTest` (3 tests), plus `NavigationTest`, `TopBarNavigationTest` and `HomeAndAboutTest` through `am instrument`.

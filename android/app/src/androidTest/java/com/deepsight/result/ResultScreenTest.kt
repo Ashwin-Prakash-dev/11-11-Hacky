@@ -44,6 +44,15 @@ class ResultScreenTest {
     }
 
     @Test
+    fun aResultOpenedFromHistoryOffersNoRecapture() {
+        val case = Contracts.parseCaseResult(read("case_result.malaria_thin.json"))
+        val fields = listOf(Contracts.parseFieldResult(read("field_result.rejected.json")))
+        rule.setContent { ResultScreen(case, fields, report = null, signOff = null, onRecapture = {}, onSignOff = {}, canRecapture = false) }
+        rule.onNodeWithText("Rejected: blur").assertExists()
+        rule.onNodeWithText("Recapture").assertDoesNotExist()
+    }
+
+    @Test
     fun classificationOnlyShowsClassesButNotTriageOrReport() {
         val case = Contracts.parseCaseResult(read("case_result.malaria_thin.json"))
         val fields = listOf(Contracts.parseFieldResult(read("field_result.malaria_thin.json")))

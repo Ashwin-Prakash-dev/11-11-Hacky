@@ -7,8 +7,10 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -25,6 +27,8 @@ object DeepSightIcons {
     val Person = Icons.Outlined.Person
     val Pass = Icons.Rounded.CheckCircle
     val Warning = Icons.Rounded.Warning
+    val Search = Icons.Outlined.Search
+    val Clear = Icons.Rounded.Close
     val Add = Icons.Rounded.Add
 
     val Camera: ImageVector @Composable get() = ImageVector.vectorResource(R.drawable.ic_camera)

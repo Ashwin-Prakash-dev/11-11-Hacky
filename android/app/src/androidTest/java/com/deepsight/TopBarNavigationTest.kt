@@ -4,6 +4,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
 import org.junit.Test
@@ -19,7 +20,7 @@ class TopBarNavigationTest {
         rule.onNodeWithText("Choose test").assertExists()
         rule.onNodeWithContentDescription("Back").assertDoesNotExist()
 
-        rule.onNodeWithText("History").performClick()
+        rule.onNodeWithText("History").performScrollTo().performClick() // below the Profiles card
         rule.onNodeWithText("Choose test").assertDoesNotExist() // on History now; it may list saved cases
 
         rule.onNodeWithContentDescription("Back").performClick()

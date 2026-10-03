@@ -13,20 +13,26 @@ import com.deepsight.ai.ReportSource
 import com.deepsight.ai.ReportWriter
 import com.deepsight.capture.CaseStore
 import com.deepsight.capture.FieldImage
+import com.deepsight.batch.BatchItem
+import com.deepsight.batch.batchesOf
 import com.deepsight.data.CaseDb
-import com.deepsight.data.CaseEntity
-import com.deepsight.data.FieldEntity
+import com.deepsight.data.CaseStatus
+import com.deepsight.data.create
 import com.deepsight.engine.contract.CaseResult
 import com.deepsight.engine.contract.Contracts
 import com.deepsight.engine.contract.FieldResult
 import com.deepsight.engine.contract.PackManifest
 import com.deepsight.engine.contract.TriageLevel
+import com.deepsight.profiles.Patient
+import com.deepsight.profiles.PatientProfile
+import com.deepsight.profiles.Sex
+import com.deepsight.profiles.profilesOf
 import com.deepsight.profile.ProfileRole
 import com.deepsight.profile.Profiles
 import com.deepsight.result.SignOff
+import com.deepsight.result.sign
 import com.deepsight.result.signOff
 import java.io.File
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,6 +40,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -49,6 +56,10 @@ sealed interface Route {
     data object History : Route
     data class SavedCase(val caseId: String) : Route
     data object About : Route
+    data object Profiles : Route
+    /** Before a case: choose the patient the batch belongs to, or add one. */
+    data object PickPatient : Route
+    data object NewPatient : Route
     data class Document(val title: String, val asset: String) : Route
 }
 
@@ -59,10 +70,14 @@ data class CaseUiState(
     val pack: PackManifest,
     val caseId: String,
     val images: List<FieldImage> = emptyList(),
+    /** Submitted to the queue and not finished: waiting or analysing. */
     val running: Boolean = false,
-    /** (field being analysed, total) while [running]. */
+    /** (field being analysed, total) while the queue runs this case. */
     val progress: Pair<Int, Int>? = null,
     val error: String? = null,
+    val patient: Patient? = null,
+    /** Batches queued ahead of this one (the running one included) while it waits. */
+    val ahead: Int? = null,
 )
 
 sealed interface ReportUiState {
@@ -77,6 +92,8 @@ data class ResultUiState(
     val images: Map<String, File>,
     val report: ReportUiState,
     val signOff: SignOff? = null,
+    /** Only from the case screen: Recapture goes back there to capture again. Not for a result opened from History. */
+    val canRecapture: Boolean = true,
 )
 
 data class HistoryItem(
@@ -86,6 +103,7 @@ data class HistoryItem(
     val signedAt: Long?,
     val signedBy: String?,
     val decision: String?,
+    val status: CaseStatus,
     val classificationOnly: Boolean = false,
 )
 
@@ -106,6 +124,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val narrator = ReportService.narrator(app)
     private val writer = ReportWriter(narrator)
     private val dao = CaseDb.get(app).dao()
+    private val patientDao = CaseDb.get(app).patientDao()
+    private val queue = CaseQueue.get(app)
     private val store = CaseStore(app.filesDir.resolve("cases"))
 
     private val _nav = MutableStateFlow(NavState())
@@ -135,17 +155,43 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             HistoryItem(
                 caseId = row.caseId, packName = manifest?.displayName ?: row.packId,
                 level = row.caseResultJson?.let { runCatching { Contracts.parseCaseResult(it).triage.level }.getOrNull() },
-                signedAt = row.signedAt, signedBy = row.signedBy, decision = row.decision,
+                signedAt = row.signedAt, signedBy = row.signedBy, decision = row.decision, status = row.status,
                 classificationOnly = manifest?.triage?.rules?.all { it.level == TriageLevel.NEEDS_EXPERT } == true,
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    private var analysis: Job? = null
+    /** Patient profiles (Room) for the Profiles list and the pick before a case; not the phone users in [profiles]. */
+    val patients: StateFlow<List<PatientProfile>> = combine(patientDao.all(), dao.patientCases()) { patients, cases ->
+        profilesOf(patients, cases, System.currentTimeMillis())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val batches: StateFlow<List<BatchItem>> = combine(dao.unsigned(), patientDao.all(), queue.state, _packs) { rows, patients, q, packs ->
+        batchesOf(rows, patients.associate { it.uid to it.name }, packs.orEmpty().associate { it.manifest.id to it.manifest.displayName }, q)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    private val _patientError = MutableStateFlow<String?>(null)
+    val patientError: StateFlow<String?> = _patientError.asStateFlow()
+
+    /** The test chosen on Home, waiting for its patient. */
+    private var pendingPack: PackManifest? = null
     private var reporting: Job? = null
 
     init {
         viewModelScope.launch { _packs.value = runner.packs().map { PackItem(it, DemoPacks.isReady(it.id)) } }
+        viewModelScope.launch {
+            queue.state.collect { q ->
+                _case.update { c ->
+                    if (c == null || !c.running) return@update c
+                    val waiting = q.queued.indexOf(c.caseId)
+                    when {
+                        q.running == c.caseId -> c.copy(progress = q.progress ?: (0 to c.images.size), ahead = null)
+                        waiting >= 0 -> c.copy(progress = null, ahead = waiting + if (q.running != null) 1 else 0)
+                        else -> c
+                    }
+                }
+            }
+        }
     }
 
     // Navigation
@@ -157,19 +203,41 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** Returns false on Single's first screen, so the activity can close. */
     fun back(): Boolean = _nav.value.back()?.let { navigate(it); true } ?: false
 
-    /** Leaving the case or result screen, by back or by reselecting Single, stops its analysis or report. */
+    /** Leaving the result screen, by back or by reselecting Single, stops its report. A queued or running analysis carries on. */
     private fun navigate(next: NavState) {
-        val single = next.stacks.getValue(Tab.SINGLE)
-        if (Route.Case !in single) analysis?.cancel()
-        if (Route.Result !in single) reporting?.cancel()
+        if (Route.Result !in next.stacks.getValue(Tab.SINGLE)) reporting?.cancel()
         _nav.value = next
     }
 
     // Case
 
+    /** Every case belongs to a patient: pick one (or add one) first. */
     fun startCase(pack: PackManifest) {
-        _case.value = CaseUiState(pack, caseId = "case-${System.currentTimeMillis()}")
-        open(Route.Case)
+        pendingPack = pack
+        _patientError.value = null
+        open(Route.PickPatient)
+    }
+
+    fun selectPatient(uid: String) {
+        viewModelScope.launch { patientDao.byUid(uid)?.let(::caseFor) }
+    }
+
+    /** Patient validates the form; its message is shown on the form. A new patient goes straight into the case. */
+    fun createPatient(name: String, dob: String, sex: Sex) {
+        viewModelScope.launch {
+            try {
+                caseFor(patientDao.create(name, dob, sex, System.currentTimeMillis()))
+                _patientError.value = null
+            } catch (e: IllegalArgumentException) {
+                _patientError.value = e.message
+            }
+        }
+    }
+
+    private fun caseFor(patient: Patient) {
+        val pack = pendingPack ?: return
+        _case.value = CaseUiState(pack, caseId = "case-${System.currentTimeMillis()}", patient = patient)
+        _nav.update { n -> n.reset(Tab.SINGLE, n.stacks.getValue(Tab.SINGLE).filterNot { it == Route.NewPatient } + Route.Case) }
     }
 
     /** Re-reads the case directory: after import, capture or delete, and when the case screen comes back to the foreground. */
@@ -201,34 +269,43 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         refreshImages()
     }
 
+    /** Hands the batch to the queue: the technician can back out and start the next patient while it waits or runs. */
     fun analyse() {
         val c = _case.value ?: return
         if (c.images.isEmpty() || c.running) return
-        analysis = viewModelScope.launch {
-            _case.update { it?.copy(running = true, error = null, progress = 0 to c.images.size) }
+        _case.update { it?.copy(running = true, error = null, progress = null, ahead = null) }
+        viewModelScope.launch {
+            queue.submit(c.patient?.uid, c.pack.id, c.caseId)
+            val row = dao.observe(c.caseId).first { it?.status == CaseStatus.DONE || it?.status == CaseStatus.FAILED }!!
+            _case.update { if (it?.caseId == c.caseId) it.copy(running = false, progress = null, ahead = null) else it }
             // Only the case still on screen may show its result: the user may have backed out.
             // Another tab may be open meanwhile: the result still goes on Single, without switching to it.
-            fun current() = _case.value?.caseId == c.caseId && _nav.value.top(Tab.SINGLE) == Route.Case
-            try {
-                val run = runner.run(c.pack.id, c.caseId, c.images) { done, total -> _case.update { it?.copy(progress = done to total) } }
-                if (current()) {
-                    val images = store.fields(c.caseId).associate { fieldId(c.caseId, it.index) to it.file }
-                    _result.value = ResultUiState(c.pack, run, images, ReportUiState.Writing(""))
-                    _nav.update { it.open(Route.Result, Tab.SINGLE) }
-                    if (!c.pack.triage.rules.all { it.level == TriageLevel.NEEDS_EXPERT }) writeReport(c.pack, run)
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.e(TAG, "case ${c.caseId} failed", e)
-                if (current()) _case.update { it?.copy(error = "Analysis failed: ${e.message}") }
-            } catch (e: OutOfMemoryError) {
-                Log.e(TAG, "case ${c.caseId} ran out of memory", e)
-                if (current()) _case.update { it?.copy(error = "Analysis failed: not enough memory for these images.") }
-            } finally {
-                _case.update { if (it?.caseId == c.caseId) it.copy(running = false, progress = null) else it }
-            }
+            if (_case.value?.caseId != c.caseId || _nav.value.top(Tab.SINGLE) != Route.Case) return@launch
+            if (row.status == CaseStatus.FAILED) _case.update { it?.copy(error = "Analysis failed: ${row.error}") } else showResult(c.caseId, canRecapture = true)
         }
+    }
+
+    /** A finished batch from the Batch tab opens for sign-off on Single, like one from History. */
+    fun openBatch(caseId: String) {
+        viewModelScope.launch {
+            if (dao.caseById(caseId)?.status != CaseStatus.DONE) return@launch
+            _nav.update { it.copy(tab = Tab.SINGLE) }
+            showResult(caseId, canRecapture = false) // no case screen behind it to capture on
+        }
+    }
+
+    /** The result as the queue stored it, ready for review and sign-off. */
+    private suspend fun showResult(caseId: String, canRecapture: Boolean) {
+        val row = dao.caseById(caseId) ?: return
+        val case = row.caseResultJson?.let(Contracts::parseCaseResult) ?: return
+        val pack = _packs.value.orEmpty().firstOrNull { it.manifest.id == row.packId }?.manifest ?: return
+        val fieldRows = dao.fields(caseId).associateBy { it.fieldId }
+        val fields = case.fieldIds.mapNotNull { fieldRows[it] } // the run's order; field_id sorts field_10 before field_2
+        val run = CaseRun(fields.map { Contracts.parseFieldResult(it.fieldResultJson) }, case, row.analysedAt ?: 0L)
+        val images = fields.mapNotNull { f -> f.imagePath?.let { f.fieldId to File(it) } }.toMap()
+        _result.value = ResultUiState(pack, run, images, ReportUiState.Writing(""), canRecapture = canRecapture)
+        _nav.update { it.open(Route.Result, Tab.SINGLE) } // from the case screen or History, both on Single
+        if (!pack.triage.rules.all { it.level == TriageLevel.NEEDS_EXPERT }) writeReport(pack, run) // classification-only packs have no report
     }
 
     private fun writeReport(pack: PackManifest, run: CaseRun) {
@@ -257,22 +334,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val r = _result.value ?: return
         val report = (r.report as? ReportUiState.Done)?.report
         _result.update { it?.copy(signOff = signOff) }
-        viewModelScope.launch { save(r, signOff, report) }
+        // The queue already stored the case, its fields and case_result; signing adds the sign-off and the report seen.
+        viewModelScope.launch { dao.sign(signOff, report?.text, report?.source?.name?.lowercase()) }
         _nav.update { it.reset(Tab.SINGLE, listOf(Route.Home, Route.History)) }
     }
 
-    /** The case, its fields (each with its image file), the case_result JSON as the contract wrote it, and the report seen. */
-    private suspend fun save(r: ResultUiState, signOff: SignOff, report: CaseReportText?) {
-        val case = r.run.case
-        val rows = r.run.fields.map { f -> FieldEntity(f.fieldId, case.caseId, r.images[f.fieldId]?.path, Contracts.encode(f)) }
-        val entity = CaseEntity(
-            case.caseId, case.packId, signOff.signedAt, Contracts.encode(case),
-            reportText = report?.text, reportSource = report?.source?.name?.lowercase(), analysedAt = r.run.analysedAt,
-        )
-        dao.upsert(signOff.applyTo(entity), rows)
-    }
-
-    // Profiles (in memory until they are saved; see Profiles)
+    // Profiles: the phone's users (in memory until they are saved; see Profiles). Patients are in Room.
 
     fun addProfile(name: String, role: ProfileRole) = _profiles.update { it.add(name, role) }
 
@@ -280,7 +347,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // History
 
+    /** A signed case opens read-only; a finished, unsigned one opens for review and sign-off; one still queued doesn't open. */
     fun openSaved(caseId: String) {
+        val status = history.value.firstOrNull { it.caseId == caseId }?.status
+        if (status == CaseStatus.DONE) {
+            viewModelScope.launch { showResult(caseId, canRecapture = false) } // no case screen behind it to capture on
+            return
+        }
+        if (status != CaseStatus.SIGNED) return
         _saved.value = null
         open(Route.SavedCase(caseId))
         viewModelScope.launch {
