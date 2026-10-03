@@ -143,6 +143,20 @@ interface CaseDao {
     /** For tests that seed the app's own database; its fields go with it. */
     @Query("DELETE FROM cases WHERE case_id = :caseId")
     suspend fun deleteCase(caseId: String)
+
+    @Query("SELECT case_id FROM cases WHERE case_id IN (:ids) AND status NOT IN ('QUEUED', 'RUNNING')")
+    suspend fun finishedAmong(ids: List<String>): List<String>
+
+    @Query("DELETE FROM cases WHERE case_id IN (:ids)")
+    suspend fun deleteByIds(ids: List<String>)
+
+    /**
+     * Deletes the finished cases (done, failed, signed) among [ids] with their fields (cascade) and returns their ids.
+     * Queued and running ones stay: the queue still writes its result into them. Unknown ids are ignored.
+     */
+    @Transaction
+    suspend fun deleteFinished(ids: List<String>): List<String> =
+        ids.chunked(500).flatMap { chunk -> finishedAmong(chunk).also { if (it.isNotEmpty()) deleteByIds(it) } }
 }
 
 @Dao
