@@ -3,6 +3,7 @@ package com.deepsight.batch
 import com.deepsight.QueueState
 import com.deepsight.data.CaseEntity
 import com.deepsight.data.CaseStatus
+import com.deepsight.data.SubmissionSource
 
 /**
  * One batch (a patient's fields for one test) not yet signed off. [progress] is (field started, total) while it runs;
@@ -27,8 +28,8 @@ data class BatchItem(
 }
 
 /** The Batch tab's list: [unsigned] cases in submit order, with the live queue's progress and positions. */
-fun batchesOf(unsigned: List<CaseEntity>, patientNames: Map<String, String>, packNames: Map<String, String>, queue: QueueState): List<BatchItem> =
-    unsigned.map { row ->
+fun batchesOf(submissions: List<CaseEntity>, patientNames: Map<String, String>, packNames: Map<String, String>, queue: QueueState): List<BatchItem> =
+    submissions.filter { it.submissionSource == SubmissionSource.BATCH }.map { row ->
         BatchItem(
             caseId = row.caseId,
             patient = row.patientUid?.let { uid -> patientNames[uid]?.let { "$it · $uid" } ?: uid },

@@ -19,6 +19,17 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class CaseDaoTest {
     @Test
+    fun batchQueryExcludesSingleSubmissions() = runBlocking {
+        val db = Room.inMemoryDatabaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext, CaseDb::class.java).build()
+        val dao = db.dao()
+        dao.enqueue(CaseEntity("single", "malaria_thin", 1L, submissionSource = SubmissionSource.SINGLE))
+        dao.enqueue(CaseEntity("batch", "malaria_thin", 2L, submissionSource = SubmissionSource.BATCH))
+
+        assertEquals(listOf("batch"), dao.batchSubmissions().first().map { it.caseId })
+        db.close()
+    }
+
+    @Test
     fun caseAndFieldsRoundTripUnchanged() = runBlocking {
         val db = Room.inMemoryDatabaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext, CaseDb::class.java).build()
         val dao = db.dao()

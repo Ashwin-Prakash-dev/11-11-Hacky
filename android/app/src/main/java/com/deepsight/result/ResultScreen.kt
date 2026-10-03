@@ -21,10 +21,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,12 +69,13 @@ fun ResultScreen(
     canRecapture: Boolean = true,
     analysedAt: Long? = null,
     classificationOnly: Boolean = false,
+    patientLabel: String? = null,
 ) {
     Column(
         modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        SummaryCard(case, testName, analysedAt, classificationOnly)
+        SummaryCard(case, testName, analysedAt, classificationOnly, patientLabel)
         if (!classificationOnly) ReportCard(report)
         SectionHeader("Fields", supporting = "${fields.size} analysed · ${case.fieldsPassed} passed the quality check")
         fields.forEach { FieldCard(it, images[it.fieldId], positiveLabel, canRecapture, onRecapture) }
@@ -88,12 +91,13 @@ fun ResultScreen(
 }
 
 @Composable
-private fun SummaryCard(case: CaseResult, testName: String?, analysedAt: Long?, classificationOnly: Boolean) = ElevatedCard(Modifier.fillMaxWidth()) {
+private fun SummaryCard(case: CaseResult, testName: String?, analysedAt: Long?, classificationOnly: Boolean, patientLabel: String?) = ElevatedCard(Modifier.fillMaxWidth()) {
     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(testName ?: case.packId, style = MaterialTheme.typography.titleMedium)
             Text(case.caseId, style = Mono, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(analysedAtLine(analysedAt), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            patientLabel?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary) }
         }
         if (classificationOnly) {
             NoticeRow("Cell classification only — clinician review required", DeepSightIcons.Info)
@@ -103,13 +107,16 @@ private fun SummaryCard(case: CaseResult, testName: String?, analysedAt: Long?, 
         if (!classificationOnly && case.triage.provisional) {
             NoticeRow("PROVISIONAL: thresholds not clinically validated", DeepSightIcons.Warning, color = MaterialTheme.colorScheme.error)
         }
-        val tiles = listOf("${case.fieldsPassed} / ${case.fieldIds.size}" to "Fields passed") +
-            case.counts.entries.map { "${it.value}" to it.key }
-        tiles.chunked(3).forEach { row ->
+        Text("${case.fieldsPassed} of ${case.fieldIds.size} fields passed the quality check", style = MaterialTheme.typography.bodyMedium)
+        val tiles = case.counts.entries.map { "${it.value}" to displayClassLabel(it.key) }
+        tiles.chunked(2).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { (value, label) -> StatTile(value, label, Modifier.weight(1f)) }
-                repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                if (row.size == 1) Spacer(Modifier.weight(1f))
             }
+        }
+        if (classificationOnly && case.fieldsPassed > 0 && case.counts.isNotEmpty() && case.counts.values.all { it == 0 }) {
+            NoticeRow("No cells were returned by the detector/classifier. Review the field image before sign-off.", DeepSightIcons.Warning)
         }
         if (!classificationOnly) {
             Text("Rule: ${case.triage.ruleId}", style = Mono, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -172,14 +179,22 @@ private fun FieldCard(field: FieldResult, image: File?, positiveLabel: String?, 
                 }
             }
             if (image != null && image.isFile) {
-                FieldImage(image, field.objects, positiveLabel)
-                if (positiveLabel != null && hasBoxes(field.objects)) FieldImageLegend(positiveLabel)
+                var imageExpanded by rememberSaveable(field.fieldId) { mutableStateOf(false) }
+                TextButton(onClick = { imageExpanded = !imageExpanded }) {
+                    Icon(DeepSightIcons.Gallery, contentDescription = null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(if (imageExpanded) "Hide field image" else "Show field image")
+                }
+                if (imageExpanded) {
+                    FieldImage(image, field.objects, positiveLabel)
+                    if (positiveLabel != null && hasBoxes(field.objects)) FieldImageLegend(displayClassLabel(positiveLabel))
+                }
             }
             field.router?.let { Text(routerMessage(it), style = MaterialTheme.typography.bodyMedium) }
             wholeFieldPrediction(field.objects)?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
             if (field.quality.pass) {
                 Text(
-                    "Counts: ${field.counts.entries.joinToString(" · ") { "${it.key} ${it.value}" }.ifEmpty { "none" }}",
+                    "Counts: ${field.counts.entries.joinToString(" · ") { "${displayClassLabel(it.key)} ${it.value}" }.ifEmpty { "none" }}",
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }

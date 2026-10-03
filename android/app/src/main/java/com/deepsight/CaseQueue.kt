@@ -9,6 +9,7 @@ import com.deepsight.data.CaseDb
 import com.deepsight.data.CaseEntity
 import com.deepsight.data.CaseStatus
 import com.deepsight.data.FieldEntity
+import com.deepsight.data.SubmissionSource
 import com.deepsight.engine.contract.Contracts
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -54,9 +55,9 @@ class CaseQueue(
     }
 
     /** Stores the case as QUEUED (re-queues a stored one: a recapture runs the whole batch again) behind every earlier batch. */
-    suspend fun submit(patientUid: String?, packId: String, caseId: String) {
+    suspend fun submit(patientUid: String?, packId: String, caseId: String, source: SubmissionSource = SubmissionSource.SINGLE) {
         recovered.await() // what a killed process left goes first
-        dao.enqueue(CaseEntity(caseId, packId, createdAt = clock(), patientUid = patientUid, status = CaseStatus.QUEUED))
+        dao.enqueue(CaseEntity(caseId, packId, createdAt = clock(), patientUid = patientUid, status = CaseStatus.QUEUED, submissionSource = source))
         enqueue(caseId)
     }
 
