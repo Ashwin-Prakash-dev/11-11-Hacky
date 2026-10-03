@@ -21,6 +21,8 @@ import com.deepsight.engine.contract.Contracts
 import com.deepsight.engine.contract.FieldResult
 import com.deepsight.engine.contract.PackManifest
 import com.deepsight.engine.contract.TriageLevel
+import com.deepsight.profile.ProfileRole
+import com.deepsight.profile.Profiles
 import com.deepsight.result.SignOff
 import com.deepsight.result.signOff
 import java.io.File
@@ -37,8 +39,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** Where the user is. The back stack lives in [AppViewModel], so it survives rotation. */
+/** Where the user is. The back stacks live in [AppViewModel] ([NavState]), so they survive rotation. */
 sealed interface Route {
+    data object Batch : Route
+    data object Profile : Route
     data object Home : Route
     data object Case : Route
     data object Result : Route
@@ -93,6 +97,7 @@ data class SavedCaseUiState(
     val images: Map<String, File>,
     val report: CaseReportText?,
     val signOff: SignOff?,
+    val analysedAt: Long?,
     val classificationOnly: Boolean = false,
 )
 
@@ -103,8 +108,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val dao = CaseDb.get(app).dao()
     private val store = CaseStore(app.filesDir.resolve("cases"))
 
-    private val _stack = MutableStateFlow<List<Route>>(listOf(Route.Home))
-    val stack: StateFlow<List<Route>> = _stack.asStateFlow()
+    private val _nav = MutableStateFlow(NavState())
+    val nav: StateFlow<NavState> = _nav.asStateFlow()
+
+    private val _profiles = MutableStateFlow(Profiles())
+    val profiles: StateFlow<Profiles> = _profiles.asStateFlow()
 
     private val _packs = MutableStateFlow<List<PackItem>?>(null)
     val packs: StateFlow<List<PackItem>?> = _packs.asStateFlow()
@@ -142,19 +150,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // Navigation
 
-    fun open(route: Route) = _stack.update { it + route }
+    fun open(route: Route) = navigate(_nav.value.open(route))
 
-    /** Returns false at the root, so the activity can close. */
-    fun back(): Boolean {
-        val stack = _stack.value
-        if (stack.size <= 1) return false
-        when (stack.last()) {
-            Route.Case -> analysis?.cancel()
-            Route.Result -> reporting?.cancel()
-            else -> Unit
-        }
-        _stack.value = stack.dropLast(1)
-        return true
+    fun selectTab(tab: Tab) = navigate(_nav.value.select(tab))
+
+    /** Returns false on Single's first screen, so the activity can close. */
+    fun back(): Boolean = _nav.value.back()?.let { navigate(it); true } ?: false
+
+    /** Leaving the case or result screen, by back or by reselecting Single, stops its analysis or report. */
+    private fun navigate(next: NavState) {
+        val single = next.stacks.getValue(Tab.SINGLE)
+        if (Route.Case !in single) analysis?.cancel()
+        if (Route.Result !in single) reporting?.cancel()
+        _nav.value = next
     }
 
     // Case
@@ -199,13 +207,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         analysis = viewModelScope.launch {
             _case.update { it?.copy(running = true, error = null, progress = 0 to c.images.size) }
             // Only the case still on screen may show its result: the user may have backed out.
-            fun current() = _case.value?.caseId == c.caseId && _stack.value.last() == Route.Case
+            // Another tab may be open meanwhile: the result still goes on Single, without switching to it.
+            fun current() = _case.value?.caseId == c.caseId && _nav.value.top(Tab.SINGLE) == Route.Case
             try {
                 val run = runner.run(c.pack.id, c.caseId, c.images) { done, total -> _case.update { it?.copy(progress = done to total) } }
                 if (current()) {
                     val images = store.fields(c.caseId).associate { fieldId(c.caseId, it.index) to it.file }
                     _result.value = ResultUiState(c.pack, run, images, ReportUiState.Writing(""))
-                    open(Route.Result)
+                    _nav.update { it.open(Route.Result, Tab.SINGLE) }
                     if (!c.pack.triage.rules.all { it.level == TriageLevel.NEEDS_EXPERT }) writeReport(c.pack, run)
                 }
             } catch (e: CancellationException) {
@@ -240,7 +249,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun recapture(fieldId: String) {
         _result.value?.images?.get(fieldId)?.delete()
         reporting?.cancel()
-        _stack.update { s -> if (s.lastOrNull() == Route.Result) s.dropLast(1) else s }
+        _nav.update { it.dropTop(Tab.SINGLE, Route.Result) }
         refreshImages()
     }
 
@@ -249,7 +258,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val report = (r.report as? ReportUiState.Done)?.report
         _result.update { it?.copy(signOff = signOff) }
         viewModelScope.launch { save(r, signOff, report) }
-        _stack.value = listOf(Route.Home, Route.History)
+        _nav.update { it.reset(Tab.SINGLE, listOf(Route.Home, Route.History)) }
     }
 
     /** The case, its fields (each with its image file), the case_result JSON as the contract wrote it, and the report seen. */
@@ -258,10 +267,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val rows = r.run.fields.map { f -> FieldEntity(f.fieldId, case.caseId, r.images[f.fieldId]?.path, Contracts.encode(f)) }
         val entity = CaseEntity(
             case.caseId, case.packId, signOff.signedAt, Contracts.encode(case),
-            reportText = report?.text, reportSource = report?.source?.name?.lowercase(),
+            reportText = report?.text, reportSource = report?.source?.name?.lowercase(), analysedAt = r.run.analysedAt,
         )
         dao.upsert(signOff.applyTo(entity), rows)
     }
+
+    // Profiles (in memory until they are saved; see Profiles)
+
+    fun addProfile(name: String, role: ProfileRole) = _profiles.update { it.add(name, role) }
+
+    fun selectProfile(id: String) = _profiles.update { it.select(id) }
 
     // History
 
@@ -281,6 +296,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 images = fieldRows.mapNotNull { f -> f.imagePath?.let { f.fieldId to File(it) } }.toMap(),
                 report = row.reportText?.let { CaseReportText(it, if (row.reportSource == "gemma") ReportSource.GEMMA else ReportSource.TEMPLATE) },
                 signOff = row.signOff(),
+                analysedAt = row.analysedAt,
                 classificationOnly = pack?.triage?.rules?.all { it.level == TriageLevel.NEEDS_EXPERT } == true,
             )
         }

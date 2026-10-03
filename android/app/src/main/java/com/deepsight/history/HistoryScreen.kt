@@ -88,7 +88,7 @@ fun SavedCaseScreen(state: SavedCaseUiState?, modifier: Modifier = Modifier) {
     ResultScreen(
         case = state.case, fields = state.fields, report = state.report?.let { ReportUiState.Done(it) }, signOff = state.signOff,
         onRecapture = {}, onSignOff = {}, modifier = modifier,
-        testName = state.packName, images = state.images, positiveLabel = state.positiveLabel, canRecapture = false,
+        testName = state.packName, images = state.images, positiveLabel = state.positiveLabel, canRecapture = false, analysedAt = state.analysedAt,
         classificationOnly = state.classificationOnly,
     )
 }

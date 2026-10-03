@@ -107,7 +107,10 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
     - Release-build memory is unchecked (no `largeHeap`).
     - Compose's `LocalLifecycleOwner` shows a deprecation warning until Lifecycle is 2.8 or later.
     - Not run on another phone model.
-- **Next:** decide whether `eval` merges into `test`; the G1 gate row (not Track B's) can now point at the main case flow.
+- **Bottom navigation (branch `Ashwin-Prakash-dev/b-bottom-nav`, 2026-10-03):** three tabs, each with its own back stack (`NavState` in `Navigation.kt`). **Batch** is UI only: its controls are disabled until the batch mechanism is specified. **Single** is the existing flow unchanged (choose test → case → result → sign-off → history) and is where the app starts and where back ends. **Profile** lets you add and pick profiles (`profile/Profiles.kt`), in memory only: nothing saves them and nothing else reads them yet. It also links to About. An analysis still running when you switch tabs puts its result on Single without switching to it. Reselecting Single, or backing out, cancels it as before. The disclaimer bar sits just above the tab bar on every screen.
+  - **Verified:** `:app:testDebugUnitTest` passes (36 tests, including the new `NavStateTest` 8 and `ProfilesTest` 5). `:app:compileDebugAndroidTestKotlin` passes.
+  - **Not yet run on a phone** (none connected): `installDebug` and the new `BottomNavTest` (3 tests), plus `NavigationTest`, `TopBarNavigationTest` and `HomeAndAboutTest` through `am instrument`.
+- **Next:** run the bottom-nav checks above on a phone; the batch mechanism (spec pending); save profiles and use the active one for sign-off. `eval` was merged into `test` (`e89b1b6`). The G1 gate row (not Track B's) can now point at the main case flow.
 
 ### C: On-device engine (owner: TBD)
 - **Done:**
