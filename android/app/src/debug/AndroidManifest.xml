@@ -3,28 +3,18 @@
 
     <!-- Debug builds only. largeHeap: the quality gate holds a 5312x2988 field as ARGB ints (~64 MB). -->
     <application android:largeHeap="true">
+        <!-- Developer screens: exported so `adb shell am start -n com.deepsight/.<Activity>` works, but not launcher
+             entries, so opening the app from the phone always opens MainActivity (LauncherTest). -->
         <activity
             android:name=".DebugGemmaActivity"
             android:exported="true"
             android:label="DeepSight Gemma"
-            android:theme="@style/Theme.DeepSight">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.DeepSight" />
         <activity
             android:name=".DebugAnalyzeActivity"
             android:exported="true"
             android:label="DeepSight debug"
-            android:theme="@style/Theme.DeepSight">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.DeepSight" />
     </application>
 
 </manifest>
