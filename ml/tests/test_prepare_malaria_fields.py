@@ -155,7 +155,7 @@ class ReservationTest(unittest.TestCase):
             assert_no_reserved_patients([{"path": "renamed.png", "patient_id": "C70P31", "source": "other"}])
 
     def test_unrelated_sources_and_unreserved_patients_pass(self):
-        assert_no_reserved_patients([{"path": "fungal/a.png", "source": "DeFungi"},
+        assert_no_reserved_patients([{"path": "breast/a.png", "source": "BreakHis"},
                                     {"path": "C999P999thinF_cell_1.png", "source": "NIH-NLM"}])
 
     def test_nlm_without_patient_provenance_fails_closed(self):

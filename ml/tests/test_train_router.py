@@ -25,7 +25,7 @@ class TrainRouterTest(unittest.TestCase):
             root = Path(tmp)
             files = []
             rng = np.random.default_rng(0)
-            for ci, cls in enumerate(["fungal", "malaria_thin", "reject"]):
+            for ci, cls in enumerate(["breast_breakhis", "malaria_thin", "reject"]):
                 for source in ["a", "b"]:
                     for i in range(4):
                         rel = f"{source}/{cls}_{i}.png"
@@ -36,13 +36,13 @@ class TrainRouterTest(unittest.TestCase):
             split = root / "split.json"
             split.write_text(json.dumps({
                 "schema_version": 1, "reject_class": "reject",
-                "heldout": {"fungal": "b", "malaria_thin": "b", "reject": "b"}, "files": files,
+                "heldout": {"breast_breakhis": "b", "malaria_thin": "b", "reject": "b"}, "files": files,
             }))
             out = root / "out"
             report, model = run(split, root, out, epochs=1, image_size=32, pretrained=False)
 
-            self.assertEqual(json.loads((out / "labels.json").read_text()), ["fungal", "malaria_thin", "reject"])
-            self.assertEqual(set(report["by_source"]), {"fungal/b", "malaria_thin/b", "reject/b"})
+            self.assertEqual(json.loads((out / "labels.json").read_text()), ["breast_breakhis", "malaria_thin", "reject"])
+            self.assertEqual(set(report["by_source"]), {"breast_breakhis/b", "malaria_thin/b", "reject/b"})
             self.assertEqual(report["overall"]["n"], 12)
 
             x = torch.rand(2, 3, 32, 32)

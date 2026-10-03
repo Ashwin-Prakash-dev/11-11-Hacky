@@ -60,7 +60,6 @@ ml/packs/<id>/
 | Module | Runs on | Basis |
 |---|---|---|
 | Malaria (thin smear) | Phone (target) | Android prior art and an evaluation-model fallback exist; S1 remains partial ([status](STATUS.md)) |
-| Fungal (DeFungi) | Phone (probably) | Small patch classifier. S2 and S5 are done; the pack still has a placeholder model |
 | Leukaemia | Phone (probably) | Single-cell classifier on WBC crops; needs segmentation or tiling. Placeholder model today |
 | Breast (PathOS) | Hub, unless S6 passes | Fine-tuned Gemma VLM via Ollama |
 | Gemma reports | Phone | S3 passed: Gemma 4 E2B streams in our app next to an ONNX pack ([evidence](spikes/S3-litertlm-gemma.md)); the template stays the fallback |

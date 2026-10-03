@@ -16,13 +16,13 @@ def entries(cls, source, n=2):
 
 def valid():
     files = []
-    for cls, sources in {"fungal": ["a", "b"], "malaria_thin": ["c", "d"], "reject": ["e", "f"]}.items():
+    for cls, sources in {"breast_breakhis": ["a", "b"], "malaria_thin": ["c", "d"], "reject": ["e", "f"]}.items():
         for s in sources:
             files += entries(cls, s)
     return {
         "schema_version": 1,
         "reject_class": "reject",
-        "heldout": {"fungal": "b", "malaria_thin": "d", "reject": "f"},
+        "heldout": {"breast_breakhis": "b", "malaria_thin": "d", "reject": "f"},
         "files": files,
     }
 
@@ -36,12 +36,12 @@ class RouterSplitTest(unittest.TestCase):
 
     def test_labels_come_from_files_with_reject_last(self):
         split = self.load(valid())
-        self.assertEqual(split.labels, ["fungal", "malaria_thin", "reject"])
+        self.assertEqual(split.labels, ["breast_breakhis", "malaria_thin", "reject"])
 
     def test_heldout_source_is_entirely_in_test(self):
         split = self.load(valid())
-        self.assertEqual({(f.cls, f.source) for f in split.test}, {("fungal", "b"), ("malaria_thin", "d"), ("reject", "f")})
-        self.assertEqual({(f.cls, f.source) for f in split.train}, {("fungal", "a"), ("malaria_thin", "c"), ("reject", "e")})
+        self.assertEqual({(f.cls, f.source) for f in split.test}, {("breast_breakhis", "b"), ("malaria_thin", "d"), ("reject", "f")})
+        self.assertEqual({(f.cls, f.source) for f in split.train}, {("breast_breakhis", "a"), ("malaria_thin", "c"), ("reject", "e")})
 
     def test_single_source_class_rejected(self):
         doc = valid()
@@ -51,13 +51,13 @@ class RouterSplitTest(unittest.TestCase):
 
     def test_missing_heldout_rejected(self):
         doc = valid()
-        del doc["heldout"]["fungal"]
+        del doc["heldout"]["breast_breakhis"]
         with self.assertRaisesRegex(SplitError, "heldout"):
             self.load(doc)
 
     def test_heldout_must_be_a_source_of_that_class(self):
         doc = valid()
-        doc["heldout"]["fungal"] = "c"
+        doc["heldout"]["breast_breakhis"] = "c"
         with self.assertRaisesRegex(SplitError, "heldout"):
             self.load(doc)
 

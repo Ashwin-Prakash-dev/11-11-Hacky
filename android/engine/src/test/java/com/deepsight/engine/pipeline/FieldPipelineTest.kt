@@ -45,7 +45,7 @@ class FieldPipelineTest {
 
     @Test
     fun routerMismatchStopsBeforeCellsAndPackModel() {
-        val router = RouterGuard { _, _ -> RouterResult(RouterVerdict.MISMATCH, 0.9, "fungal") }
+        val router = RouterGuard { _, _ -> RouterResult(RouterVerdict.MISMATCH, 0.9, "breast_breakhis") }
         val result = FieldPipeline(
             LoadedPack(manifest, ByteArray(0)),
             cellFinder = { _, _ -> error("cell finder must not run after router mismatch") },
@@ -54,7 +54,7 @@ class FieldPipelineTest {
 
         assertTrue(result.quality.pass)
         assertEquals(RouterVerdict.MISMATCH, result.router?.verdict)
-        assertEquals("fungal", result.router?.predicted)
+        assertEquals("breast_breakhis", result.router?.predicted)
         assertTrue(result.objects.isEmpty())
         assertTrue(result.counts.isEmpty())
         assertNull(result.imageScore)

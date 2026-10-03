@@ -17,8 +17,8 @@ class RouterMessageTest {
     @Test
     fun mismatchNamesPredictedTest() {
         assertEquals(
-            "Image looks like another test: fungal",
-            routerMessage(RouterResult(RouterVerdict.MISMATCH, 0.9, "fungal")),
+            "Image looks like another test: breast_breakhis",
+            routerMessage(RouterResult(RouterVerdict.MISMATCH, 0.9, "breast_breakhis")),
         )
     }
 

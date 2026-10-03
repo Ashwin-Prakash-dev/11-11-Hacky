@@ -8,7 +8,6 @@ The router needs at least two sources per test type plus a reject set, with one 
 |---|---|---|---|---|---|
 | NIH-NLM Malaria Screener (Cells) | [link](https://lhncbc.nlm.nih.gov/LHC-publications/pubs/MalariaDatasets.html) | UNVERIFIED | NIH / NLM | Malaria pack (cell classifier) | patient |
 | NIH-NLM ThinBloodSmearsPf (Fields) | [dataset](https://data.lhncbc.nlm.nih.gov/public/Malaria/NIH-NLM-ThinBloodSmearsPf/index.html) | NLM Informational Notice: commercial/non-commercial use and redistribution permitted; retain notice, conditions and disclaimer; no endorsement. [Original terms](https://data.lhncbc.nlm.nih.gov/public/Malaria/NIH-NLM-ThinBloodSmearsPf/Data%20License%20Agreement.docx), read 2026-10-02 | “Courtesy of the U.S. National Library of Medicine” or “Source: U.S. National Library of Medicine”; cite Kassim et al., RBCNet ([DOI](https://doi.org/10.1109/JBHI.2020.3034863)). [Retained notice](../ml/fixtures/NOTICE_NLM_THIN_FIELDS.txt) | Reserved full-field goldens and demo (#6) | patient (all fields and derived cell crops) |
-| DeFungi | [link](https://archive.ics.uci.edu/dataset/872/defungi) | UNVERIFIED | UCI ML Repository / DeFungi authors | Fungal pack | source image |
 | Router sources | UNVERIFIED | UNVERIFIED | UNVERIFIED | Router guard | UNVERIFIED |
 | C-NMC Leukaemia (ISBI 2019) | [link](https://www.kaggle.com/datasets/andrewmvd/leukemia-classification) | CC BY 4.0 (UNVERIFIED) | ISBI 2019 C-NMC Challenge | Leukaemia pack (cell classifier) | patient |
 

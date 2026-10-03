@@ -8,7 +8,7 @@ import org.junit.Test
 
 class RouterGuardTest {
     private val image = PixelImage(1, 1, intArrayOf(0xff808080.toInt()))
-    private val labels = listOf("malaria_thin", "fungal", "reject")
+    private val labels = listOf("malaria_thin", "breast_breakhis", "reject")
 
     @Test
     fun selectedPackWinningIsMatch() {
@@ -25,7 +25,7 @@ class RouterGuardTest {
 
         assertEquals(RouterVerdict.MISMATCH, result.verdict)
         assertEquals(0.7, result.score, 1e-6)
-        assertEquals("fungal", result.predicted)
+        assertEquals("breast_breakhis", result.predicted)
     }
 
     @Test
@@ -39,7 +39,7 @@ class RouterGuardTest {
 
     @Test
     fun tiesUseStableLabelOrder() {
-        val result = guard(0.4f, 0.4f, 0.2f).evaluate(image, "fungal")
+        val result = guard(0.4f, 0.4f, 0.2f).evaluate(image, "breast_breakhis")
 
         assertEquals(RouterVerdict.MISMATCH, result.verdict)
         assertEquals("malaria_thin", result.predicted)

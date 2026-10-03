@@ -21,7 +21,7 @@ class RouterGuardDeviceTest {
     @Test
     fun mismatchBlocksPackAndDrivesDeterministicTriage() {
         verifyBlocked(
-            RouterResult(RouterVerdict.MISMATCH, 0.9, "fungal"),
+            RouterResult(RouterVerdict.MISMATCH, 0.9, "breast_breakhis"),
             Contracts.RULE_ROUTER_MISMATCH,
         )
     }

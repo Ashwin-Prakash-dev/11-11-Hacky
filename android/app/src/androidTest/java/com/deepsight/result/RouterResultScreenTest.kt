@@ -18,9 +18,9 @@ class RouterResultScreenTest {
 
     @Test
     fun mismatchNamesTheOtherTest() {
-        show(RouterResult(RouterVerdict.MISMATCH, 0.9, "fungal"))
+        show(RouterResult(RouterVerdict.MISMATCH, 0.9, "breast_breakhis"))
 
-        rule.onNodeWithText("Image looks like another test: fungal").assertExists()
+        rule.onNodeWithText("Image looks like another test: breast_breakhis").assertExists()
     }
 
     @Test

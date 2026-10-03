@@ -102,11 +102,11 @@ class PackLoaderTest {
 
     @Test
     fun rejectsDirectoryAndManifestIdMismatch() {
-        val loader = loader(mapOf(packFile("fungal", MANIFEST) to exampleManifest.encodeToByteArray(), packFile("fungal", MODEL) to modelBytes))
+        val loader = loader(mapOf(packFile("breast_breakhis", MANIFEST) to exampleManifest.encodeToByteArray(), packFile("breast_breakhis", MODEL) to modelBytes))
 
-        val error = expectLoadFailure { loader.load("fungal") }
+        val error = expectLoadFailure { loader.load("breast_breakhis") }
 
-        assertTrue(error.message.orEmpty(), "does not match directory id 'fungal'" in error.message.orEmpty())
+        assertTrue(error.message.orEmpty(), "does not match directory id 'breast_breakhis'" in error.message.orEmpty())
     }
 
     @Test
