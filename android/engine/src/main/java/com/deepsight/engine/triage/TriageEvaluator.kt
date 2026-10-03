@@ -15,6 +15,24 @@ import com.deepsight.engine.contract.UncertaintyResult
 
 /** Deterministic aggregation and triage: contracts/README.md "Per case", steps 1-6. No LLM, no I/O. */
 object TriageEvaluator {
+    /** The manifest's deterministic rule outcome for one slide, used to order batch review. */
+    fun evaluateField(field: FieldResult, manifest: PackManifest): TriageLevel {
+        if (!field.quality.pass) return TriageLevel.NEEDS_EXPERT
+        when (field.router?.verdict) {
+            RouterVerdict.REJECT, RouterVerdict.MISMATCH -> return TriageLevel.NEEDS_EXPERT
+            else -> Unit
+        }
+        val rule = manifest.triage.rules.firstOrNull { candidate ->
+            candidate.all.all { holds(it, field.counts, field.imageScore) }
+        } ?: return TriageLevel.NEEDS_EXPERT
+        if (rule.level == TriageLevel.NORMAL_SCREEN &&
+            (field.uncertainty?.flag == true || manifest.aggregation.minFields > 1)
+        ) {
+            return TriageLevel.NEEDS_EXPERT
+        }
+        return rule.level
+    }
+
     fun evaluate(caseId: String, fields: List<FieldResult>, manifest: PackManifest): CaseResult {
         val passed = fields.filter { it.quality.pass }
         val counts = passed.flatMap { it.counts.entries }

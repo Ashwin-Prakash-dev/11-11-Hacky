@@ -31,7 +31,7 @@ class BreastCaseDeviceTest {
     )
 
     @Test
-    fun wholeFieldPackRunsLikeMalariaAndTriagesProvisionally() = runBlocking {
+    fun wholeFieldPackReturnsClassificationOnlyResultsForClinicianReview() = runBlocking {
         val photos = reference.keys.associateWith { File(context.getExternalFilesDir(null), "breast_$it.png") }
         assumeTrue("breast fields not pushed", photos.values.all(File::isFile))
         assertEquals(true, DemoPacks.isReady("breast_breakhis"))
@@ -47,9 +47,7 @@ class BreastCaseDeviceTest {
             assertEquals(label, field.objects.single().label)
             assertNull(field.objects.single().bbox)
             assertEquals(pMalignant, field.imageScore!!, 0.02)
-            // malignant_seen flags a malignant prediction; anything else is NEEDS_EXPERT, never NORMAL_SCREEN
-            val expected = if (label == "malignant") TriageLevel.ABNORMAL_FLAG to "malignant_seen" else TriageLevel.NEEDS_EXPERT to "engine.no_rule_matched"
-            assertEquals(expected, case.triage.level to case.triage.ruleId)
+            assertEquals(TriageLevel.NEEDS_EXPERT to "review_only", case.triage.level to case.triage.ruleId)
         }
     }
 

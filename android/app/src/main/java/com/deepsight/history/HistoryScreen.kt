@@ -65,7 +65,7 @@ fun HistoryRow(item: HistoryItem, onOpen: (String) -> Unit) {
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(item.packName, style = MaterialTheme.typography.titleMedium)
-                Text(if (item.classificationOnly) "Cell classification" else item.level?.name ?: "No triage", style = MaterialTheme.typography.labelLarge)
+                Text(if (item.classificationOnly) "Classification only" else item.level?.name ?: "No triage", style = MaterialTheme.typography.labelLarge)
                 STATUS[item.status]?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary) }
                 item.error?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error) }
                 Text(
@@ -96,6 +96,9 @@ fun SavedCaseScreen(state: SavedCaseUiState?, modifier: Modifier = Modifier) {
         testName = state.packName, images = state.images, positiveLabel = state.positiveLabel, canRecapture = false, analysedAt = state.analysedAt,
         classificationOnly = state.classificationOnly,
         patientLabel = state.patientLabel,
+        pack = state.pack,
+        wholeFieldClassification = state.pack?.let { it.taskType.name == "CLASSIFIER" && it.preprocess.source.name == "FIELD" } == true,
+        batchReview = state.batchReview,
     )
 }
 

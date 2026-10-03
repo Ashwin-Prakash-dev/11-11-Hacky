@@ -72,11 +72,11 @@ class ResultScreenTest {
             )
         }
 
-        rule.onNodeWithText("Cell classification only", substring = true).assertExists()
+        rule.onNodeWithText("Classification only", substring = true).assertExists()
         rule.onNodeWithText("Ada Example · P-0000-0001").assertExists()
         rule.onNodeWithText("Early pre B like").assertExists()
         rule.onAllNodesWithText("early_pre_b_like").assertCountEquals(0)
-        rule.onNodeWithText("No cells were returned", substring = true).assertExists()
+        rule.onNodeWithText("No classifications were returned", substring = true).assertExists()
         rule.onAllNodesWithText("ABNORMAL_FLAG").assertCountEquals(0)
         rule.onAllNodesWithText("Report").assertCountEquals(0)
     }

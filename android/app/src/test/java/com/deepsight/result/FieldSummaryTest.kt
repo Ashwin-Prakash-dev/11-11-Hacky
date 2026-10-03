@@ -17,8 +17,8 @@ class FieldSummaryTest {
 
     @Test
     fun wholeFieldPackNamesItsPredictionAndScore() {
-        assertEquals("Model prediction: Malignant (94%)", wholeFieldPrediction(listOf(DetectedObject("malignant", 0.9443, null))))
-        assertEquals("Model prediction: Benign (51%)", wholeFieldPrediction(listOf(DetectedObject("benign", 0.51, null))))
+        assertEquals("Model prediction: Malignant · model score 94%", wholeFieldPrediction(listOf(DetectedObject("malignant", 0.9443, null))))
+        assertEquals("Model prediction: Benign · model score 51%", wholeFieldPrediction(listOf(DetectedObject("benign", 0.51, null))))
     }
 
     @Test

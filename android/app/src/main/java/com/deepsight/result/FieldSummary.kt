@@ -6,7 +6,7 @@ import kotlin.math.roundToInt
 /** Whole-field packs (breast) give one object with no box: say what the model predicted, since there is nothing to draw. */
 internal fun wholeFieldPrediction(objects: List<DetectedObject>): String? {
     val only = objects.singleOrNull()?.takeIf { it.bbox == null } ?: return null
-    return "Model prediction: ${displayClassLabel(only.label)} (${(only.score * 100).roundToInt()}%)"
+    return "Model prediction: ${displayClassLabel(only.label)} · model score ${(only.score * 100).roundToInt()}%"
 }
 
 /** Manifest labels are stable machine identifiers; result screens show them as readable words. */

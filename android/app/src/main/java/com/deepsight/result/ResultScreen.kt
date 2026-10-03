@@ -35,6 +35,9 @@ import com.deepsight.ReportUiState
 import com.deepsight.ai.ReportSource
 import com.deepsight.engine.contract.CaseResult
 import com.deepsight.engine.contract.FieldResult
+import com.deepsight.engine.contract.PackManifest
+import com.deepsight.engine.contract.TriageLevel
+import com.deepsight.engine.triage.TriageEvaluator
 import com.deepsight.report.cleanNarrative
 import com.deepsight.ui.DeepSightIcons
 import com.deepsight.ui.components.FieldImage
@@ -70,15 +73,42 @@ fun ResultScreen(
     analysedAt: Long? = null,
     classificationOnly: Boolean = false,
     patientLabel: String? = null,
+    pack: PackManifest? = null,
+    wholeFieldClassification: Boolean = false,
+    batchReview: Boolean = false,
 ) {
+    val rankPack = pack.takeIf { batchReview }
+    val rankBatchResults = rankPack != null
+    val fieldLevels = rankPack?.let { manifest ->
+        fields.associate { it.fieldId to TriageEvaluator.evaluateField(it, manifest) }
+    }.orEmpty()
+    val visibleFields = if (rankBatchResults) {
+        fields.withIndex()
+            .sortedWith(
+                compareBy<IndexedValue<FieldResult>> {
+                    fieldPriority(fieldLevels.getValue(it.value.fieldId))
+                }.thenBy { it.index },
+            )
+            .map { it.value }
+    } else fields
     Column(
         modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        SummaryCard(case, testName, analysedAt, classificationOnly, patientLabel)
+        SummaryCard(case, testName, analysedAt, classificationOnly, patientLabel, wholeFieldClassification)
         if (!classificationOnly) ReportCard(report)
-        SectionHeader("Fields", supporting = "${fields.size} analysed · ${case.fieldsPassed} passed the quality check")
-        fields.forEach { FieldCard(it, images[it.fieldId], positiveLabel, canRecapture, onRecapture) }
+        SectionHeader(
+            if (rankBatchResults) "Slides ranked by review priority" else "Fields",
+            supporting = if (rankBatchResults) "Flagged first · needs review next · no flag last"
+                else "${fields.size} analysed · ${case.fieldsPassed} passed the quality check",
+        )
+        visibleFields.forEach { field ->
+            FieldCard(
+                field, images[field.fieldId], positiveLabel, canRecapture, onRecapture,
+                triageLevel = fieldLevels[field.fieldId],
+                showCounts = !wholeFieldClassification,
+            )
+        }
         SignOffCard(
             case.caseId,
             signOff,
@@ -91,7 +121,14 @@ fun ResultScreen(
 }
 
 @Composable
-private fun SummaryCard(case: CaseResult, testName: String?, analysedAt: Long?, classificationOnly: Boolean, patientLabel: String?) = ElevatedCard(Modifier.fillMaxWidth()) {
+private fun SummaryCard(
+    case: CaseResult,
+    testName: String?,
+    analysedAt: Long?,
+    classificationOnly: Boolean,
+    patientLabel: String?,
+    wholeFieldClassification: Boolean,
+) = ElevatedCard(Modifier.fillMaxWidth()) {
     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(testName ?: case.packId, style = MaterialTheme.typography.titleMedium)
@@ -100,7 +137,7 @@ private fun SummaryCard(case: CaseResult, testName: String?, analysedAt: Long?, 
             patientLabel?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary) }
         }
         if (classificationOnly) {
-            NoticeRow("Cell classification only — clinician review required", DeepSightIcons.Info)
+            NoticeRow("Classification only — clinician review required", DeepSightIcons.Info)
         } else {
             TriageBadge(case.triage.level, Modifier.fillMaxWidth())
         }
@@ -108,15 +145,17 @@ private fun SummaryCard(case: CaseResult, testName: String?, analysedAt: Long?, 
             NoticeRow("PROVISIONAL: thresholds not clinically validated", DeepSightIcons.Warning, color = MaterialTheme.colorScheme.error)
         }
         Text("${case.fieldsPassed} of ${case.fieldIds.size} fields passed the quality check", style = MaterialTheme.typography.bodyMedium)
-        val tiles = case.counts.entries.map { "${it.value}" to displayClassLabel(it.key) }
-        tiles.chunked(2).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { (value, label) -> StatTile(value, label, Modifier.weight(1f)) }
-                if (row.size == 1) Spacer(Modifier.weight(1f))
+        if (!wholeFieldClassification) {
+            val tiles = case.counts.entries.map { "${it.value}" to displayClassLabel(it.key) }
+            tiles.chunked(2).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { (value, label) -> StatTile(value, label, Modifier.weight(1f)) }
+                    if (row.size == 1) Spacer(Modifier.weight(1f))
+                }
             }
         }
         if (classificationOnly && case.fieldsPassed > 0 && case.counts.isNotEmpty() && case.counts.values.all { it == 0 }) {
-            NoticeRow("No cells were returned by the detector/classifier. Review the field image before sign-off.", DeepSightIcons.Warning)
+            NoticeRow("No classifications were returned. Review the field image before sign-off.", DeepSightIcons.Warning)
         }
         if (!classificationOnly) {
             Text("Rule: ${case.triage.ruleId}", style = Mono, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -166,8 +205,34 @@ private fun ReportCard(report: ReportUiState?) = ElevatedCard(Modifier.fillMaxWi
 /** "case-123_field_2" → "Field 2"; other ids (contract examples) as they are. */
 private fun fieldName(fieldId: String) = fieldId.substringAfterLast("_field_", "").takeIf { it.isNotEmpty() }?.let { "Field $it" } ?: fieldId
 
+private fun fieldPriority(level: TriageLevel): Int = when (level) {
+    TriageLevel.ABNORMAL_FLAG -> 0
+    TriageLevel.NEEDS_EXPERT -> 1
+    TriageLevel.NORMAL_SCREEN -> 2
+}
+
+private fun fieldTriageLabel(level: TriageLevel): String = when (level) {
+    TriageLevel.ABNORMAL_FLAG -> "Flagged"
+    TriageLevel.NEEDS_EXPERT -> "Needs review"
+    TriageLevel.NORMAL_SCREEN -> "No flag"
+}
+
+private fun fieldTriageTone(level: TriageLevel): PillTone = when (level) {
+    TriageLevel.ABNORMAL_FLAG -> PillTone.ALERT
+    TriageLevel.NEEDS_EXPERT -> PillTone.CAUTION
+    TriageLevel.NORMAL_SCREEN -> PillTone.GOOD
+}
+
 @Composable
-private fun FieldCard(field: FieldResult, image: File?, positiveLabel: String?, canRecapture: Boolean, onRecapture: (String) -> Unit) =
+private fun FieldCard(
+    field: FieldResult,
+    image: File?,
+    positiveLabel: String?,
+    canRecapture: Boolean,
+    onRecapture: (String) -> Unit,
+    triageLevel: TriageLevel? = null,
+    showCounts: Boolean = true,
+) =
     ElevatedCard(colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -178,6 +243,7 @@ private fun FieldCard(field: FieldResult, image: File?, positiveLabel: String?, 
                     StatusPill("Rejected: ${field.quality.reasons.joinToString { it.name.lowercase() }}", icon = DeepSightIcons.Warning, tone = PillTone.ALERT)
                 }
             }
+            triageLevel?.let { StatusPill(fieldTriageLabel(it), tone = fieldTriageTone(it)) }
             if (image != null && image.isFile) {
                 var imageExpanded by rememberSaveable(field.fieldId) { mutableStateOf(false) }
                 TextButton(onClick = { imageExpanded = !imageExpanded }) {
@@ -192,7 +258,7 @@ private fun FieldCard(field: FieldResult, image: File?, positiveLabel: String?, 
             }
             field.router?.let { Text(routerMessage(it), style = MaterialTheme.typography.bodyMedium) }
             wholeFieldPrediction(field.objects)?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
-            if (field.quality.pass) {
+            if (field.quality.pass && showCounts) {
                 Text(
                     "Counts: ${field.counts.entries.joinToString(" · ") { "${displayClassLabel(it.key)} ${it.value}" }.ifEmpty { "none" }}",
                     style = MaterialTheme.typography.bodyMedium,
@@ -232,7 +298,7 @@ private fun SignOffCard(
             )
             if (signOff.note.isNotBlank()) Text(signOff.note, style = MaterialTheme.typography.bodyMedium)
             Text(
-                if (classificationOnly) "The cell classifications above are unchanged by sign-off."
+                if (classificationOnly) "The model classifications above are unchanged by sign-off."
                 else "The triage level above is unchanged by sign-off.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

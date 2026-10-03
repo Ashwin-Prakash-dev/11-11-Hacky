@@ -56,19 +56,17 @@
   },
   "triage": {
     "provisional": true,
-    "source": "PROVISIONAL, not clinically validated: malignant >= 1 is a model-prediction review flag on one field, not a confirmed finding. No benign or normal rule exists on purpose: a benign prediction is not evidence of a normal screen, and the model calls two of three benign golden images malignant, so every other case gets NEEDS_EXPERT (engine.no_rule_matched). No threshold was validated on held-out patients; sensitivity and specificity for the app's preprocessing are UNVERIFIED (pack README).",
+    "source": "PROVISIONAL classification-only demo. Every case requires clinician review; model predictions do not set an abnormal or normal screen status. The model calls two of three benign golden images malignant. No threshold was validated on held-out patients; sensitivity and specificity for the app's preprocessing are UNVERIFIED (pack README).",
     "rules": [
       {
-        "id": "malignant_seen",
-        "level": "ABNORMAL_FLAG",
+        "id": "review_only",
+        "level": "NEEDS_EXPERT",
         "all": [
           {
             "metric": "count",
-            "labels": [
-              "malignant"
-            ],
+            "labels": ["benign"],
             "op": ">=",
-            "value": 1
+            "value": 0
           }
         ]
       }

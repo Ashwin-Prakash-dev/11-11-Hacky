@@ -149,6 +149,9 @@ private fun Screen(route: Route, vm: AppViewModel) {
                     testName = r.pack.displayName, images = r.images, positiveLabel = r.pack.output.imageScoreLabel, analysedAt = r.run.analysedAt, canRecapture = r.canRecapture,
                     classificationOnly = r.pack.triage.rules.all { it.level.name == "NEEDS_EXPERT" },
                     patientLabel = r.patientLabel,
+                    pack = r.pack,
+                    wholeFieldClassification = r.pack.taskType.name == "CLASSIFIER" && r.pack.preprocess.source.name == "FIELD",
+                    batchReview = r.batchReview,
                 )
             }
         }

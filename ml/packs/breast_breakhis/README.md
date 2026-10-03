@@ -1,6 +1,6 @@
 # breast_breakhis: Breast tumour (benign vs malignant) on H&E histology
 
-**Demo pack, not a screening tool.** It works in the app like malaria (pick it, add fields, analyse, report, sign-off), but its triage is provisional and its accuracy is unverified (see Triage and Metrics). "Ready" on the home screen means the pipeline matches the reference on a phone, not that the model is clinically validated.
+**Demo pack, not a screening tool.** The app shows a benign/malignant model prediction and score, then requires clinician review. It does not issue an abnormal or normal screen status. "Ready" on the home screen means the pipeline matches the reference on a phone, not that the model is clinically validated.
 
 **Source.** DenseNet-121 checkpoint from https://github.com/mrdvince/breast_cancer_detection. The repo is MIT-licensed; the file is `saved/models/BCDensenet/0224_034642/model_best.pth`, at commit `8c5028c`. It was trained on BreakHis.
 **Conversion.** The checkpoint was loaded into torchvision `densenet121` with a 2-class head and exported to ONNX (opset 17); the output matches PyTorch to within 3.7e-7. `prepare_pack.py` then strips the final Softmax (`ml/tools/onnx_logits.py`), because the engine applies softmax itself.
@@ -30,7 +30,7 @@
 | Input type | Whole microscope field, not single cells (`source: field`) |
 
 ## Triage
-One provisional rule: `malignant_seen`, `malignant >= 1` gives `ABNORMAL_FLAG` (a review flag on the model's prediction, not a finding). **There is no normal rule, on purpose:** a benign prediction on one field is not evidence of a normal screen, and the model calls two of three benign golden images malignant. Any case without a malignant field therefore gets `NEEDS_EXPERT` (`engine.no_rule_matched`); the pack never issues `NORMAL_SCREEN`. Counts add up across fields, so a case with several fields flags if any one is predicted malignant. No threshold is validated on held-out patients. Quality rejection is switched off (`min_blur` 0, `max_clipped_fraction` 1) until it is calibrated.
+This pack is classification-only: every case returns `NEEDS_EXPERT` and requires clinician review. The model's class prediction does not set an abnormal or normal screen status. The score is a model output, not calibrated clinical confidence. No threshold is validated on held-out patients. Quality rejection is switched off (`min_blur` 0, `max_clipped_fraction` 1) until it is calibrated.
 
 ## Preprocessing changes the scores
 The scores in earlier notes came from **Pillow's** resize, which anti-aliases when shrinking. The app's resize doesn't. On the 6 golden images the malignant score moves by up to 0.07 (0.0045 to 0.0723), so goldens made with Pillow fail the phone test's 0.02 tolerance. The goldens here use the app's resize (`prepare_pack.py`). Any accuracy figure measured with Pillow does not describe the app.
@@ -49,7 +49,7 @@ The Pillow row reproduces the earlier figures exactly, so the method is the same
 **These numbers are not held-out.** The upstream repo trained on a random 90/10 image-level split of all BreakHis magnifications, and its split is not this dataset's `train`/`test` folders, so most of these images were in training. Real performance on new patients will be lower. The app was not measured on phone photos at all.
 
 ## Known limits
-- **Specificity is weak (80%).** On the 6 golden images, two of the three benign fields are called malignant (p_malignant 0.94 and 0.88), so `malignant_seen` will flag many benign fields.
+- **Specificity is weak (80%).** On the 6 golden images, two of the three benign fields are called malignant (p_malignant 0.94 and 0.88). This is why the pack does not use predictions for an abnormal-screen flag.
 - **Mostly ImageNet features.** The repo froze the ImageNet DenseNet features and trained only the final layer.
 - **Single source.** One lab's H&E images (BreakHis: 82 patients, 40x–400x). A phone photo through an eyepiece will look different.
 - **Patch-level output.** It classifies one field at a time, not a slide or a patient.

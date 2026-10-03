@@ -100,6 +100,7 @@ data class ResultUiState(
     /** Only from the case screen: Recapture goes back there to capture again. Not for a result opened from History. */
     val canRecapture: Boolean = true,
     val patientLabel: String? = null,
+    val batchReview: Boolean = false,
 )
 
 data class HistoryItem(
@@ -123,6 +124,7 @@ data class PatientUiState(val patient: Patient?, val tests: List<HistoryItem>)
 data class SavedCaseUiState(
     val packName: String,
     val positiveLabel: String?,
+    val pack: PackManifest?,
     val case: CaseResult,
     val fields: List<FieldResult>,
     val images: Map<String, File>,
@@ -131,6 +133,7 @@ data class SavedCaseUiState(
     val analysedAt: Long?,
     val classificationOnly: Boolean = false,
     val patientLabel: String? = null,
+    val batchReview: Boolean = false,
 )
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
@@ -314,7 +317,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val run = CaseRun(fields.map { Contracts.parseFieldResult(it.fieldResultJson) }, case, row.analysedAt ?: 0L)
         val images = fields.mapNotNull { f -> f.imagePath?.let { f.fieldId to File(it) } }.toMap()
         val patientLabel = row.patientUid?.let { uid -> patientDao.byUid(uid)?.let { "${it.name} · $uid" } ?: uid }
-        _result.value = ResultUiState(pack, run, images, ReportUiState.Writing(""), canRecapture = canRecapture, patientLabel = patientLabel)
+        _result.value = ResultUiState(
+            pack, run, images, ReportUiState.Writing(""), canRecapture = canRecapture,
+            patientLabel = patientLabel, batchReview = row.submissionSource == SubmissionSource.BATCH,
+        )
         _nav.update { it.open(Route.Result, Tab.SINGLE) } // from the case screen or History, both on Single
         if (!pack.triage.rules.all { it.level == TriageLevel.NEEDS_EXPERT }) writeReport(pack, run) // classification-only packs have no report
     }
@@ -373,6 +379,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             _saved.value = SavedCaseUiState(
                 packName = pack?.displayName ?: row.packId,
                 positiveLabel = pack?.output?.imageScoreLabel,
+                pack = pack,
                 case = case,
                 fields = fieldRows.map { Contracts.parseFieldResult(it.fieldResultJson) },
                 images = fieldRows.mapNotNull { f -> f.imagePath?.let { f.fieldId to File(it) } }.toMap(),
@@ -381,6 +388,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 analysedAt = row.analysedAt,
                 classificationOnly = pack?.triage?.rules?.all { it.level == TriageLevel.NEEDS_EXPERT } == true,
                 patientLabel = row.patientUid?.let { uid -> patientDao.byUid(uid)?.let { "${it.name} · $uid" } ?: uid },
+                batchReview = row.submissionSource == SubmissionSource.BATCH,
             )
         }
     }
