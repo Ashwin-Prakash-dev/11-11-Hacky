@@ -116,8 +116,8 @@ private fun ProfilesCard(count: Int, onProfiles: () -> Unit) {
     OutlinedCard(onClick = onProfiles, modifier = Modifier.fillMaxWidth()) {
         ListRow(
             icon = DeepSightIcons.Person,
-            title = "Profiles",
-            supporting = "$count patient profiles · search by name or ID",
+            title = "Patients",
+            supporting = "$count patients · search by name or ID",
             trailing = { Icon(DeepSightIcons.Forward, contentDescription = null) },
         )
     }

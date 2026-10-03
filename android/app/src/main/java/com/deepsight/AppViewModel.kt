@@ -13,6 +13,8 @@ import com.deepsight.ai.ReportSource
 import com.deepsight.ai.ReportWriter
 import com.deepsight.capture.CaseStore
 import com.deepsight.capture.FieldImage
+import com.deepsight.batch.BatchItem
+import com.deepsight.batch.batchesOf
 import com.deepsight.data.CaseDb
 import com.deepsight.data.CaseStatus
 import com.deepsight.data.create
@@ -164,6 +166,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         profilesOf(patients, cases, System.currentTimeMillis())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    val batches: StateFlow<List<BatchItem>> = combine(dao.unsigned(), patientDao.all(), queue.state, _packs) { rows, patients, q, packs ->
+        batchesOf(rows, patients.associate { it.uid to it.name }, packs.orEmpty().associate { it.manifest.id to it.manifest.displayName }, q)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     private val _patientError = MutableStateFlow<String?>(null)
     val patientError: StateFlow<String?> = _patientError.asStateFlow()
 
@@ -276,6 +282,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             // Another tab may be open meanwhile: the result still goes on Single, without switching to it.
             if (_case.value?.caseId != c.caseId || _nav.value.top(Tab.SINGLE) != Route.Case) return@launch
             if (row.status == CaseStatus.FAILED) _case.update { it?.copy(error = "Analysis failed: ${row.error}") } else showResult(c.caseId, canRecapture = true)
+        }
+    }
+
+    /** A finished batch from the Batch tab opens for sign-off on Single, like one from History. */
+    fun openBatch(caseId: String) {
+        viewModelScope.launch {
+            if (dao.caseById(caseId)?.status != CaseStatus.DONE) return@launch
+            _nav.update { it.copy(tab = Tab.SINGLE) }
+            showResult(caseId, canRecapture = false) // no case screen behind it to capture on
         }
     }
 

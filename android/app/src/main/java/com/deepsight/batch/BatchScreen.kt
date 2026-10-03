@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -23,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.deepsight.data.CaseStatus
 import com.deepsight.ui.DeepSightIcons
 import com.deepsight.ui.ThemePreviews
 import com.deepsight.ui.components.EmptyState
@@ -31,9 +34,12 @@ import com.deepsight.ui.components.SectionHeader
 import com.deepsight.ui.components.StatusPill
 import com.deepsight.ui.theme.DeepSightTheme
 
-/** Batch upload, UI only: the mechanism isn't specified yet, so its controls are disabled. */
+/**
+ * Batches: every case not yet signed off, in the order the queue runs them (Single submits them). Bulk image selection
+ * isn't specified yet, so its controls are disabled. A finished batch opens for sign-off ([onOpen]).
+ */
 @Composable
-fun BatchScreen(onUseSingle: () -> Unit, modifier: Modifier = Modifier) {
+fun BatchScreen(batches: List<BatchItem>, onOpen: (String) -> Unit, onUseSingle: () -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -59,12 +65,42 @@ fun BatchScreen(onUseSingle: () -> Unit, modifier: Modifier = Modifier) {
                 }
             }
         }
-        SectionHeader("Batches")
-        EmptyState(DeepSightIcons.Batch, title = "No batches yet", body = "Batches you run will be listed here.")
+        SectionHeader("Batches", supporting = if (batches.isEmpty()) null else "Run one at a time, in the order they were submitted.")
+        if (batches.isEmpty()) EmptyState(DeepSightIcons.Batch, title = "No batches yet", body = "Batches you run will be listed here.")
+        batches.forEach { BatchRow(it, onOpen) }
         TextButton(onClick = onUseSingle, modifier = Modifier.align(Alignment.CenterHorizontally)) { Text("Screen one case in Single") }
     }
 }
 
+@Composable
+private fun BatchRow(item: BatchItem, onOpen: (String) -> Unit) {
+    val colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+    val content: @Composable () -> Unit = {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(item.patient ?: "No patient", style = MaterialTheme.typography.titleMedium)
+            Text(item.packName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                item.statusLine(),
+                style = MaterialTheme.typography.labelLarge,
+                color = if (item.status == CaseStatus.FAILED) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+            )
+            item.progress?.let { (done, total) ->
+                if (total > 0) LinearProgressIndicator(progress = { (done - 0.5f).coerceAtLeast(0f) / total }, modifier = Modifier.fillMaxWidth().padding(top = 6.dp))
+            }
+        }
+    }
+    if (item.status == CaseStatus.DONE) Card(onClick = { onOpen(item.caseId) }, colors = colors, modifier = Modifier.fillMaxWidth()) { content() }
+    else Card(colors = colors, modifier = Modifier.fillMaxWidth()) { content() }
+}
+
 @ThemePreviews
 @Composable
-private fun BatchScreenPreview() = DeepSightTheme { BatchScreen(onUseSingle = {}) }
+private fun BatchScreenPreview() = DeepSightTheme {
+    BatchScreen(
+        listOf(
+            BatchItem("c1", "Ada Example · P-0000-0001", "Malaria (thin smear)", CaseStatus.RUNNING, 2 to 4, null, null),
+            BatchItem("c2", "Ben Sample · P-0000-0002", "Malaria (thin smear)", CaseStatus.QUEUED, null, 1, null),
+        ),
+        onOpen = {}, onUseSingle = {},
+    )
+}

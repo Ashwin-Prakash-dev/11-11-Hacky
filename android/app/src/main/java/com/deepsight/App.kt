@@ -35,7 +35,7 @@ import com.deepsight.ui.components.DisclaimerBar
 
 /**
  * Three tabs, each with its own back stack ([NavState]): Batch, Single (home → patient → case → result and sign-off →
- * history; patient profiles) and Profile (the phone's users, about and the licences). State lives in [AppViewModel].
+ * history; the patient list) and Profile (the phone's users, about and the licences). State lives in [AppViewModel].
  */
 @Composable
 fun DeepSightApp(vm: AppViewModel) {
@@ -105,7 +105,7 @@ private fun title(route: Route): String = when (route) {
     Route.History -> "History"
     is Route.SavedCase -> "Signed-off case"
     Route.About -> "About"
-    Route.Profiles -> "Profiles"
+    Route.Profiles -> "Patients"
     Route.PickPatient -> "Choose patient"
     Route.NewPatient -> "New patient"
     is Route.Document -> route.title
@@ -114,7 +114,10 @@ private fun title(route: Route): String = when (route) {
 @Composable
 private fun Screen(route: Route, vm: AppViewModel) {
     when (route) {
-        Route.Batch -> BatchScreen(onUseSingle = { vm.selectTab(Tab.SINGLE) })
+        Route.Batch -> {
+            val batches by vm.batches.collectAsStateWithLifecycle()
+            BatchScreen(batches, onOpen = vm::openBatch, onUseSingle = { vm.selectTab(Tab.SINGLE) })
+        }
         Route.Profile -> {
             val profiles by vm.profiles.collectAsStateWithLifecycle()
             ProfileScreen(profiles, onAdd = vm::addProfile, onSelect = vm::selectProfile, onAbout = { vm.open(Route.About) })

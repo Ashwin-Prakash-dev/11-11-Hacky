@@ -129,6 +129,10 @@ interface CaseDao {
     @Query("SELECT * FROM cases WHERE case_id = :caseId")
     fun observe(caseId: String): Flow<CaseEntity?>
 
+    /** The Batch tab: everything not yet signed off, in submit order. */
+    @Query("SELECT * FROM cases WHERE status != 'SIGNED' ORDER BY created_at, rowid")
+    fun unsigned(): Flow<List<CaseEntity>>
+
     @Query("SELECT * FROM cases WHERE patient_uid IS NOT NULL ORDER BY created_at DESC")
     fun patientCases(): Flow<List<CaseEntity>>
 }

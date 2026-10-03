@@ -17,7 +17,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Home → Profiles → search → back, in the real activity, on patients stored in the phone's own database. */
+/** Home → Patients → search → back, in the real activity, on patients stored in the phone's own database. */
 @RunWith(AndroidJUnit4::class)
 class ProfilesNavigationTest {
     @get:Rule val rule = createAndroidComposeRule<MainActivity>()
@@ -35,8 +35,9 @@ class ProfilesNavigationTest {
     @Test
     fun profilesAreReachableFromHomeAndSearchable() {
         val (first, other) = seeded
-        rule.waitUntil(10_000) { rule.onAllNodes(hasText("Profiles")).fetchSemanticsNodes().isNotEmpty() }
-        rule.onNodeWithText("Profiles").performScrollTo().performClick()
+        rule.waitUntil(10_000) { rule.onAllNodes(hasText("Patients")).fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithText("Patients").performScrollTo().performClick()
+        rule.onNodeWithText("Patients").assertExists() // the screen title; the Profile tab is the phone's users
 
         rule.onNodeWithText("Screening aid. A clinician decides.").assertExists()
         rule.onNodeWithText("Search by name or ID").performTextInput(first.uid) // the phone may hold other patients
