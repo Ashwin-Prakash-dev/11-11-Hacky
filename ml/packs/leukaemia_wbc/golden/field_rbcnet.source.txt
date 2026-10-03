@@ -1,0 +1,9 @@
+Integration fixture only; it is not leukemia-domain data or leukemia ground truth.
+
+Dataset: NIH-NLM ThinBloodSmearsPf / RBCNet evaluation field
+Original relative path: 239C12NThinF/IMG_20150614_124212.jpg
+Repository source: ml/data/android_parity/239C12NThinF_IMG_20150614_124212.jpg
+SHA-256: f19d14f9eaf7839ed04026b1782f2e3f4f09e870aeb9872ff54de6817a438cd7
+Licensing/attribution: see LICENSING.md and ml/fixtures/NOTICE-ThinBloodSmearsPf.txt
+
+This file is committed only under AGENTS.md's private-repository golden-image exception.

@@ -121,5 +121,6 @@ class FieldPipeline(
 
     override fun close() {
         if (modelCreated) model.close()
+        (cellFinder as? AutoCloseable)?.close()
     }
 }

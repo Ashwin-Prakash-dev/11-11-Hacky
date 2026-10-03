@@ -66,30 +66,41 @@ fun ResultScreen(
     positiveLabel: String? = null,
     canRecapture: Boolean = true,
     analysedAt: Long? = null,
+    classificationOnly: Boolean = false,
 ) {
     Column(
         modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        SummaryCard(case, testName, analysedAt)
-        ReportCard(report)
+        SummaryCard(case, testName, analysedAt, classificationOnly)
+        if (!classificationOnly) ReportCard(report)
         SectionHeader("Fields", supporting = "${fields.size} analysed · ${case.fieldsPassed} passed the quality check")
         fields.forEach { FieldCard(it, images[it.fieldId], positiveLabel, canRecapture, onRecapture) }
-        SignOffCard(case.caseId, signOff, reportPending = report is ReportUiState.Writing, onSignOff = onSignOff)
+        SignOffCard(
+            case.caseId,
+            signOff,
+            reportPending = !classificationOnly && report is ReportUiState.Writing,
+            classificationOnly = classificationOnly,
+            onSignOff = onSignOff,
+        )
         Spacer(Modifier.height(8.dp))
     }
 }
 
 @Composable
-private fun SummaryCard(case: CaseResult, testName: String?, analysedAt: Long?) = ElevatedCard(Modifier.fillMaxWidth()) {
+private fun SummaryCard(case: CaseResult, testName: String?, analysedAt: Long?, classificationOnly: Boolean) = ElevatedCard(Modifier.fillMaxWidth()) {
     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(testName ?: case.packId, style = MaterialTheme.typography.titleMedium)
             Text(case.caseId, style = Mono, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(analysedAtLine(analysedAt), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        TriageBadge(case.triage.level, Modifier.fillMaxWidth())
-        if (case.triage.provisional) {
+        if (classificationOnly) {
+            NoticeRow("Cell classification only — clinician review required", DeepSightIcons.Info)
+        } else {
+            TriageBadge(case.triage.level, Modifier.fillMaxWidth())
+        }
+        if (!classificationOnly && case.triage.provisional) {
             NoticeRow("PROVISIONAL: thresholds not clinically validated", DeepSightIcons.Warning, color = MaterialTheme.colorScheme.error)
         }
         val tiles = listOf("${case.fieldsPassed} / ${case.fieldIds.size}" to "Fields passed") +
@@ -100,12 +111,14 @@ private fun SummaryCard(case: CaseResult, testName: String?, analysedAt: Long?) 
                 repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
-        Text("Rule: ${case.triage.ruleId}", style = Mono, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(
-            if (case.uncertainty.flag) "Uncertain: ${case.uncertainty.reason ?: "no reason given"}" else "Not flagged uncertain",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        if (!classificationOnly) {
+            Text("Rule: ${case.triage.ruleId}", style = Mono, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                if (case.uncertainty.flag) "Uncertain: ${case.uncertainty.reason ?: "no reason given"}" else "Not flagged uncertain",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
@@ -184,7 +197,13 @@ private fun FieldCard(field: FieldResult, image: File?, positiveLabel: String?, 
     }
 
 @Composable
-private fun SignOffCard(caseId: String, signOff: SignOff?, reportPending: Boolean, onSignOff: (SignOff) -> Unit) = ElevatedCard(Modifier.fillMaxWidth()) {
+private fun SignOffCard(
+    caseId: String,
+    signOff: SignOff?,
+    reportPending: Boolean,
+    classificationOnly: Boolean,
+    onSignOff: (SignOff) -> Unit,
+) = ElevatedCard(Modifier.fillMaxWidth()) {
     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(DeepSightIcons.Person, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -197,7 +216,12 @@ private fun SignOffCard(caseId: String, signOff: SignOff?, reportPending: Boolea
                 DeepSightIcons.Pass, color = MaterialTheme.colorScheme.onSurface,
             )
             if (signOff.note.isNotBlank()) Text(signOff.note, style = MaterialTheme.typography.bodyMedium)
-            Text("The triage level above is unchanged by sign-off.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                if (classificationOnly) "The cell classifications above are unchanged by sign-off."
+                else "The triage level above is unchanged by sign-off.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             return@Column
         }
         var name by remember { mutableStateOf("") }

@@ -2,6 +2,8 @@ package com.deepsight.result
 
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
@@ -48,5 +50,28 @@ class ResultScreenTest {
         rule.setContent { ResultScreen(case, fields, report = null, signOff = null, onRecapture = {}, onSignOff = {}, canRecapture = false) }
         rule.onNodeWithText("Rejected: blur").assertExists()
         rule.onNodeWithText("Recapture").assertDoesNotExist()
+    }
+
+    @Test
+    fun classificationOnlyShowsClassesButNotTriageOrReport() {
+        val case = Contracts.parseCaseResult(read("case_result.malaria_thin.json"))
+        val fields = listOf(Contracts.parseFieldResult(read("field_result.malaria_thin.json")))
+
+        rule.setContent {
+            ResultScreen(
+                case,
+                fields,
+                report = null,
+                signOff = null,
+                onRecapture = {},
+                onSignOff = {},
+                classificationOnly = true,
+            )
+        }
+
+        rule.onNodeWithText("Cell classification only", substring = true).assertExists()
+        rule.onNodeWithText("parasitized").assertExists()
+        rule.onAllNodesWithText("ABNORMAL_FLAG").assertCountEquals(0)
+        rule.onAllNodesWithText("Report").assertCountEquals(0)
     }
 }

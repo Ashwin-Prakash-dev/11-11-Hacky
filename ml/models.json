@@ -2,6 +2,38 @@
   "schema_version": 1,
   "artifacts": [
     {
+      "id": "leukaemia_mobilenetv2_tflite",
+      "filename": "model1 (MobileNetV2).tflite",
+      "url": "https://raw.githubusercontent.com/MAmirEshraghi/Lightweight-Deep-CNN-Based-Mobile-App-in-the-Screening-of-ALL/9477169349d2543a107c9f150d48cf6b5417fbdb/1-%20MobileNetV2%20(100%25)/model1%20(MobileNetV2).tflite",
+      "sha256": "df026f860d192a1cc5a60e57c288483274c34c74247cb10020fd42dab1d58a89",
+      "status": "unverified",
+      "license": "UNVERIFIED",
+      "task": "b_all_cell_classifier",
+      "format": "tflite",
+      "input": "float32 NHWC [batch,224,224,3]; (RGB-128)/128",
+      "output": "[EarlyPreB, PreB, ProB, Benign] probabilities",
+      "source": "https://github.com/MAmirEshraghi/Lightweight-Deep-CNN-Based-Mobile-App-in-the-Screening-of-ALL",
+      "license_source": null,
+      "source_revision": "9477169349d2543a107c9f150d48cf6b5417fbdb",
+      "notes": "Converted locally to the pack ONNX. Training data is C-NMC 2019 (CC BY-NC 4.0); artifact licence is not declared. Private evaluation only."
+    },
+    {
+      "id": "satelladet_blood_txl_pbc",
+      "filename": "SatellaDet_Blood_TXL_PBC_640.onnx",
+      "url": "https://huggingface.co/EphAsad/SatellaDet-Blood/resolve/116a0432c56d15015992435506c820d8a602a904/model/SatellaDet_Blood_TXL_PBC_640.onnx",
+      "sha256": "af8cc48b56a77c608215c1ec11980c288750174a62c7dbace28b612a73cc2d6b",
+      "status": "unverified",
+      "license": "UNVERIFIED",
+      "task": "blood_cell_detector",
+      "format": "onnx",
+      "input": "float32 NCHW [1,3,640,640]",
+      "output": "float32 [1,7,33600]: cx,cy,w,h,WBC,RBC,Platelets",
+      "source": "https://huggingface.co/EphAsad/SatellaDet-Blood",
+      "license_source": null,
+      "source_revision": "116a0432c56d15015992435506c820d8a602a904",
+      "notes": "Model-card held-out TXL-PBC WBC precision 1.0 and recall 0.834586; not independently reproduced. Artifact licence and exact preprocessing are UNVERIFIED. Private evaluation only."
+    },
+    {
       "id": "localmedscan_mobilenetv2",
       "filename": "localmedscan-malaria-mobilenetv2.pth",
       "url": "https://huggingface.co/Svetozar1993/LocalMedScan-malaria-mobilenetv2/resolve/2403c195c4901d179221ee9d5f17ec1128d3cbe1/model.pth",
