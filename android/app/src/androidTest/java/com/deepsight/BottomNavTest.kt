@@ -3,6 +3,7 @@ package com.deepsight
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.espresso.Espresso.pressBack
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -29,7 +30,7 @@ class BottomNavTest {
 
         // Single keeps History open while another tab is shown; tapping Single again goes back to its first screen.
         rule.onNodeWithText("Single").performClick()
-        rule.onNodeWithText("History").performClick()
+        rule.onNodeWithText("History").performScrollTo().performClick() // below the Profiles card
         rule.onNodeWithText("Profile").performClick()
         rule.onNodeWithText("Profiles").assertExists()
         rule.onNodeWithText("Single").performClick()
