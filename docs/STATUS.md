@@ -140,6 +140,32 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
     - **Batch tab:** its "Batches" section lists every unsigned case in submit order: running (field i/n), queued (place in line), ready for sign-off (tapping opens it in Single, without Recapture) or failed (with the error). Bulk image selection is still disabled until it's specified.
     - **Rename:** the patient list's title and the Home card say "Patients"; the Profile tab (the phone's users) keeps "Profiles".
     - **Tests:** `BatchesTest` (JVM, 3, written first; passes). `BatchScreenTest` and the renamed `ProfilesNavigationTest` compile; **not yet run on a phone** (the phone is off).
+- **Patient profile: search and retrieval (#65, branch `Abhay-Mmmm/b-patient-profile-search-and-retrieval`, 2026-10-03):**
+  - **Search:**
+    - A patient ID typed without its dashes or `P-` now matches (`v9jhxpr4` finds `P-V9JH-XPR4`), only once the query is at least 4 characters long.
+    - Search stays in memory (`searchProfiles`), because the list already loads every patient. There is no SQL `PatientDao.search` and no 50-row limit, a deliberate deviation from the issue.
+  - **Profile:**
+    - Tapping a patient opens `Route.Patient`: name, ID, age, sex and date of birth, then their tests newest first.
+    - The screen reads `CaseDao.casesFor(uid)` (a Room Flow), so a batch moving from queued to done shows without a refresh.
+    - FAILED rows show their error.
+    - A row opens like one in History.
+  - **Fix:** `openSaved` read the case status from `history`, which is only kept while History or Home is on screen, so a test opened from elsewhere did nothing. It now reads Room.
+  - **Tests:**
+    - JVM, written first: `ProfileSearchTest` (UID without dashes; short queries don't match IDs).
+    - Device:
+      - `CaseDaoTest`: newest first, and a re-emit on QUEUED → DONE.
+      - `CaseQueueTest`: sign-off leaves `case_result_json` byte-identical.
+      - `ProfilesNavigationTest`: patient → their FAILED test with its error.
+  - **Verified on the edge 50 fusion (2026-10-03):**
+    - `installDebug installDebugAndroidTest`, then the full `:app` device suite through `am instrument`: 53 of 54 pass.
+    - The one failure is `BottomNavTest.tabsSwitchAndKeepTheirOwnStack`, which fails the same way on unmodified `origin/test` `d2d6cb8`, so it predates this work.
+  - **Walkthrough (adb-driven, on the #64 walkthrough patients):**
+    - search `v9jhxpr4` and `walk one`;
+    - open Walk One's newest DONE test, with photos and cell boxes and the template report (no Gemma on the phone);
+    - sign off;
+    - force-stop and relaunch: the profile shows the signed test.
+    - In Room afterwards: `SIGNED`, same `patient_uid`, 8 fields, and `case_result_json` byte-identical to its value before sign-off.
+  - **Not walked by hand:** creating a patient and watching a new batch run live. No photo was imported, but `CaseDaoTest` covers the Flow re-emit.
 - **Bottom navigation (branch `Ashwin-Prakash-dev/b-bottom-nav`, 2026-10-03):** three tabs, each with its own back stack (`NavState` in `Navigation.kt`). **Batch** is UI only: its controls are disabled until the batch mechanism is specified. **Single** is the existing flow unchanged (choose test → case → result → sign-off → history) and is where the app starts and where back ends. **Profile** lets you add and pick profiles (`profile/Profiles.kt`), in memory only: nothing saves them and nothing else reads them yet. It also links to About. An analysis still running when you switch tabs puts its result on Single without switching to it. Reselecting Single, or backing out, cancels it as before. The disclaimer bar sits just above the tab bar on every screen.
   - **Verified:** `:app:testDebugUnitTest` passes (36 tests, including the new `NavStateTest` 8 and `ProfilesTest` 5). `:app:compileDebugAndroidTestKotlin` passes.
   - **Not yet run on a phone** (none connected): `installDebug` and the new `BottomNavTest` (3 tests), plus `NavigationTest`, `TopBarNavigationTest` and `HomeAndAboutTest` through `am instrument`.
