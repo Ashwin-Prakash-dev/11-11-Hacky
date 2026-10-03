@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,12 +26,12 @@ import com.deepsight.ui.ThemePreviews
 import com.deepsight.ui.theme.DeepSightTheme
 import com.deepsight.ui.theme.LocalTriageColors
 
-/** The screening-aid line, at the bottom of every screen. */
+/** The screening-aid line, at the bottom of every screen, just above the tab bar (which takes the system bar's inset). */
 @Composable
 fun DisclaimerBar(modifier: Modifier = Modifier) {
     Surface(color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = modifier.fillMaxWidth()) {
         Row(
-            Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp),
+            Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {

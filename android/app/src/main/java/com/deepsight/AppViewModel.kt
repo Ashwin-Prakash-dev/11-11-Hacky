@@ -25,6 +25,8 @@ import com.deepsight.profiles.Patient
 import com.deepsight.profiles.PatientProfile
 import com.deepsight.profiles.Sex
 import com.deepsight.profiles.profilesOf
+import com.deepsight.profile.ProfileRole
+import com.deepsight.profile.Profiles
 import com.deepsight.result.SignOff
 import com.deepsight.result.sign
 import com.deepsight.result.signOff
@@ -42,8 +44,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** Where the user is. The back stack lives in [AppViewModel], so it survives rotation. */
+/** Where the user is. The back stacks live in [AppViewModel] ([NavState]), so they survive rotation. */
 sealed interface Route {
+    data object Batch : Route
+    data object Profile : Route
     data object Home : Route
     data object Case : Route
     data object Result : Route
@@ -122,8 +126,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val queue = CaseQueue.get(app)
     private val store = CaseStore(app.filesDir.resolve("cases"))
 
-    private val _stack = MutableStateFlow<List<Route>>(listOf(Route.Home))
-    val stack: StateFlow<List<Route>> = _stack.asStateFlow()
+    private val _nav = MutableStateFlow(NavState())
+    val nav: StateFlow<NavState> = _nav.asStateFlow()
+
+    private val _profiles = MutableStateFlow(Profiles())
+    val profiles: StateFlow<Profiles> = _profiles.asStateFlow()
 
     private val _packs = MutableStateFlow<List<PackItem>?>(null)
     val packs: StateFlow<List<PackItem>?> = _packs.asStateFlow()
@@ -152,7 +159,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    val profiles: StateFlow<List<PatientProfile>> = combine(patientDao.all(), dao.patientCases()) { patients, cases ->
+    /** Patient profiles (Room) for the Profiles list and the pick before a case; not the phone users in [profiles]. */
+    val patients: StateFlow<List<PatientProfile>> = combine(patientDao.all(), dao.patientCases()) { patients, cases ->
         profilesOf(patients, cases, System.currentTimeMillis())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -182,15 +190,17 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // Navigation
 
-    fun open(route: Route) = _stack.update { it + route }
+    fun open(route: Route) = navigate(_nav.value.open(route))
 
-    /** Returns false at the root, so the activity can close. */
-    fun back(): Boolean {
-        val stack = _stack.value
-        if (stack.size <= 1) return false
-        if (stack.last() == Route.Result) reporting?.cancel() // a queued or running analysis carries on
-        _stack.value = stack.dropLast(1)
-        return true
+    fun selectTab(tab: Tab) = navigate(_nav.value.select(tab))
+
+    /** Returns false on Single's first screen, so the activity can close. */
+    fun back(): Boolean = _nav.value.back()?.let { navigate(it); true } ?: false
+
+    /** Leaving the result screen, by back or by reselecting Single, stops its report. A queued or running analysis carries on. */
+    private fun navigate(next: NavState) {
+        if (Route.Result !in next.stacks.getValue(Tab.SINGLE)) reporting?.cancel()
+        _nav.value = next
     }
 
     // Case
@@ -221,7 +231,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private fun caseFor(patient: Patient) {
         val pack = pendingPack ?: return
         _case.value = CaseUiState(pack, caseId = "case-${System.currentTimeMillis()}", patient = patient)
-        _stack.update { s -> s.filterNot { it == Route.NewPatient } + Route.Case }
+        _nav.update { n -> n.reset(Tab.SINGLE, n.stacks.getValue(Tab.SINGLE).filterNot { it == Route.NewPatient } + Route.Case) }
     }
 
     /** Re-reads the case directory: after import, capture or delete, and when the case screen comes back to the foreground. */
@@ -263,7 +273,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             val row = dao.observe(c.caseId).first { it?.status == CaseStatus.DONE || it?.status == CaseStatus.FAILED }!!
             _case.update { if (it?.caseId == c.caseId) it.copy(running = false, progress = null, ahead = null) else it }
             // Only the case still on screen may show its result: the user may have backed out.
-            if (_case.value?.caseId != c.caseId || _stack.value.last() != Route.Case) return@launch
+            // Another tab may be open meanwhile: the result still goes on Single, without switching to it.
+            if (_case.value?.caseId != c.caseId || _nav.value.top(Tab.SINGLE) != Route.Case) return@launch
             if (row.status == CaseStatus.FAILED) _case.update { it?.copy(error = "Analysis failed: ${row.error}") } else showResult(c.caseId, canRecapture = true)
         }
     }
@@ -278,7 +289,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val run = CaseRun(fields.map { Contracts.parseFieldResult(it.fieldResultJson) }, case, row.analysedAt ?: 0L)
         val images = fields.mapNotNull { f -> f.imagePath?.let { f.fieldId to File(it) } }.toMap()
         _result.value = ResultUiState(pack, run, images, ReportUiState.Writing(""), canRecapture = canRecapture)
-        open(Route.Result)
+        _nav.update { it.open(Route.Result, Tab.SINGLE) } // from the case screen or History, both on Single
         if (!pack.triage.rules.all { it.level == TriageLevel.NEEDS_EXPERT }) writeReport(pack, run) // classification-only packs have no report
     }
 
@@ -300,7 +311,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun recapture(fieldId: String) {
         _result.value?.images?.get(fieldId)?.delete()
         reporting?.cancel()
-        _stack.update { s -> if (s.lastOrNull() == Route.Result) s.dropLast(1) else s }
+        _nav.update { it.dropTop(Tab.SINGLE, Route.Result) }
         refreshImages()
     }
 
@@ -310,8 +321,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         _result.update { it?.copy(signOff = signOff) }
         // The queue already stored the case, its fields and case_result; signing adds the sign-off and the report seen.
         viewModelScope.launch { dao.sign(signOff, report?.text, report?.source?.name?.lowercase()) }
-        _stack.value = listOf(Route.Home, Route.History)
+        _nav.update { it.reset(Tab.SINGLE, listOf(Route.Home, Route.History)) }
     }
+
+    // Profiles: the phone's users (in memory until they are saved; see Profiles). Patients are in Room.
+
+    fun addProfile(name: String, role: ProfileRole) = _profiles.update { it.add(name, role) }
+
+    fun selectProfile(id: String) = _profiles.update { it.select(id) }
 
     // History
 
