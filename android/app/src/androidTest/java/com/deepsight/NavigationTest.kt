@@ -4,6 +4,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.espresso.Espresso.pressBack
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -60,7 +61,7 @@ class NavigationTest {
         pressBack()
         rule.onNodeWithText(patientName).assertExists() // back on Choose patient, the new patient listed
         pressBack()
-        rule.onNodeWithText("History").performClick()
+        rule.onNodeWithText("History").performScrollTo().performClick() // below the Profiles card
         rule.onNodeWithText("Choose test").assertDoesNotExist() // history screen, whatever Room already holds
         rule.onNodeWithText(disclaimer).assertExists()
     }

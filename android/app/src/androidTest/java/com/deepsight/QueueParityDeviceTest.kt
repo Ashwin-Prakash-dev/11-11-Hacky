@@ -21,8 +21,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * A batch through the queue stores exactly what CaseRunner.run returns for it, on the real malaria pack. Needs
- * `annot_golden_positive.jpg` (see AnnotatedFieldsDeviceTest) in the app's external files dir; otherwise skipped.
+ * A batch through the queue stores exactly what CaseRunner.run returns for it, on the real malaria pack. Needs a malaria
+ * field photo pushed as `queue_parity.jpg` into the app's external files dir (any thin-smear field, e.g. one from
+ * `ml/data/android_parity/`); otherwise skipped.
  */
 @RunWith(AndroidJUnit4::class)
 class QueueParityDeviceTest {
@@ -30,8 +31,8 @@ class QueueParityDeviceTest {
 
     @Test
     fun queuedBatchStoresTheSameResultAsADirectRun() = runBlocking {
-        val photo = File(context.getExternalFilesDir(null), "annot_golden_positive.jpg")
-        assumeTrue("annotated field not pushed", photo.isFile)
+        val photo = File(context.getExternalFilesDir(null), "queue_parity.jpg")
+        assumeTrue("queue_parity.jpg not pushed", photo.isFile)
         val store = CaseStore(File(context.cacheDir, "queue-parity-test").apply { deleteRecursively() })
         repeat(2) { photo.inputStream().use { store.import("q1", it, "jpg") } }
         val runner = CaseRunner(PackLoader.fromAssets(context.assets))
