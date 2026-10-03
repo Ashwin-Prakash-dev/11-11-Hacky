@@ -40,6 +40,16 @@ class CaseRunnerTest {
     }
 
     @Test
+    fun analysisTimeIsTakenWhenTheRunFinishes() = runBlocking {
+        val times = ArrayDeque(listOf(1_000L, 2_000L))
+        val timed = CaseRunner(PackLoader.fromAssets(testAssets, packsRoot = "testpacks")) { times.removeFirst() }
+        addSmokeField("c1")
+        addSmokeField("c2")
+        assertEquals(1_000L, timed.run("smoke", "c1", store.fields("c1")).analysedAt)
+        assertEquals(2_000L, timed.run("smoke", "c2", store.fields("c2")).analysedAt) // every analysis gets its own time
+    }
+
+    @Test
     fun secondCaseReusesTheLoadedPack() = runBlocking {
         addSmokeField("c1")
         addSmokeField("c2")
