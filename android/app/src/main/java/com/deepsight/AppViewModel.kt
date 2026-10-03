@@ -189,6 +189,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** Every case belongs to a patient: pick one (or add one) first. */
     fun startCase(pack: PackManifest) {
         pendingPack = pack
+        _patientError.value = null
         open(Route.PickPatient)
     }
 
