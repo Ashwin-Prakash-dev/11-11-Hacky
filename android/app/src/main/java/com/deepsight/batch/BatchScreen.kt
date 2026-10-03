@@ -35,8 +35,8 @@ import com.deepsight.ui.components.StatusPill
 import com.deepsight.ui.theme.DeepSightTheme
 
 /**
- * Batches: every case not yet signed off, in the order the queue runs them (Single submits them). Bulk image selection
- * isn't specified yet, so its controls are disabled. A finished batch opens for sign-off ([onOpen]).
+ * Batch-tab submissions only, in the order the shared queue runs them. Bulk image selection isn't specified yet, so
+ * its controls are disabled. A finished batch opens for sign-off ([onOpen]).
  */
 @Composable
 fun BatchScreen(batches: List<BatchItem>, onOpen: (String) -> Unit, onUseSingle: () -> Unit, modifier: Modifier = Modifier) {

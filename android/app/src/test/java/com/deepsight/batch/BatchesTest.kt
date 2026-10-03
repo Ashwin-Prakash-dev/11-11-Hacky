@@ -3,12 +3,18 @@ package com.deepsight.batch
 import com.deepsight.QueueState
 import com.deepsight.data.CaseEntity
 import com.deepsight.data.CaseStatus
+import com.deepsight.data.SubmissionSource
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class BatchesTest {
-    private fun case(id: String, status: CaseStatus, patient: String? = "P-0000-0001", error: String? = null) =
-        CaseEntity(id, "malaria_thin", createdAt = 0L, patientUid = patient, status = status, error = error)
+    private fun case(
+        id: String,
+        status: CaseStatus,
+        patient: String? = "P-0000-0001",
+        error: String? = null,
+        source: SubmissionSource = SubmissionSource.BATCH,
+    ) = CaseEntity(id, "malaria_thin", createdAt = 0L, patientUid = patient, status = status, error = error, submissionSource = source)
 
     private val patients = mapOf("P-0000-0001" to "Ada Example")
     private val packs = mapOf("malaria_thin" to "Malaria (thin smear)")
@@ -33,6 +39,16 @@ class BatchesTest {
         assertEquals(null, item.patient)
         assertEquals("malaria_thin", item.packName)
         assertEquals("boom", item.error)
+    }
+
+    @Test
+    fun singleSubmissionsNeverAppearInTheBatchTab() {
+        val rows = listOf(
+            case("single", CaseStatus.DONE, source = SubmissionSource.SINGLE),
+            case("batch", CaseStatus.DONE),
+        )
+
+        assertEquals(listOf("batch"), batchesOf(rows, patients, packs, QueueState()).map { it.caseId })
     }
 
     @Test

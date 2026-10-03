@@ -17,6 +17,7 @@ import com.deepsight.batch.BatchItem
 import com.deepsight.batch.batchesOf
 import com.deepsight.data.CaseDb
 import com.deepsight.data.CaseStatus
+import com.deepsight.data.SubmissionSource
 import com.deepsight.data.create
 import com.deepsight.history.historyItemsOf
 import com.deepsight.engine.contract.CaseResult
@@ -98,6 +99,7 @@ data class ResultUiState(
     val signOff: SignOff? = null,
     /** Only from the case screen: Recapture goes back there to capture again. Not for a result opened from History. */
     val canRecapture: Boolean = true,
+    val patientLabel: String? = null,
 )
 
 data class HistoryItem(
@@ -128,6 +130,7 @@ data class SavedCaseUiState(
     val signOff: SignOff?,
     val analysedAt: Long?,
     val classificationOnly: Boolean = false,
+    val patientLabel: String? = null,
 )
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
@@ -173,7 +176,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         profilesOf(patients, cases, System.currentTimeMillis())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    val batches: StateFlow<List<BatchItem>> = combine(dao.unsigned(), patientDao.all(), queue.state, _packs) { rows, patients, q, packs ->
+    val batches: StateFlow<List<BatchItem>> = combine(dao.batchSubmissions(), patientDao.all(), queue.state, _packs) { rows, patients, q, packs ->
         batchesOf(rows, patients.associate { it.uid to it.name }, packs.orEmpty().associate { it.manifest.id to it.manifest.displayName }, q)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -282,7 +285,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (c.images.isEmpty() || c.running) return
         _case.update { it?.copy(running = true, error = null, progress = null, ahead = null) }
         viewModelScope.launch {
-            queue.submit(c.patient?.uid, c.pack.id, c.caseId)
+            queue.submit(c.patient?.uid, c.pack.id, c.caseId, SubmissionSource.SINGLE)
             val row = dao.observe(c.caseId).first { it?.status == CaseStatus.DONE || it?.status == CaseStatus.FAILED }!!
             _case.update { if (it?.caseId == c.caseId) it.copy(running = false, progress = null, ahead = null) else it }
             // Only the case still on screen may show its result: the user may have backed out.
@@ -310,7 +313,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val fields = case.fieldIds.mapNotNull { fieldRows[it] } // the run's order; field_id sorts field_10 before field_2
         val run = CaseRun(fields.map { Contracts.parseFieldResult(it.fieldResultJson) }, case, row.analysedAt ?: 0L)
         val images = fields.mapNotNull { f -> f.imagePath?.let { f.fieldId to File(it) } }.toMap()
-        _result.value = ResultUiState(pack, run, images, ReportUiState.Writing(""), canRecapture = canRecapture)
+        val patientLabel = row.patientUid?.let { uid -> patientDao.byUid(uid)?.let { "${it.name} · $uid" } ?: uid }
+        _result.value = ResultUiState(pack, run, images, ReportUiState.Writing(""), canRecapture = canRecapture, patientLabel = patientLabel)
         _nav.update { it.open(Route.Result, Tab.SINGLE) } // from the case screen or History, both on Single
         if (!pack.triage.rules.all { it.level == TriageLevel.NEEDS_EXPERT }) writeReport(pack, run) // classification-only packs have no report
     }
@@ -376,6 +380,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 signOff = row.signOff(),
                 analysedAt = row.analysedAt,
                 classificationOnly = pack?.triage?.rules?.all { it.level == TriageLevel.NEEDS_EXPERT } == true,
+                patientLabel = row.patientUid?.let { uid -> patientDao.byUid(uid)?.let { "${it.name} · $uid" } ?: uid },
             )
         }
     }

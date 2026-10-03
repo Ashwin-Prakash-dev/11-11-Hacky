@@ -95,6 +95,7 @@ fun SavedCaseScreen(state: SavedCaseUiState?, modifier: Modifier = Modifier) {
         onRecapture = {}, onSignOff = {}, modifier = modifier,
         testName = state.packName, images = state.images, positiveLabel = state.positiveLabel, canRecapture = false, analysedAt = state.analysedAt,
         classificationOnly = state.classificationOnly,
+        patientLabel = state.patientLabel,
     )
 }
 

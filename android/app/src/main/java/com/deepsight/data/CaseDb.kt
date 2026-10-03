@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.Flow
  * columns are null until a clinician signs. [reportText] is the report the clinician saw when signing; [reportSource] is
  * `gemma` or `template` (schema v2). [patientUid] is null only for cases saved before patients existed (schema v4);
  * [status] follows QUEUED → RUNNING → DONE or FAILED ([error]) → SIGNED, and older cases are SIGNED.
+ * [submissionSource] separates cases started in Single from future Batch-tab submissions (schema v5).
  */
 @Entity(
     tableName = "cases",
@@ -50,9 +51,11 @@ data class CaseEntity(
     @ColumnInfo(name = "patient_uid") val patientUid: String? = null,
     @ColumnInfo(defaultValue = "SIGNED") val status: CaseStatus = CaseStatus.SIGNED,
     val error: String? = null,
+    @ColumnInfo(name = "submission_source", defaultValue = "SINGLE") val submissionSource: SubmissionSource = SubmissionSource.SINGLE,
 )
 
 enum class CaseStatus { QUEUED, RUNNING, DONE, FAILED, SIGNED }
+enum class SubmissionSource { SINGLE, BATCH }
 
 /** One field. [imagePath] is null when the field has no image (fake engine fields until #30); must be a file under filesDir (copy picker/camera images in): content:// URIs lose permission after a restart. */
 @Entity(
@@ -102,10 +105,13 @@ interface CaseDao {
     @Query("UPDATE cases SET status = :status, error = :error WHERE case_id = :caseId")
     suspend fun setStatus(caseId: String, status: CaseStatus, error: String? = null)
 
+    @Query("UPDATE cases SET status = 'QUEUED', error = NULL, submission_source = :source WHERE case_id = :caseId")
+    suspend fun requeue(caseId: String, source: SubmissionSource)
+
     /** A new case goes in QUEUED; a case already stored (a recapture) is re-queued with its patient and created_at kept. */
     @Transaction
     suspend fun enqueue(entity: CaseEntity) {
-        if (insertIfAbsent(entity.copy(status = CaseStatus.QUEUED)) == -1L) setStatus(entity.caseId, CaseStatus.QUEUED)
+        if (insertIfAbsent(entity.copy(status = CaseStatus.QUEUED)) == -1L) requeue(entity.caseId, entity.submissionSource)
     }
 
     /** What a restarted queue must still run, in submit order. */
@@ -129,9 +135,9 @@ interface CaseDao {
     @Query("SELECT * FROM cases WHERE case_id = :caseId")
     fun observe(caseId: String): Flow<CaseEntity?>
 
-    /** The Batch tab: everything not yet signed off, in submit order. */
-    @Query("SELECT * FROM cases WHERE status != 'SIGNED' ORDER BY created_at, rowid")
-    fun unsigned(): Flow<List<CaseEntity>>
+    /** The Batch tab never displays cases submitted from Single. */
+    @Query("SELECT * FROM cases WHERE submission_source = 'BATCH' AND status != 'SIGNED' ORDER BY created_at, rowid")
+    fun batchSubmissions(): Flow<List<CaseEntity>>
 
     @Query("SELECT * FROM cases WHERE patient_uid IS NOT NULL ORDER BY created_at DESC")
     fun patientCases(): Flow<List<CaseEntity>>
@@ -178,7 +184,7 @@ suspend fun PatientDao.create(name: String, dob: String, sex: Sex, now: Long, ui
     error("Could not find a free patient ID")
 }
 
-@Database(entities = [CaseEntity::class, FieldEntity::class, Patient::class], version = 4, exportSchema = false)
+@Database(entities = [CaseEntity::class, FieldEntity::class, Patient::class], version = 5, exportSchema = false)
 abstract class CaseDb : RoomDatabase() {
     abstract fun dao(): CaseDao
     abstract fun patientDao(): PatientDao
@@ -212,9 +218,16 @@ abstract class CaseDb : RoomDatabase() {
             }
         }
 
+        /** v4 → v5: distinguish Single cases from future Batch submissions. Every existing case came from Single. */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `cases` ADD COLUMN `submission_source` TEXT NOT NULL DEFAULT 'SINGLE'")
+            }
+        }
+
         fun build(context: Context, name: String = "cases.db"): CaseDb =
             Room.databaseBuilder(context.applicationContext, CaseDb::class.java, name)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build()
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build()
 
         fun get(context: Context): CaseDb = instance ?: synchronized(this) {
             instance ?: build(context).also { instance = it }

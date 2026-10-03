@@ -54,7 +54,9 @@ class ResultScreenTest {
 
     @Test
     fun classificationOnlyShowsClassesButNotTriageOrReport() {
-        val case = Contracts.parseCaseResult(read("case_result.malaria_thin.json"))
+        val case = Contracts.parseCaseResult(read("case_result.malaria_thin.json")).copy(
+            counts = linkedMapOf("early_pre_b_like" to 0, "pre_b_like" to 0, "pro_b_like" to 0, "benign" to 0),
+        )
         val fields = listOf(Contracts.parseFieldResult(read("field_result.malaria_thin.json")))
 
         rule.setContent {
@@ -66,11 +68,15 @@ class ResultScreenTest {
                 onRecapture = {},
                 onSignOff = {},
                 classificationOnly = true,
+                patientLabel = "Ada Example · P-0000-0001",
             )
         }
 
         rule.onNodeWithText("Cell classification only", substring = true).assertExists()
-        rule.onNodeWithText("parasitized").assertExists()
+        rule.onNodeWithText("Ada Example · P-0000-0001").assertExists()
+        rule.onNodeWithText("Early pre B like").assertExists()
+        rule.onAllNodesWithText("early_pre_b_like").assertCountEquals(0)
+        rule.onNodeWithText("No cells were returned", substring = true).assertExists()
         rule.onAllNodesWithText("ABNORMAL_FLAG").assertCountEquals(0)
         rule.onAllNodesWithText("Report").assertCountEquals(0)
     }
