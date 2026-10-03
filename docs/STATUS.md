@@ -121,13 +121,21 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
   - **Backup:** the database and `files/cases/` are excluded from cloud backup and device transfer.
   - **Tests:**
     - JVM, written first and passing: `PatientTest` (8), `ProfilesOfTest` (2).
-    - Device tests, written first; they compile, but **have not run (no phone connected)**: `CaseDbMigrationTest` (v3 → v4), `PatientDaoTest`, `CaseQueueTest` (fake runner: order, failure, restart, recapture, sign-off), `QueueParityDeviceTest` (real malaria pack; needs `annot_golden_positive.jpg`).
-    - Updated for the patient step: `NavigationTest` and `ProfilesScreenTest`. `ProfilesNavigationTest` seeds Room instead of using `SampleProfiles`.
-    - Run them with `installDebug installDebugAndroidTest` + `am instrument`, not `connectedDebugAndroidTest`, which uninstalls the app and deletes the Gemma model.
-  - **UNVERIFIED (measure on a moto g32):**
-    - MB per patient on disk (`du -s files/cases/<caseId>` plus the database);
-    - whether CameraX capture stays usable while the queue runs inference.
-  - **UNVERIFIED (walkthrough on a phone):** queue 2 patients back to back; back out during a run; force-stop mid-run and relaunch, then check both finish with the right `patient_uid`.
+    - New device tests, written first: `CaseDbMigrationTest` (v3 → v4), `PatientDaoTest`, `CaseQueueTest` (fake runner: order, failure, restart, recapture, sign-off), `QueueParityDeviceTest` (real malaria pack; needs a field photo pushed as `queue_parity.jpg`).
+    - Updated for the patient step: `NavigationTest` and `ProfilesScreenTest`. `ProfilesNavigationTest` seeds Room instead of using `SampleProfiles`. `NavigationTest` and `TopBarNavigationTest` now scroll to History, which the Profiles card pushed below the fold.
+    - **Verified on the edge 50 fusion (Android 15, 2026-10-03):** after `installDebug installDebugAndroidTest`, the full `:app` device suite passed through `am instrument`: OK (46 tests). These are skipped because their files aren't on the phone: Annotated, Breast, Gemma, PipelineReport.
+    - The phone had another machine's debug signature, so the app was uninstalled first. Its data was a v2 database with no cases plus 2 photos, backed up locally first.
+  - **Walkthrough on the edge 50 fusion (2026-10-03), driven with adb; Room checked after each step:**
+    - **Migration:** the phone's own v2 database opened as v4.
+    - **New patients:** 2 created, getting `P-V9JH-XPR4` and `P-WXZY-KRCW`.
+    - **Back out:** backing out during a 4-field run, that run finished `DONE` in the background.
+    - **Queue:** patient 2's batch, submitted during patient 1's 8-field run, showed "Queued behind 1 batch".
+    - **Force-stop:** the app was force-stopped with batch 1 `RUNNING` and batch 2 `QUEUED`. After relaunch, both finished in submit order with the right `patient_uid`. Another force-stop mid-run also recovered (4/4 fields).
+    - **Sign-off from History:** "Ready for sign-off" opened the result without Recapture. The case became `SIGNED`, keeping its `patient_uid`, field and `analysed_at`.
+  - **Measured on the edge 50 fusion:**
+    - **Disk:** about 2.6 MB per imported NIH field (5312x2988 JPEG, stored unchanged) and about 1 MB per camera capture. Room adds about 29 KB per field; the database was 1.4 MB for 10 cases and 28 fields (`du`, sqlite).
+    - **Camera:** a capture during a running 8-field batch succeeded. Preview smoothness was not measured.
+  - **UNVERIFIED (moto g32):** the same MB-per-patient figure, and whether CameraX stays usable during inference on a low-end phone.
 - **Next:** decide whether `eval` merges into `test`; the G1 gate row (not Track B's) can now point at the main case flow.
 
 ### C: On-device engine (owner: TBD)
