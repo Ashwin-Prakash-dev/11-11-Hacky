@@ -27,4 +27,5 @@ The classifier training data is described upstream as C-NMC 2019 under CC BY-NC 
 - Contract validation and pack SHA checks: pass on 2026-10-03.
 - Source-TFLite/converted-ONNX parity: pass as described above.
 - JVM engine tests and Android source/androidTest compilation: pass on 2026-10-03.
-- Physical Android `connectedDebugAndroidTest`, full-field golden cases, latency, and memory: **UNVERIFIED** because no device was attached.
+- Physical Android model execution: `LeukaemiaModelsDeviceTest` passed for pack commit `66b4237` on a Motorola edge 50 fusion, Android 15/API 35, arm64-v8a (2026-10-03). CPU and XNNPACK both loaded and executed the two packaged ONNX files. Classifier zero-input probabilities matched the desktop reference within `2e-5`, and the detector produced the expected finite `[1,7,33600]` output; the test report recorded `1.643 s` total for both providers.
+- Full detector→crop→classifier execution on a real blood field, full-field goldens, end-to-end latency, and memory remain **UNVERIFIED**. `installDebug` could not replace the phone's existing `com.deepsight` because it was signed with a different developer key; verify the app flow after preserving or explicitly removing that installation.
