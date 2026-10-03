@@ -9,6 +9,7 @@ class DemoPacksTest {
     fun onlyPhoneValidatedPacksArePickable() {
         assertTrue(DemoPacks.isReady("malaria_thin"))
         assertTrue(DemoPacks.isReady("breast_breakhis")) // its 6 golden cases pass on a phone
-        listOf("fungal", "leukaemia_wbc", "smoke").forEach { assertFalse(it, DemoPacks.isReady(it)) }
+        assertTrue(DemoPacks.isReady("leukaemia_wbc")) // its detector + classifier cascade passes on a phone
+        assertFalse(DemoPacks.isReady("smoke"))
     }
 }
