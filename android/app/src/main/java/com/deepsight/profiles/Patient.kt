@@ -3,9 +3,14 @@ package com.deepsight.profiles
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.deepsight.data.CaseEntity
+import com.deepsight.engine.contract.Contracts
 import java.security.SecureRandom
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.GregorianCalendar
+import java.util.Locale
 import java.util.Random
 import java.util.TimeZone
 
@@ -62,4 +67,25 @@ object PatientUid {
     }
 
     fun isValid(uid: String) = FORMAT.matches(uid)
+}
+
+/** The Profiles list rows: each patient with their case count and the level and date of their newest case ([cases] newest first). */
+fun profilesOf(
+    patients: List<Patient>,
+    cases: List<CaseEntity>,
+    now: Long,
+    zone: TimeZone = TimeZone.getDefault(),
+    locale: Locale = Locale.getDefault(),
+): List<PatientProfile> {
+    val byPatient = cases.groupBy { it.patientUid }
+    val day = SimpleDateFormat("d MMM yyyy", locale).apply { timeZone = zone }
+    return patients.map { p ->
+        val mine = byPatient[p.uid].orEmpty()
+        val newest = mine.firstOrNull()
+        PatientProfile(
+            id = p.uid, name = p.name, ageYears = p.ageOn(now, zone), sex = p.sex.name, caseCount = mine.size,
+            lastLevel = newest?.caseResultJson?.let { runCatching { Contracts.parseCaseResult(it).triage.level }.getOrNull() },
+            lastScreening = newest?.let { day.format(Date(it.createdAt)) },
+        )
+    }
 }

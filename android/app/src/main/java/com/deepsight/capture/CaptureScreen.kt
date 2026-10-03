@@ -109,6 +109,7 @@ fun CaseScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(state.pack.displayName, style = MaterialTheme.typography.headlineSmall)
+            state.patient?.let { Text("${it.name} · ${it.uid}", style = MaterialTheme.typography.titleMedium) }
             Text(state.caseId, style = Mono, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Steps(current = if (state.running) 2 else 1)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -191,7 +192,12 @@ private fun AnalyseBar(state: CaseUiState, onAnalyse: () -> Unit) {
     Surface(tonalElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             val progress = state.progress
-            if (state.running && progress != null) {
+            if (state.running && state.ahead != null) {
+                Text(
+                    "Queued behind ${state.ahead} ${if (state.ahead == 1) "batch" else "batches"}. You can start the next patient.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            } else if (state.running && progress != null) {
                 val (done, total) = progress
                 LinearProgressIndicator(progress = { if (total == 0) 0f else (done - 0.5f).coerceAtLeast(0f) / total }, modifier = Modifier.fillMaxWidth())
                 Text(if (done == 0) "Loading the model…" else "Analysing field $done of $total…", style = MaterialTheme.typography.bodyMedium)

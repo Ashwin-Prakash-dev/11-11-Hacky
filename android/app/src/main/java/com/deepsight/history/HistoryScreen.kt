@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.deepsight.HistoryItem
+import com.deepsight.data.CaseStatus
 import com.deepsight.ReportUiState
 import com.deepsight.SavedCaseUiState
 import com.deepsight.result.ResultScreen
@@ -64,6 +65,7 @@ private fun HistoryRow(item: HistoryItem, onOpen: (String) -> Unit) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(item.packName, style = MaterialTheme.typography.titleMedium)
                 Text(item.level?.name ?: "No triage", style = MaterialTheme.typography.labelLarge)
+                STATUS[item.status]?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary) }
                 Text(
                     listOfNotNull(
                         item.signedBy?.let { "Signed by $it${item.decision?.let { d -> " ($d)" } ?: ""}" },
@@ -91,3 +93,11 @@ fun SavedCaseScreen(state: SavedCaseUiState?, modifier: Modifier = Modifier) {
         testName = state.packName, images = state.images, positiveLabel = state.positiveLabel, canRecapture = false, analysedAt = state.analysedAt,
     )
 }
+
+/** What an unsigned case is waiting for; signed cases show their sign-off instead. */
+private val STATUS = mapOf(
+    CaseStatus.QUEUED to "Queued",
+    CaseStatus.RUNNING to "Analysing…",
+    CaseStatus.DONE to "Ready for sign-off",
+    CaseStatus.FAILED to "Analysis failed",
+)

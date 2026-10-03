@@ -8,12 +8,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,14 +35,21 @@ import com.deepsight.engine.contract.TriageLevel
 import com.deepsight.ui.DeepSightIcons
 import com.deepsight.ui.ThemePreviews
 import com.deepsight.ui.components.EmptyState
-import com.deepsight.ui.components.NoticeRow
 import com.deepsight.ui.components.PillTone
 import com.deepsight.ui.components.StatusPill
 import com.deepsight.ui.theme.DeepSightTheme
 
-/** Patient profiles with a search bar. UI only: it displays [profiles] and filters them as the user types. */
+/**
+ * Patient profiles with a search bar; it filters [profiles] as the user types. Before a case, [onSelect] makes each
+ * profile a choice and [onNew] adds a "New patient" button.
+ */
 @Composable
-fun ProfilesScreen(profiles: List<PatientProfile>, modifier: Modifier = Modifier) {
+fun ProfilesScreen(
+    profiles: List<PatientProfile>,
+    modifier: Modifier = Modifier,
+    onSelect: ((PatientProfile) -> Unit)? = null,
+    onNew: (() -> Unit)? = null,
+) {
     var query by rememberSaveable { mutableStateOf("") }
     val shown = searchProfiles(profiles, query)
     Column(modifier.fillMaxSize()) {
@@ -56,43 +66,56 @@ fun ProfilesScreen(profiles: List<PatientProfile>, modifier: Modifier = Modifier
                 shape = MaterialTheme.shapes.extraLarge,
                 modifier = Modifier.fillMaxWidth(),
             )
-            NoticeRow("Sample data for the preview. Profiles are not stored yet.", DeepSightIcons.Info)
+            onNew?.let {
+                FilledTonalButton(onClick = it, modifier = Modifier.fillMaxWidth()) {
+                    Icon(DeepSightIcons.Person, contentDescription = null, Modifier.size(ButtonDefaults.IconSize))
+                    Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                    Text("New patient")
+                }
+            }
             Text(
                 if (query.isBlank()) "${profiles.size} profiles" else "${shown.size} of ${profiles.size} profiles",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        if (shown.isEmpty()) {
+        if (profiles.isEmpty()) {
+            EmptyState(DeepSightIcons.Person, "No patients yet", "Add a new patient when you start a case.", Modifier.padding(16.dp))
+        } else if (shown.isEmpty()) {
             EmptyState(DeepSightIcons.Person, "No profiles match", "Try a different name or ID.", Modifier.padding(16.dp))
         } else {
             LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(shown, key = { it.id }) { ProfileRow(it) }
+                items(shown, key = { it.id }) { ProfileRow(it, onSelect) }
             }
         }
     }
 }
 
 @Composable
-private fun ProfileRow(profile: PatientProfile) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow), modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(color = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer, shape = CircleShape) {
-                Text(initials(profile.name), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp).width(32.dp), maxLines = 1)
-            }
-            Spacer(Modifier.width(16.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(profile.name, style = MaterialTheme.typography.titleMedium)
-                Text("${profile.id} · ${profile.ageYears} y · ${profile.sex}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(
-                    if (profile.caseCount == 0) "No cases yet"
-                    else "${profile.caseCount} ${if (profile.caseCount == 1) "case" else "cases"}${profile.lastScreening?.let { " · last $it" } ?: ""}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            profile.lastLevel?.let { LevelPill(it) }
+private fun ProfileRow(profile: PatientProfile, onSelect: ((PatientProfile) -> Unit)?) {
+    val colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+    if (onSelect == null) Card(colors = colors, modifier = Modifier.fillMaxWidth()) { ProfileRowContent(profile) }
+    else Card(onClick = { onSelect(profile) }, colors = colors, modifier = Modifier.fillMaxWidth()) { ProfileRowContent(profile) }
+}
+
+@Composable
+private fun ProfileRowContent(profile: PatientProfile) {
+    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Surface(color = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer, shape = CircleShape) {
+            Text(initials(profile.name), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp).width(32.dp), maxLines = 1)
         }
+        Spacer(Modifier.width(16.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(profile.name, style = MaterialTheme.typography.titleMedium)
+            Text("${profile.id} · ${profile.ageYears} y · ${profile.sex}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                if (profile.caseCount == 0) "No cases yet"
+                else "${profile.caseCount} ${if (profile.caseCount == 1) "case" else "cases"}${profile.lastScreening?.let { " · last $it" } ?: ""}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        profile.lastLevel?.let { LevelPill(it) }
     }
 }
 

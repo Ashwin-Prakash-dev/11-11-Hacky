@@ -2,9 +2,12 @@ package com.deepsight.profiles
 
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.deepsight.ui.theme.DeepSightTheme
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,8 +40,20 @@ class ProfilesScreenTest {
     }
 
     @Test
-    fun saysThatTheseAreSampleProfiles() {
-        rule.setContent { DeepSightTheme { ProfilesScreen(profiles) } }
-        rule.onNodeWithText("Sample data", substring = true).assertExists()
+    fun choosingAPatientSelectsThatProfile() {
+        var chosen: PatientProfile? = null
+        var added = false
+        rule.setContent { DeepSightTheme { ProfilesScreen(profiles, onSelect = { chosen = it }, onNew = { added = true }) } }
+        rule.onNodeWithText("Ben Sample").performClick()
+        assertEquals(profiles[1], chosen)
+        rule.onNodeWithText("New patient").performClick()
+        assertTrue(added)
+    }
+
+    @Test
+    fun noPatientsYetSaysHowToAddOne() {
+        rule.setContent { DeepSightTheme { ProfilesScreen(emptyList()) } }
+        rule.onNodeWithText("No patients yet").assertExists()
+        rule.onNodeWithText("New patient").assertDoesNotExist() // only offered before a case
     }
 }

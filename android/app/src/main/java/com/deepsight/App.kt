@@ -20,13 +20,13 @@ import com.deepsight.history.HistoryScreen
 import com.deepsight.history.SavedCaseScreen
 import com.deepsight.home.HomeScreen
 import com.deepsight.profiles.ProfilesScreen
-import com.deepsight.profiles.SampleProfiles
+import com.deepsight.profiles.NewPatientScreen
 import com.deepsight.result.ResultScreen
 import com.deepsight.ui.DeepSightIcons
 import com.deepsight.ui.components.DeepSightTopBar
 import com.deepsight.ui.components.DisclaimerBar
 
-/** Home → case → result and sign-off → history; about and the licence from home. State lives in [AppViewModel]. */
+/** Home → patient → case → result and sign-off → history; profiles, about and the licence from home. State lives in [AppViewModel]. */
 @Composable
 fun DeepSightApp(vm: AppViewModel) {
     val stack by vm.stack.collectAsStateWithLifecycle()
@@ -62,6 +62,8 @@ private fun title(route: Route): String = when (route) {
     is Route.SavedCase -> "Signed-off case"
     Route.About -> "About"
     Route.Profiles -> "Profiles"
+    Route.PickPatient -> "Choose patient"
+    Route.NewPatient -> "New patient"
     is Route.Document -> route.title
 }
 
@@ -72,8 +74,9 @@ private fun Screen(route: Route, vm: AppViewModel) {
             val packs by vm.packs.collectAsStateWithLifecycle()
             val ai by vm.aiStatus.collectAsStateWithLifecycle()
             val history by vm.history.collectAsStateWithLifecycle()
+            val profiles by vm.profiles.collectAsStateWithLifecycle()
             HomeScreen(
-                packs, ai, history.size, SampleProfiles.all.size,
+                packs, ai, history.size, profiles.size,
                 onPick = vm::startCase, onHistory = { vm.open(Route.History) }, onProfiles = { vm.open(Route.Profiles) },
             )
         }
@@ -100,7 +103,18 @@ private fun Screen(route: Route, vm: AppViewModel) {
             val saved by vm.saved.collectAsStateWithLifecycle()
             SavedCaseScreen(saved?.takeIf { it.case.caseId == route.caseId })
         }
-        Route.Profiles -> ProfilesScreen(SampleProfiles.all)
+        Route.Profiles -> {
+            val profiles by vm.profiles.collectAsStateWithLifecycle()
+            ProfilesScreen(profiles)
+        }
+        Route.PickPatient -> {
+            val profiles by vm.profiles.collectAsStateWithLifecycle()
+            ProfilesScreen(profiles, onSelect = { vm.selectPatient(it.id) }, onNew = { vm.open(Route.NewPatient) })
+        }
+        Route.NewPatient -> {
+            val error by vm.patientError.collectAsStateWithLifecycle()
+            NewPatientScreen(error, onSave = vm::createPatient)
+        }
         Route.About -> AboutScreen(onOpenDocument = { title, asset -> vm.open(Route.Document(title, asset)) })
         is Route.Document -> DocumentScreen(route.asset)
     }

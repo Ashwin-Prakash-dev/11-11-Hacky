@@ -107,6 +107,27 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
     - Release-build memory is unchecked (no `largeHeap`).
     - Compose's `LocalLifecycleOwner` shows a deprecation warning until Lifecycle is 2.8 or later.
     - Not run on another phone model.
+- **Patients and the FCFS case queue (#64, branch `Abhay-Mmmm/b-patient-records-and-a-sequential-fcfs-case-que`, 2026-10-03):**
+  - **Base:** built on Ashwin's unmerged `b-profiles-ui` (Profiles screen) and `b-analysis-timestamp` (Room v3, `analysed_at`). It replaces #63/PR #66's UI. Merge those two first; if `MIGRATION_2_3` changes, renumber this one.
+  - **Room v4 (`MIGRATION_3_4`):**
+    - A `patients` table: UID `P-XXXX-XXXX` (Crockford base32, `SecureRandom`, retried on a clash), name, ISO date of birth and sex. These are the fields the Profiles screen shows; blood group was dropped.
+    - Cases gain `patient_uid` (foreign key, no cascade), `status` (old rows become `SIGNED`) and `error`.
+    - `Patient` validates itself and is the only validator.
+  - **Flow:** choose test → choose patient or add one → case.
+    - **Analyse:** submits the batch to `CaseQueue`, which runs one batch at a time, first in first out, and survives leaving the screen. Restart recovery re-runs `QUEUED`/`RUNNING` rows. A failed batch is marked `FAILED` and the queue moves on.
+    - **History:** a finished, unsigned case opens for sign-off.
+    - **Sign-off:** an UPDATE (`CaseDao.sign`), not a REPLACE.
+    - **Profiles:** the screen reads Room.
+  - **Backup:** the database and `files/cases/` are excluded from cloud backup and device transfer.
+  - **Tests:**
+    - JVM, written first and passing: `PatientTest` (8), `ProfilesOfTest` (2).
+    - Device tests, written first; they compile, but **have not run (no phone connected)**: `CaseDbMigrationTest` (v3 → v4), `PatientDaoTest`, `CaseQueueTest` (fake runner: order, failure, restart, recapture, sign-off), `QueueParityDeviceTest` (real malaria pack; needs `annot_golden_positive.jpg`).
+    - Updated for the patient step: `NavigationTest` and `ProfilesScreenTest`. `ProfilesNavigationTest` seeds Room instead of using `SampleProfiles`.
+    - Run them with `installDebug installDebugAndroidTest` + `am instrument`, not `connectedDebugAndroidTest`, which uninstalls the app and deletes the Gemma model.
+  - **UNVERIFIED (measure on a moto g32):**
+    - MB per patient on disk (`du -s files/cases/<caseId>` plus the database);
+    - whether CameraX capture stays usable while the queue runs inference.
+  - **UNVERIFIED (walkthrough on a phone):** queue 2 patients back to back; back out during a run; force-stop mid-run and relaunch, then check both finish with the right `patient_uid`.
 - **Next:** decide whether `eval` merges into `test`; the G1 gate row (not Track B's) can now point at the main case flow.
 
 ### C: On-device engine (owner: TBD)
