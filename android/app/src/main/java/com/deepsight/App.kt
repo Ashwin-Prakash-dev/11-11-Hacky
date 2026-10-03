@@ -14,6 +14,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -27,6 +28,7 @@ import com.deepsight.history.SavedCaseScreen
 import com.deepsight.home.HomeScreen
 import com.deepsight.profiles.ProfilesScreen
 import com.deepsight.profiles.NewPatientScreen
+import com.deepsight.profiles.PatientScreen
 import com.deepsight.profile.ProfileScreen
 import com.deepsight.result.ResultScreen
 import com.deepsight.ui.DeepSightIcons
@@ -107,6 +109,7 @@ private fun title(route: Route): String = when (route) {
     Route.About -> "About"
     Route.Profiles -> "Patients"
     Route.PickPatient -> "Choose patient"
+    is Route.Patient -> "Patient"
     Route.NewPatient -> "New patient"
     is Route.Document -> route.title
 }
@@ -158,11 +161,15 @@ private fun Screen(route: Route, vm: AppViewModel) {
         }
         Route.Profiles -> {
             val patients by vm.patients.collectAsStateWithLifecycle()
-            ProfilesScreen(patients)
+            ProfilesScreen(patients, onSelect = { vm.open(Route.Patient(it.id)) })
         }
         Route.PickPatient -> {
             val patients by vm.patients.collectAsStateWithLifecycle()
             ProfilesScreen(patients, onSelect = { vm.selectPatient(it.id) }, onNew = { vm.open(Route.NewPatient) })
+        }
+        is Route.Patient -> {
+            val profile by remember(route.uid) { vm.patientProfile(route.uid) }.collectAsStateWithLifecycle(null)
+            PatientScreen(profile, onOpen = vm::openSaved)
         }
         Route.NewPatient -> {
             val error by vm.patientError.collectAsStateWithLifecycle()

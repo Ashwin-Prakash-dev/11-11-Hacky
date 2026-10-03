@@ -18,6 +18,7 @@ import com.deepsight.batch.batchesOf
 import com.deepsight.data.CaseDb
 import com.deepsight.data.CaseStatus
 import com.deepsight.data.create
+import com.deepsight.history.historyItemsOf
 import com.deepsight.engine.contract.CaseResult
 import com.deepsight.engine.contract.Contracts
 import com.deepsight.engine.contract.FieldResult
@@ -35,6 +36,7 @@ import com.deepsight.result.signOff
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -59,6 +61,8 @@ sealed interface Route {
     data object Profiles : Route
     /** Before a case: choose the patient the batch belongs to, or add one. */
     data object PickPatient : Route
+    /** One patient and every test they've had. */
+    data class Patient(val uid: String) : Route
     data object NewPatient : Route
     data class Document(val title: String, val asset: String) : Route
 }
@@ -105,7 +109,14 @@ data class HistoryItem(
     val decision: String?,
     val status: CaseStatus,
     val classificationOnly: Boolean = false,
+    /** Why the analysis failed (FAILED only). */
+    val error: String? = null,
+    /** When the batch was submitted; shown until the case is signed. */
+    val createdAt: Long = 0L,
 )
+
+/** A patient's profile: who they are and their tests, newest first. [patient] is null until Room answers. */
+data class PatientUiState(val patient: Patient?, val tests: List<HistoryItem>)
 
 data class SavedCaseUiState(
     val packName: String,
@@ -148,18 +159,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val _saved = MutableStateFlow<SavedCaseUiState?>(null)
     val saved: StateFlow<SavedCaseUiState?> = _saved.asStateFlow()
 
-    val history: StateFlow<List<HistoryItem>> = combine(dao.history(), _packs) { rows, packs ->
-        val manifests = packs.orEmpty().associate { it.manifest.id to it.manifest }
-        rows.map { row ->
-            val manifest = manifests[row.packId]
-            HistoryItem(
-                caseId = row.caseId, packName = manifest?.displayName ?: row.packId,
-                level = row.caseResultJson?.let { runCatching { Contracts.parseCaseResult(it).triage.level }.getOrNull() },
-                signedAt = row.signedAt, signedBy = row.signedBy, decision = row.decision, status = row.status,
-                classificationOnly = manifest?.triage?.rules?.all { it.level == TriageLevel.NEEDS_EXPERT } == true,
-            )
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val history: StateFlow<List<HistoryItem>> = combine(dao.history(), _packs) { rows, packs -> historyItemsOf(rows, manifests(packs)) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** A patient and their tests from Room, so a batch moving from queued to done shows up without a refresh. */
+    fun patientProfile(uid: String): Flow<PatientUiState> =
+        combine(patientDao.observe(uid), dao.casesFor(uid), _packs) { patient, rows, packs -> PatientUiState(patient, historyItemsOf(rows, manifests(packs))) }
+
+    private fun manifests(packs: List<PackItem>?) = packs.orEmpty().associate { it.manifest.id to it.manifest }
 
     /** Patient profiles (Room) for the Profiles list and the pick before a case; not the phone users in [profiles]. */
     val patients: StateFlow<List<PatientProfile>> = combine(patientDao.all(), dao.patientCases()) { patients, cases ->
@@ -349,16 +356,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     /** A signed case opens read-only; a finished, unsigned one opens for review and sign-off; one still queued doesn't open. */
     fun openSaved(caseId: String) {
-        val status = history.value.firstOrNull { it.caseId == caseId }?.status
-        if (status == CaseStatus.DONE) {
-            viewModelScope.launch { showResult(caseId, canRecapture = false) } // no case screen behind it to capture on
-            return
-        }
-        if (status != CaseStatus.SIGNED) return
-        _saved.value = null
-        open(Route.SavedCase(caseId))
         viewModelScope.launch {
+            // Room, not [history]: that list is only kept while History or Home is on screen, and this also opens from a patient.
             val row = dao.caseById(caseId) ?: return@launch
+            if (row.status == CaseStatus.DONE) return@launch showResult(caseId, canRecapture = false) // no case screen behind it to capture on
+            if (row.status != CaseStatus.SIGNED) return@launch
+            _saved.value = null
+            open(Route.SavedCase(caseId))
             val case = row.caseResultJson?.let(Contracts::parseCaseResult) ?: return@launch
             val fieldRows = dao.fields(caseId)
             val pack = _packs.value.orEmpty().firstOrNull { it.manifest.id == row.packId }?.manifest

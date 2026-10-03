@@ -135,6 +135,14 @@ interface CaseDao {
 
     @Query("SELECT * FROM cases WHERE patient_uid IS NOT NULL ORDER BY created_at DESC")
     fun patientCases(): Flow<List<CaseEntity>>
+
+    /** One patient's tests, newest first; emits again as the queue moves them on. */
+    @Query("SELECT * FROM cases WHERE patient_uid = :uid ORDER BY created_at DESC")
+    fun casesFor(uid: String): Flow<List<CaseEntity>>
+
+    /** For tests that seed the app's own database; its fields go with it. */
+    @Query("DELETE FROM cases WHERE case_id = :caseId")
+    suspend fun deleteCase(caseId: String)
 }
 
 @Dao
@@ -144,6 +152,9 @@ interface PatientDao {
 
     @Query("SELECT * FROM patients WHERE patient_uid = :uid")
     suspend fun byUid(uid: String): Patient?
+
+    @Query("SELECT * FROM patients WHERE patient_uid = :uid")
+    fun observe(uid: String): Flow<Patient?>
 
     @Query("SELECT * FROM patients ORDER BY name COLLATE NOCASE")
     fun all(): Flow<List<Patient>>

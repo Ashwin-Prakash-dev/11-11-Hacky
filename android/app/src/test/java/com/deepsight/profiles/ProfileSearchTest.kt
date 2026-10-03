@@ -30,6 +30,27 @@ class ProfileSearchTest {
     }
 
     @Test
+    fun matchesAStoredUidTypedWithoutItsDashesOrPrefix() {
+        val dan = PatientProfile("P-V9JH-XPR4", "Dan Test", 40, "M", 0, null)
+        val pam = PatientProfile("P-AB12-CD34", "Pam Abel", 50, "F", 0, null)
+        val people = listOf(dan, pam)
+        assertEquals(listOf(dan), searchProfiles(people, "v9jhxpr4"))
+        assertEquals(listOf(dan), searchProfiles(people, "P-V9JH-XPR4"))
+        assertEquals(listOf(dan), searchProfiles(people, "p v9jh"))
+        assertEquals(listOf(dan), searchProfiles(people, "PV9JHX"))
+        assertEquals(listOf(pam), searchProfiles(people, "PAM")) // a name, not the ID "AB12…" with its P dropped
+    }
+
+    @Test
+    fun shortQueriesMatchNamesNotCompactedIds() {
+        val pam = PatientProfile("P-AB12-CD34", "Pam Abel", 50, "F", 0, null)
+        val dan = PatientProfile("P-A000-0000", "Dan Test", 40, "M", 0, null)
+        assertEquals(listOf(pam), searchProfiles(listOf(pam, dan), "Pa"))
+        assertEquals(listOf(pam, dan), searchProfiles(listOf(pam, dan), "p")) // "P-" is in every ID, as before
+        assertEquals(emptyList<PatientProfile>(), searchProfiles(listOf(pam, dan), "%"))
+    }
+
+    @Test
     fun noMatchGivesAnEmptyList() {
         assertEquals(emptyList<PatientProfile>(), searchProfiles(all, "zzz"))
     }

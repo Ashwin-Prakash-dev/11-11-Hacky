@@ -141,6 +141,7 @@ class CaseQueueTest {
         assertEquals(ada.uid, signed.patientUid)
         assertEquals(done.createdAt, signed.createdAt)
         assertEquals(42L, signed.analysedAt)
+        assertEquals(done.caseResultJson, signed.caseResultJson) // the stored triage, byte for byte
         assertEquals("Dr Who", signed.signedBy)
         assertEquals("Report.", signed.reportText)
         assertNull(signed.error)
