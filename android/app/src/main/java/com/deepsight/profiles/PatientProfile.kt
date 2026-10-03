@@ -16,15 +16,21 @@ data class PatientProfile(
     val lastScreening: String? = null,
 )
 
-/** Every whitespace-separated word of [query] must appear in the name or the ID, ignoring case. Order is kept. */
+/**
+ * Every whitespace-separated word of [query] must appear in the name or the ID, ignoring case; or the query is part of
+ * the ID typed without its `P-` and dashes (at least 4 characters, so "Pa" doesn't match every ID with an A). Order is kept.
+ */
 fun searchProfiles(profiles: List<PatientProfile>, query: String): List<PatientProfile> {
     val words = query.trim().lowercase().split(Regex("\\s+")).filter { it.isNotEmpty() }
     if (words.isEmpty()) return profiles
+    val compact = compactUid(query).takeIf { it.length >= 4 }
     return profiles.filter { p ->
         val haystack = "${p.name} ${p.id}".lowercase()
-        words.all { it in haystack }
+        words.all { it in haystack } || compact != null && compact in compactUid(p.id)
     }
 }
+
+private fun compactUid(s: String) = s.uppercase().filterNot { it == '-' || it.isWhitespace() }.removePrefix("P")
 
 /** First letter of the first and last word, upper case; "?" for a blank name. */
 fun initials(name: String): String {
