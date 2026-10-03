@@ -1,7 +1,7 @@
 {
   "contract_version": "1.0",
   "id": "leukaemia_wbc",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "display_name": "B-ALL cell classification",
   "task_type": "classifier",
   "runtime": "onnx",
@@ -13,7 +13,7 @@
     "mean": [128.0, 128.0, 128.0], "std": [128.0, 128.0, 128.0], "stain_normalization": "none"
   },
   "output": {"decoder": "softmax", "labels": ["early_pre_b_like", "pre_b_like", "pro_b_like", "benign"]},
-  "quality": {"min_blur": 50.0, "max_clipped_fraction": 0.05},
+  "quality": {"min_blur": 8.0, "max_clipped_fraction": 0.45},
   "aggregation": {"image_score": "none", "min_fields": 1},
   "triage": {
     "provisional": true,
