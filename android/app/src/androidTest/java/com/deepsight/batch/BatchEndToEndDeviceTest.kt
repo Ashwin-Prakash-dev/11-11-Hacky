@@ -55,7 +55,7 @@ class BatchEndToEndDeviceTest {
         val runner = CaseRunner(PackLoader.fromAssets(context.assets))
         val queue = CaseQueue(db.dao(), store, runner::run)
         val packIds = listOf("malaria_thin", "breast_breakhis")
-        assertEquals("both modules are offered", packIds, runner.packs().map { it.id }.filter { it in packIds })
+        assertEquals("both modules are offered", packIds.toSet(), runner.packs().map { it.id }.filter { it in packIds }.toSet())
 
         // A stand-in that knows the truth by file name, so the test checks the mechanism, not the placeholder's luck.
         val router = FieldRouter { f, _ -> if (f.name.startsWith("annot")) "malaria_thin" else "breast_breakhis" }
