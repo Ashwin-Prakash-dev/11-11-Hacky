@@ -16,9 +16,9 @@ import com.deepsight.capture.FieldImage
 import com.deepsight.batch.BatchItem
 import com.deepsight.batch.batchesOf
 import com.deepsight.data.CaseDb
-import com.deepsight.data.CaseEntity
 import com.deepsight.data.CaseStatus
 import com.deepsight.data.create
+import com.deepsight.history.historyItemsOf
 import com.deepsight.engine.contract.CaseResult
 import com.deepsight.engine.contract.Contracts
 import com.deepsight.engine.contract.FieldResult
@@ -111,6 +111,8 @@ data class HistoryItem(
     val classificationOnly: Boolean = false,
     /** Why the analysis failed (FAILED only). */
     val error: String? = null,
+    /** When the batch was submitted; shown until the case is signed. */
+    val createdAt: Long = 0L,
 )
 
 /** A patient's profile: who they are and their tests, newest first. [patient] is null until Room answers. */
@@ -157,26 +159,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val _saved = MutableStateFlow<SavedCaseUiState?>(null)
     val saved: StateFlow<SavedCaseUiState?> = _saved.asStateFlow()
 
-    val history: StateFlow<List<HistoryItem>> = combine(dao.history(), _packs) { rows, packs -> historyItems(rows, packs) }
+    val history: StateFlow<List<HistoryItem>> = combine(dao.history(), _packs) { rows, packs -> historyItemsOf(rows, manifests(packs)) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** A patient and their tests from Room, so a batch moving from queued to done shows up without a refresh. */
     fun patientProfile(uid: String): Flow<PatientUiState> =
-        combine(patientDao.observe(uid), dao.casesFor(uid), _packs) { patient, rows, packs -> PatientUiState(patient, historyItems(rows, packs)) }
+        combine(patientDao.observe(uid), dao.casesFor(uid), _packs) { patient, rows, packs -> PatientUiState(patient, historyItemsOf(rows, manifests(packs))) }
 
-    private fun historyItems(rows: List<CaseEntity>, packs: List<PackItem>?): List<HistoryItem> {
-        val manifests = packs.orEmpty().associate { it.manifest.id to it.manifest }
-        return rows.map { row ->
-            val manifest = manifests[row.packId]
-            HistoryItem(
-                caseId = row.caseId, packName = manifest?.displayName ?: row.packId,
-                level = row.caseResultJson?.let { runCatching { Contracts.parseCaseResult(it).triage.level }.getOrNull() },
-                signedAt = row.signedAt, signedBy = row.signedBy, decision = row.decision, status = row.status,
-                classificationOnly = manifest?.triage?.rules?.all { it.level == TriageLevel.NEEDS_EXPERT } == true,
-                error = row.error,
-            )
-        }
-    }
+    private fun manifests(packs: List<PackItem>?) = packs.orEmpty().associate { it.manifest.id to it.manifest }
 
     /** Patient profiles (Room) for the Profiles list and the pick before a case; not the phone users in [profiles]. */
     val patients: StateFlow<List<PatientProfile>> = combine(patientDao.all(), dao.patientCases()) { patients, cases ->

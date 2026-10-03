@@ -147,8 +147,9 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
   - **Profile:**
     - Tapping a patient opens `Route.Patient`: name, ID, age, sex and date of birth, then their tests newest first.
     - The screen reads `CaseDao.casesFor(uid)` (a Room Flow), so a batch moving from queued to done shows without a refresh.
-    - FAILED rows show their error.
+    - FAILED rows show their error, and unsigned rows show when they were submitted (also in History).
     - A row opens like one in History.
+    - The row mapping is the pure `historyItemsOf`, tested by `HistoryItemsTest` (JVM, 3, written first): triage level, null before triage or on bad JSON, the error carried through.
   - **Fix:** `openSaved` read the case status from `history`, which is only kept while History or Home is on screen, so a test opened from elsewhere did nothing. It now reads Room.
   - **Tests:**
     - JVM, written first: `ProfileSearchTest` (UID without dashes; short queries don't match IDs).
@@ -157,6 +158,7 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
       - `CaseQueueTest`: sign-off leaves `case_result_json` byte-identical.
       - `ProfilesNavigationTest`: patient → their FAILED test with its error.
   - **Verified on the edge 50 fusion (2026-10-03):**
+    - After the date change: `ProfilesNavigationTest`, `NavigationTest` and `TopBarNavigationTest` pass (4) through `am instrument`. A screenshot showed Walk One's rows with their submit times.
     - `installDebug installDebugAndroidTest`, then the full `:app` device suite through `am instrument`: 53 of 54 pass.
     - The one failure is `BottomNavTest.tabsSwitchAndKeepTheirOwnStack`, which fails the same way on unmodified `origin/test` `d2d6cb8`, so it predates this work.
   - **Walkthrough (adb-driven, on the #64 walkthrough patients):**
