@@ -186,7 +186,7 @@ private fun Screen(route: Route, vm: AppViewModel) {
         }
         Route.History -> {
             val history by vm.history.collectAsStateWithLifecycle()
-            HistoryScreen(history, onOpen = vm::openSaved)
+            HistoryScreen(history, onOpen = vm::openSaved, onDelete = vm::deleteCases)
         }
         is Route.SavedCase -> {
             val saved by vm.saved.collectAsStateWithLifecycle()

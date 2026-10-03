@@ -173,6 +173,11 @@ Rules: AGENTS.md. Edit only your track's section, plus any rows you own. Say how
   - **Not yet run on a phone** (none connected): `installDebug` and the new `BottomNavTest` (3 tests), plus `NavigationTest`, `TopBarNavigationTest` and `HomeAndAboutTest` through `am instrument`.
 - **Next:** run the bottom-nav checks above on a phone; the batch mechanism (spec pending); save profiles and use the active one for sign-off. `eval` was merged into `test` (`e89b1b6`). The G1 gate row (not Track B's) can now point at the main case flow.
 
+- **Delete history entries (branch `Ashwin-Prakash-dev/b-delete-history`, 2026-10-03, not pushed):** on History, press and hold a case to select it, tap to select more, then **Delete** after a confirmation (it says how many are signed off). Deleting removes the case row and its fields (Room cascade) and the case's image folder (`CaseStore.delete`, which ignores an id that points outside the store).
+  - **Cases the queue still owns can't be deleted.** QUEUED and RUNNING ones can't be selected, and `CaseDao.deleteFinished` skips them too, because the queue writes its result into the stored case when it finishes. Done, failed and signed cases can go.
+  - **Verified on the edge 50 fusion (2026-10-03):** `HistoryDeleteScreenTest` (7), `CaseDeleteTest` (2) and `DeleteHistoryFlowTest` (two cases seeded in the app's own database, one deleted through the real UI: row, fields and images gone, the other untouched). JVM: `HistorySelectionTest` (4), `CaseStoreDeleteTest` (3); 164 pass.
+  - **Known flaky test, not from this change:** `BottomNavTest.tabsSwitchAndKeepTheirOwnStack` fails intermittently on plain `test` too (5 of 16 runs on `ac8f03c`, 1 of 8 with this change); the failures are `Choose test` present or absent at the wrong moment, so it looks like a race with the screen transition or pack loading.
+  - **Not done:** deleting from a patient's test list, and any undo or export before deleting. Signed-off records are deleted for good.
 ### C: On-device engine (owner: TBD)
 - **Done:**
   - Contract types and JSON in `engine/.../contract/`. 4/4 JVM tests pass, and the JSON they write passes `validate.py`.

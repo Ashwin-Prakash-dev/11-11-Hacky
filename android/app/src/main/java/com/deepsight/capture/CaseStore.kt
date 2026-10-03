@@ -22,6 +22,12 @@ class CaseStore(private val root: File) {
         return File(dir, "field_$next.$ext")
     }
 
+    /** Removes a case's folder and its images. An id that would point outside the store is ignored. */
+    fun delete(caseId: String) {
+        val dir = File(root, caseId).canonicalFile
+        if (dir.parentFile == root.canonicalFile) dir.deleteRecursively()
+    }
+
     /** Copies bytes as-is: no re-encode, so the quality gate sees the original pixels. */
     fun import(caseId: String, input: InputStream, ext: String): File =
         nextFile(caseId, ext).also { f -> input.use { i -> f.outputStream().use { i.copyTo(it) } } }

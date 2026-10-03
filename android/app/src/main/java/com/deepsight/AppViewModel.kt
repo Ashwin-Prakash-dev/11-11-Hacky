@@ -355,6 +355,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     // History
 
+    /** Deletes finished cases (and their images) chosen on the History screen. Busy ones are skipped; the lists update from Room. */
+    fun deleteCases(caseIds: Set<String>) {
+        if (caseIds.isEmpty()) return
+        viewModelScope.launch {
+            val removed = withContext(Dispatchers.IO) { dao.deleteFinished(caseIds.toList()).also { ids -> ids.forEach(store::delete) } }
+            Log.i(TAG, "deleted ${removed.size} of ${caseIds.size} selected cases")
+        }
+    }
+
     /** A signed case opens read-only; a finished, unsigned one opens for review and sign-off; one still queued doesn't open. */
     fun openSaved(caseId: String) {
         viewModelScope.launch {
