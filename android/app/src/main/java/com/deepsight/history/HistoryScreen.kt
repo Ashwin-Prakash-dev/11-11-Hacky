@@ -49,8 +49,9 @@ fun HistoryScreen(items: List<HistoryItem>, onOpen: (String) -> Unit, modifier: 
     }
 }
 
+/** One case: triage, queue status (with the error when it failed) and sign-off. Also a patient's test list. */
 @Composable
-private fun HistoryRow(item: HistoryItem, onOpen: (String) -> Unit) {
+fun HistoryRow(item: HistoryItem, onOpen: (String) -> Unit) {
     val colors = LocalTriageColors.current
     val dot = when (item.level?.let { triageStyle(it).tone }) {
         TriageTone.ALERT -> colors.alert.content
@@ -66,6 +67,7 @@ private fun HistoryRow(item: HistoryItem, onOpen: (String) -> Unit) {
                 Text(item.packName, style = MaterialTheme.typography.titleMedium)
                 Text(if (item.classificationOnly) "Cell classification" else item.level?.name ?: "No triage", style = MaterialTheme.typography.labelLarge)
                 STATUS[item.status]?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary) }
+                item.error?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error) }
                 Text(
                     listOfNotNull(
                         item.signedBy?.let { "Signed by $it${item.decision?.let { d -> " ($d)" } ?: ""}" },

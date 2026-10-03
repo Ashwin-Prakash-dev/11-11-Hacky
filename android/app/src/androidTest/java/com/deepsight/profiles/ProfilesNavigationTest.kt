@@ -11,6 +11,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.deepsight.MainActivity
 import com.deepsight.data.CaseDb
+import com.deepsight.data.CaseEntity
+import com.deepsight.data.CaseStatus
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Rule
@@ -22,15 +24,24 @@ import org.junit.runner.RunWith
 class ProfilesNavigationTest {
     @get:Rule val rule = createAndroidComposeRule<MainActivity>()
 
-    private val patients = CaseDb.get(InstrumentationRegistry.getInstrumentation().targetContext).patientDao()
+    private val db = CaseDb.get(InstrumentationRegistry.getInstrumentation().targetContext)
+    private val patients = db.patientDao()
     private val stamp = System.currentTimeMillis()
     private val seeded = listOf("Profiles Test A $stamp", "Profiles Test B $stamp").map { name ->
         Patient(PatientUid.generate(), name, "1990-05-17", Sex.F, createdAt = stamp).also { runBlocking { patients.insert(it) } }
     }
 
-    /** No case references them, so they can go. */
+    /** A failed test for the first patient: the queue never re-runs FAILED, and it carries its error. */
+    private val failedCase = CaseEntity(
+        "case-profiles-test-$stamp", "malaria_thin", stamp, patientUid = seeded[0].uid, status = CaseStatus.FAILED, error = "Seeded failure $stamp",
+    ).also { runBlocking { db.dao().insertIfAbsent(it) } }
+
+    /** The case first: patients don't cascade to their cases. */
     @After
-    fun removeSeeded() = runBlocking { seeded.forEach { patients.delete(it.uid) } }
+    fun removeSeeded() = runBlocking {
+        db.dao().deleteCase(failedCase.caseId)
+        seeded.forEach { patients.delete(it.uid) }
+    }
 
     @Test
     fun profilesAreReachableFromHomeAndSearchable() {
@@ -46,5 +57,20 @@ class ProfilesNavigationTest {
 
         rule.onNodeWithContentDescription("Back").performClick()
         rule.onNodeWithText("Choose test").assertExists()
+    }
+
+    @Test
+    fun aPatientOpensWithTheirTestsAndItsStatus() {
+        val (first, other) = seeded
+        rule.waitUntil(10_000) { rule.onAllNodes(hasText("Patients")).fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithText("Patients").performScrollTo().performClick()
+        rule.onNodeWithText("Search by name or ID").performTextInput(first.uid.replace("-", "").drop(1)) // typed off the slip without dashes
+        rule.onNodeWithText(other.name).assertDoesNotExist()
+        rule.onNodeWithText(first.name).performClick()
+
+        rule.waitUntil(10_000) { rule.onAllNodes(hasText(failedCase.error!!)).fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithText("Patient").assertExists() // the screen title
+        rule.onNodeWithText(first.uid, substring = true).assertExists()
+        rule.onNodeWithText("Analysis failed").assertExists()
     }
 }
