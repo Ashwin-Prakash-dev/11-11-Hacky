@@ -22,14 +22,14 @@ import kotlinx.coroutines.withContext
 /** Field ids are unique across cases: Room keys fields by field_id alone. The index is the file's, so Delete leaves gaps. */
 fun fieldId(caseId: String, index: Int) = "${caseId}_field_$index"
 
-/** One analysed case: every field's result and the triaged case result. */
-data class CaseRun(val fields: List<FieldResult>, val case: CaseResult)
+/** One analysed case: every field's result, the triaged case result, and [analysedAt] (epoch millis) when the analysis finished. */
+data class CaseRun(val fields: List<FieldResult>, val case: CaseResult, val analysedAt: Long)
 
 /**
  * Runs a case through the real engine off the main thread. Keeps the last pack's [FieldPipeline], so its model loads
  * once across cases; picking another pack frees it first, so only one model is in memory.
  */
-class CaseRunner(private val loader: PackLoader) {
+class CaseRunner(private val loader: PackLoader, private val clock: () -> Long = System::currentTimeMillis) {
     private val lock = Mutex() // FieldPipeline is not thread-safe
     private var catalog: List<PackManifest>? = null
     private var current: Pair<String, FieldPipeline>? = null
@@ -62,7 +62,8 @@ class CaseRunner(private val loader: PackLoader) {
                     bitmap.recycle()
                 }
             }
-            CaseRun(fields, pipeline.closeCase(caseId, fields))
+            val case = pipeline.closeCase(caseId, fields)
+            CaseRun(fields, case, analysedAt = clock()) // taken after triage, so it is when the result exists
         }
     }
 

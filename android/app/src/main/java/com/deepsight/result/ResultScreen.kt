@@ -65,12 +65,13 @@ fun ResultScreen(
     images: Map<String, File> = emptyMap(),
     positiveLabel: String? = null,
     canRecapture: Boolean = true,
+    analysedAt: Long? = null,
 ) {
     Column(
         modifier.verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        SummaryCard(case, testName)
+        SummaryCard(case, testName, analysedAt)
         ReportCard(report)
         SectionHeader("Fields", supporting = "${fields.size} analysed · ${case.fieldsPassed} passed the quality check")
         fields.forEach { FieldCard(it, images[it.fieldId], positiveLabel, canRecapture, onRecapture) }
@@ -80,11 +81,12 @@ fun ResultScreen(
 }
 
 @Composable
-private fun SummaryCard(case: CaseResult, testName: String?) = ElevatedCard(Modifier.fillMaxWidth()) {
+private fun SummaryCard(case: CaseResult, testName: String?, analysedAt: Long?) = ElevatedCard(Modifier.fillMaxWidth()) {
     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(testName ?: case.packId, style = MaterialTheme.typography.titleMedium)
             Text(case.caseId, style = Mono, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(analysedAtLine(analysedAt), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         TriageBadge(case.triage.level, Modifier.fillMaxWidth())
         if (case.triage.provisional) {
